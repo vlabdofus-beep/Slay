@@ -28,6 +28,10 @@ const ui = {
   logOpen: false,
   hit: new Set<number>(),
   playerHit: 0,
+  /** Chiffres flottants à afficher au prochain rendu (par uid de monstre, -1 pour le joueur). */
+  floats: new Map<number, { n: number; el: Element | 'soin' | 'armure'; text?: string }[]>(),
+  /** Combat dont l'entrée du boss a déjà été jouée. */
+  bossIntro: null as object | null,
   /** Animation en cours : les actions de combat attendent l'impact. */
   busy: false,
   /** Carte en train d'être lancée (masquée de la main jusqu'à l'impact). */
@@ -98,12 +102,17 @@ function cardHtml(def: CardDef, opts: { inst?: CardInstance; act?: string; data?
   const lore = def.lore ? ` title="${esc(def.lore)}"` : '';
   return `<${tag} class="card el-${def.element} rar-${def.rarity}${upgraded ? ' upg' : ''}${opts.selected ? ' sel' : ''}${opts.disabled ? ' off' : ''}" ${attrs}${opts.disabled && tag === 'button' ? ' disabled' : ''}${lore}>
     <span class="card-cost" aria-label="${def.cost} PA">${def.cost}</span>
-    <span class="card-art">${pic(def.icon, def.name, 'card-pic')}</span>
-    <span class="card-name">${esc(def.name)}${upgraded ? '+' : ''}</span>
+    <span class="card-art">${def.icon ? pic(def.icon, def.name, 'card-pic') : `<span class="pic card-pic">${uiIcon(def.type === 'attaque' ? 'combat' : def.type === 'competence' ? 'defense' : 'buff', 'card-ico')}</span>`}</span>
+    <span class="card-name">${esc(def.name)}${upgraded ? '<i class="upg-mark">+</i>' : ''}</span>
     <span class="card-type">${elIcon(def.element, 'el-mini')}${TYPE_NAMES[def.type]} ${ELEMENT_NAMES[def.element]}${forged ? ' (forgemagée)' : ''}</span>
     <span class="card-text">${cardText(def, c)}</span>
     ${opts.hint ? `<span class="card-hint">${opts.hint}</span>` : ''}
   </${tag}>`;
+}
+
+/** Dos de carte : œuf de Dofus sur trame d'Amakna, liseré or. */
+function cardBack(cls = ''): string {
+  return `<span class="card-back ${cls}" aria-hidden="true"><span class="cb-ring">${uiIcon('dofus', 'cb-egg')}</span></span>`;
 }
 
 function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: boolean } = {}): string {
@@ -219,12 +228,15 @@ function startPreviews(): void {
 }
 
 const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', boss: 'Boss' };
+/** Icônes officielles de l'interface Dofus (modes de Dofusle, objets de Dofus Survivors). */
+const uiIcon = (name: string, cls = 'ui-ico') => `<img class="${cls}" src="${asset(`ui/${name}.webp`)}" alt="" draggable="false">`;
 const NODE_ICON: Record<MapNode['type'], string> = {
-  combat: '<svg viewBox="0 0 24 24"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4M5 21l-2-2"/></svg>',
-  elite: '<svg viewBox="0 0 24 24"><path d="M5 3l3 5h8l3-5M6 9a6 6 0 0012 0M9 13h.01M15 13h.01M10 17h4M8 9v9h8V9"/></svg>',
-  zaap: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
-  boss: '',
-};
+  combat: uiIcon('combat'),
+  elite: uiIcon('elite'),
+  zaap: uiIcon('zaap'),
+} as Record<MapNode['type'], string>;
+const INTENT_ICON: Record<string, string> = { attack: 'combat', defend: 'defense', buff: 'buff', debuff: 'debuff' };
+const intentIcon = (kind: string) => INTENT_ICON[kind] ? uiIcon(INTENT_ICON[kind], 'intent-ico') : '';
 
 /** Monstres d'une rencontre, regroupés (« Tofu ×2 »). */
 function encounterGroups(encId: string) {
@@ -312,6 +324,14 @@ function viewMap(run: Run): string {
   </main>`;
 }
 
+/** Chiffres de dégâts : couleur de l'élément qui a frappé. */
+function floatsHtml(uid: number): string {
+  const list = ui.floats.get(uid);
+  if (!list) return '';
+  return `<span class="floats" aria-hidden="true">${list.map((f, i) =>
+    `<span class="num n-${f.el}" style="--i:${i}">${f.text ?? (f.el === 'soin' ? `+${f.n}` : `−${f.n}`)}</span>`).join('')}</span>`;
+}
+
 function enemyHtml(e: Enemy, targeting: boolean): string {
   const c = ui.run!.combat!;
   const it = intentSummary(c, e);
@@ -319,8 +339,9 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
   const resist = e.def.resist.map((el) => elIcon(el, 'el-mini')).join('');
   const can = targeting && !e.dead;
   return `<button class="enemy${e.dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
-    ${e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e)}`)}">${it.kind === 'attack' ? `<svg viewBox="0 0 24 24"><path d="M5 19L19 5m-4 0h4v4"/></svg>` : ''}${esc(it.label)}</span>`}
+    ${e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
     ${pic(e.def.image, e.def.name, 'enemy-pic')}
+    ${floatsHtml(e.uid)}
     <span class="enemy-under">
       <span class="enemy-name">${esc(e.def.name)}</span>
       ${bar(e.hp, e.maxHp, 'hp', e.block ? ` <span class="shield">${e.block}</span>` : '')}
@@ -361,15 +382,15 @@ function viewCombat(run: Run): string {
       <span class="tb-floor">Étage ${run.stats.floor}</span>
       <span class="tb-enc"><b>${esc(title)}</b> ${run.node ? NODE_LABEL[run.node.type] : ''}, tour ${c.turn}</span>
       <span class="tb-actions">
-        <button class="link" data-act="modal-deck">Deck ${run.deck.length}</button>
+        <button class="tb-btn" data-act="modal-deck">${uiIcon('deck')}Deck ${run.deck.length}</button>
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
-        <button class="link" data-act="toggle-log">${ui.logOpen ? 'Masquer le journal' : 'Journal'}</button>
+        <button class="tb-btn" data-act="toggle-log" aria-pressed="${ui.logOpen}">${uiIcon('journal')}Journal</button>
       </span>
     </header>
     <section class="arena${targeting ? ' targeting' : ''}">
       <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
         ${bar(p.hp, p.maxHp, 'hp', p.block ? ` <span class="shield">${p.block}</span>` : '')}
-        ${ui.playerHit ? `<span class="dmg-float">−${ui.playerHit}</span>` : ''}
+        ${floatsHtml(-1)}
         <span class="chips">${statusChips(p.status)}</span>
         ${passives.length ? `<span class="passives">${passives.join(' ')}</span>` : ''}
       </div>
@@ -377,12 +398,12 @@ function viewCombat(run: Run): string {
       ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}
     </section>
     <footer class="tray">
-      <button class="pile pile-draw" data-act="pile" data-pile="draw" title="Pioche : ${c.drawPile.length} cartes"><span>${c.drawPile.length}</span></button>
+      <button class="pile pile-draw" data-act="pile" data-pile="draw" title="Pioche : ${c.drawPile.length} cartes" aria-label="Pioche, ${c.drawPile.length} cartes">${c.drawPile.length ? cardBack('pb-2') + cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.drawPile.length}</b></button>
       <div class="gem${p.energy ? '' : ' empty'}" role="img" aria-label="${p.energy} PA sur ${BASE_ENERGY}"><b>${p.energy}/${BASE_ENERGY}</b><span>PA</span></div>
       ${actives ? `<div class="actives">${actives}</div>` : ''}
       <div class="hand fan${n > 7 ? ' crowded' : ''}">${hand || '<p class="muted">Main vide.</p>'}</div>
       <button class="end-turn" data-act="end-turn">Finir le tour</button>
-      <button class="pile pile-discard" data-act="pile" data-pile="discard" title="Défausse : ${c.discardPile.length} cartes"><span>${c.discardPile.length}</span></button>
+      <button class="pile pile-discard" data-act="pile" data-pile="discard" title="Défausse : ${c.discardPile.length} cartes" aria-label="Défausse, ${c.discardPile.length} cartes">${c.discardPile.length ? cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.discardPile.length}</b></button>
     </footer>
     ${ui.logOpen ? `<aside class="log"><ol>${c.log.slice(-40).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></aside>` : ''}
   </main>`;
@@ -399,7 +420,7 @@ function viewReward(run: Run): string {
   const items = r.items.map((id) => itemTile(ITEMS.items[id], r.itemTaken ? { taken: r.itemTaken === id, dim: r.itemTaken !== id } : { act: 'take-item' })).join('');
   return `<main class="rewardview">
     <section class="reward">
-      <h2>Victoire</h2>
+      <h2 class="with-ico">${uiIcon(r.itemRarity === 'rare' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
       <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}.</p>
       <h3>${r.cardTaken ? 'Carte ajoutée au deck' : 'Ajoute une carte à ton deck'}</h3>
       <div class="row cards">${cards}</div>
@@ -415,12 +436,12 @@ function viewZaap(run: Run): string {
   const used = run.zaapUsed;
   return `<main class="zaapview">
     <section class="zaap">
-      <h2>Zaap</h2>
+      <h2 class="with-ico">${uiIcon('zaap', 'h-ico')}Zaap</h2>
       <p class="muted">Une halte avant de repartir. Une seule action possible.</p>
       <div class="row options">
-        <button class="option" data-act="zaap-rest" ${used || heal === 0 ? 'disabled' : ''}><b>Se reposer</b><span>Récupère ${heal} PV.</span></button>
-        <button class="option" data-act="modal-upgrade" ${used || run.deck.every((c) => c.upgraded) ? 'disabled' : ''}><b>Améliorer une carte</b><span>Une carte de ton deck devient sa version +.</span></button>
-        <button class="option" data-act="modal-forge" ${used ? 'disabled' : ''}><b>Forgemagie</b><span>Change l'élément d'une carte pour nourrir une voie.</span></button>
+        <button class="option" data-act="zaap-rest" ${used || heal === 0 ? 'disabled' : ''}>${uiIcon('repos', 'option-ico')}<b>Se reposer</b><span>Récupère ${heal} PV.</span></button>
+        <button class="option" data-act="modal-upgrade" ${used || run.deck.every((c) => c.upgraded) ? 'disabled' : ''}>${uiIcon('ameliorer', 'option-ico')}<b>Améliorer une carte</b><span>Une carte de ton deck devient sa version +.</span></button>
+        <button class="option" data-act="modal-forge" ${used ? 'disabled' : ''}>${uiIcon('forge', 'option-ico')}<b>Forgemagie</b><span>Change l'élément d'une carte pour nourrir une voie.</span></button>
       </div>
       <button class="primary" data-act="leave-zaap">${used ? 'Reprendre la route' : 'Repartir sans rien faire'}</button>
     </section>
@@ -432,7 +453,7 @@ function viewEnd(run: Run): string {
   const won = run.phase === 'victory';
   return `<main class="endview">
     <section class="end">
-      <h2>${won ? 'Le Bouftou Royal est tombé' : 'Défaite'}</h2>
+      <h2 class="with-ico">${won ? uiIcon('victoire', 'h-ico') : ''}${won ? 'Le Bouftou Royal est tombé' : 'Défaite'}</h2>
       <p>${won ? 'Amakna est libérée. La suite du voyage arrive avec les prochains actes.' : `Tu es tombé à l'étage ${run.stats.floor}.`}</p>
       <p class="muted">${run.stats.combats} combats gagnés, dont ${run.stats.elites} élites. Deck de ${run.deck.length} cartes, ${Object.keys(run.equipment).length} objets équipés.</p>
       <button class="primary" data-act="title">Nouvelle partie</button>
@@ -547,6 +568,17 @@ function viewStyleguide(): string {
     cardHtml(pickCard('iop_epee_jugement'), { disabled: true }),
   ].join('');
   const cardLabels = ['Rare', 'Améliorée', 'Forgemagée', 'Sélectionnée', 'Pas assez de PA'];
+  const byRar = (r: string) => Object.values(LIBRARY.cards).find((c) => c.classe === 'iop' && c.rarity === r)!;
+  const frames = [
+    cardHtml(byRar('base')), cardHtml(byRar('commune')), cardHtml(byRar('rare')),
+    cardHtml(pickCard(byRar('commune').id, { upgraded: true }), { inst: { uid: 0, id: byRar('commune').id, upgraded: true } }),
+    `<span class="sg-back">${cardBack()}</span>`,
+  ].join('');
+  const frameLabels = ['Base : bronze', 'Commune : argent', 'Rare : or', 'Améliorée : reflet', 'Dos de la pioche'];
+  const icons = ['combat', 'elite', 'zaap', 'repos', 'ameliorer', 'forge', 'coffre', 'coffre-rare', 'deck', 'journal', 'defense', 'buff', 'debuff', 'victoire', 'dofus']
+    .map((n) => `<figure class="sg-icon">${uiIcon(n, 'h-ico')}<figcaption>${n}</figcaption></figure>`).join('');
+  const nums = (['terre', 'feu', 'eau', 'air', 'neutre', 'soin', 'armure'] as const)
+    .map((el, i) => `<span class="sg-num"><span class="num n-${el}" style="animation:none;position:static;transform:none">${el === 'soin' ? '+6' : el === 'armure' ? 'Bloqué' : `−${8 + i}`}</span><small>${el}</small></span>`).join('');
 
   const items = [itemTile(ITEMS.items.item_8223), itemTile(ITEMS.items.item_2438), itemTile(ITEMS.items.item_15993, { taken: true })].join('');
 
@@ -557,9 +589,9 @@ function viewStyleguide(): string {
     + `<div class="sg-medal-row"><b>Boss</b><figure class="sg-node big"><span class="sg-node-box"><span class="node t-boss s-locked"><span class="boss-art"><img src="${asset('ui/boss.png')}" alt=""></span></span></span><figcaption>Grand médaillon doré et plaque</figcaption></figure></div>`;
 
   const chips = statusChips({ puissance: 2, faiblesse: 1, vulnerabilite: 2, brulure: 3 });
-  const intents = `<span class="intent sg-intent i-attack"><svg viewBox="0 0 24 24"><path d="M5 19L19 5m-4 0h4v4"/></svg>7</span>
-    <span class="intent sg-intent i-attack"><svg viewBox="0 0 24 24"><path d="M5 19L19 5m-4 0h4v4"/></svg>3×2</span>
-    <span class="intent sg-intent i-defend">Envol</span><span class="intent sg-intent i-buff">Cri de guerre</span><span class="intent sg-intent i-debuff">Toile</span>`;
+  const intents = `<span class="intent sg-intent i-attack">${intentIcon('attack')}7</span>
+    <span class="intent sg-intent i-attack">${intentIcon('attack')}3×2</span>
+    <span class="intent sg-intent i-defend">${intentIcon('defend')}Envol</span><span class="intent sg-intent i-buff">${intentIcon('buff')}Cri de guerre</span><span class="intent sg-intent i-debuff">${intentIcon('debuff')}Toile</span>`;
 
   ui.run = saved;
   return `<main class="styleguide">
@@ -570,11 +602,14 @@ function viewStyleguide(): string {
     ${sgSection('Boutons et cadres', "Le bouton principal prend l'accent de l'écran. Coins biseautés pour les cadres, arrondis pour ce qui se joue.", buttons)}
     ${sgSection('Cartes', "Le cadre et le dégradé suivent l'élément. Les valeurs vertes tiennent compte des bonus en combat.",
       `<div class="sg-row cards">${cardsRow}</div><div class="sg-row cards">${cardStates}</div><div class="sg-row sg-labels">${cardLabels.map((l) => `<span>${l}</span>`).join('')}</div>`)}
+    ${sgSection('Cadres de carte', "Le métal du cadre dit la rareté, comme les objets de Dofus. L'étoile bleue porte le coût en PA ; la fenêtre prend la couleur de l'élément.",
+      `<div class="sg-row cards">${frames}</div><div class="sg-row sg-labels">${frameLabels.map((l) => `<span>${l}</span>`).join('')}</div>`)}
+    ${sgSection('Icônes', "Icônes de l'interface et des objets de Dofus, jamais redessinées.", `<div class="sg-row">${icons}</div>`)}
     ${sgSection('Objets', 'Pièce de panoplie, objet rare avec actif, objet équipé.', `<div class="row items">${items}</div>`)}
     ${sgSection("Carte de l'acte", "La taille et le liseré des médaillons disent l'enjeu. L'infobulle s'ouvre au survol ou au focus.",
       `${medals}<div class="sg-row sg-tips"><div class="sg-static">${tipCombat}</div><div class="sg-static">${tipZaap}</div></div>`)}
-    ${sgSection('Combat', 'Intentions des monstres, statuts, barres de vie et armure, PA.',
-      `<div class="field sg-field">${enemies}</div><div class="sg-row">${intents}</div><div class="sg-row chips">${chips}</div>
+    ${sgSection('Combat', "Intentions des monstres, statuts, chiffres de dégâts à la couleur de l'élément, barres de vie et armure, PA.",
+      `<div class="field sg-field">${enemies}</div><div class="sg-row">${intents}</div><div class="sg-row chips">${chips}</div><div class="sg-row sg-nums">${nums}</div>
       <div class="sg-row"><span class="sg-bar">${bar(54, 80, 'hp', ' <span class="shield">12</span>')}</span><div class="gem" role="img" aria-label="2 PA sur 3"><b>2/3</b><span>PA</span></div><div class="gem empty" role="img" aria-label="0 PA sur 3"><b>0/3</b><span>PA</span></div></div>`)}
   </main>`;
 }
@@ -611,22 +646,79 @@ function render(): void {
     const here = root.querySelector('.node.s-avail') as HTMLElement | null;
     here?.scrollIntoView({ block: 'center' });
   }
+  if (run?.phase === 'combat' && run.combat && run.node?.type === 'boss' && ui.bossIntro !== run.combat) bossIntro(run);
   ui.hit.clear();
   ui.lunge.clear();
   ui.playerHit = 0;
+  ui.floats.clear();
+}
+
+// ───────────── entrée du boss : le seul grand moment de mise en scène ─────────────
+
+function bossIntro(run: Run): void {
+  ui.bossIntro = run.combat!;
+  const boss = run.combat!.enemies[0];
+  if (!boss) return;
+  const quick = reduceMotion();
+  ui.busy = true;
+  const el = document.createElement('div');
+  el.className = `boss-intro${quick ? ' quick' : ''}`;
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', `${boss.def.name} entre en combat`);
+  el.innerHTML = `<div class="bi-bar bi-top"></div><div class="bi-bar bi-bottom"></div>
+    <div class="bi-stage">
+      <div class="bi-halo"></div>
+      ${pic(boss.def.image, boss.def.name, 'bi-pic')}
+      <p class="bi-kicker">Gardien d'Amakna</p>
+      <h2 class="bi-name">${esc(boss.def.name)}</h2>
+      <p class="bi-meta">${boss.def.level ? `Niveau ${boss.def.level[1]}, ` : ''}${boss.maxHp} points de vie</p>
+    </div>
+    <p class="bi-skip">Clique pour combattre</p>`;
+  document.body.appendChild(el);
+  document.body.classList.add('boss-entering');
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    el.classList.add('out');
+    document.body.classList.remove('boss-entering');
+    setTimeout(() => { el.remove(); ui.busy = false; render(); }, quick ? 150 : 450);
+  };
+  el.addEventListener('click', finish);
+  const onKey = (ev: KeyboardEvent) => { if (['Escape', 'Enter', ' '].includes(ev.key)) { ev.stopPropagation(); finish(); document.removeEventListener('keydown', onKey, true); } };
+  document.addEventListener('keydown', onKey, true);
+  setTimeout(finish, quick ? 1600 : 3400);
 }
 
 // ───────────── actions ─────────────
 
-/** Après une action : marques visuelles, puis fin de combat (laissée visible un instant). */
-function afterCombatAction(before: Map<number, number>, hpBefore: number): void {
+type Snap = { foes: Map<number, { hp: number; block: number }>; hp: number; block: number };
+
+function pushFloat(uid: number, f: { n: number; el: Element | 'soin' | 'armure'; text?: string }): void {
+  const l = ui.floats.get(uid) ?? [];
+  l.push(f);
+  ui.floats.set(uid, l);
+}
+
+/** Après une action : chiffres et marques visuelles, puis fin de combat (laissée visible un instant).
+ *  `el` : élément de ce qui a frappé les monstres (carte jouée) ; sinon, brûlure → feu. */
+function afterCombatAction(snap: Snap, el?: Element): void {
   const run = ui.run!;
   const c = run.combat!;
-  for (const e of c.enemies) if ((before.get(e.uid) ?? e.hp) > e.hp) ui.hit.add(e.uid);
-  if (c.player.hp < hpBefore) {
-    ui.playerHit = hpBefore - c.player.hp;
-    if (c.player.hp > 0) stage.hurt();
+  for (const e of c.enemies) {
+    const b = snap.foes.get(e.uid);
+    if (!b) continue;
+    if (b.hp > e.hp) { ui.hit.add(e.uid); pushFloat(e.uid, { n: b.hp - e.hp, el: el ?? 'feu' }); }
+    else if (el && b.block > e.block && b.hp === e.hp) pushFloat(e.uid, { n: 0, el: 'armure', text: 'Bloqué' });
   }
+  const p = c.player;
+  if (p.hp < snap.hp) {
+    ui.playerHit = snap.hp - p.hp;
+    pushFloat(-1, { n: snap.hp - p.hp, el: 'neutre' });
+    if (p.hp > 0) stage.hurt();
+  } else if (p.hp > snap.hp) pushFloat(-1, { n: p.hp - snap.hp, el: 'soin' });
+  if (p.block > snap.block && !el) { /* armure gagnée en fin de tour : la barre suffit */ }
+  else if (p.block > snap.block) pushFloat(-1, { n: p.block - snap.block, el: 'armure', text: `+${p.block - snap.block}` });
   ui.selecting = null;
   if (c.outcome !== 'ongoing' && stage.visible) {
     if (c.outcome === 'lost') stage.die();
@@ -635,9 +727,31 @@ function afterCombatAction(before: Map<number, number>, hpBefore: number): void 
   } else run.checkCombatEnd();
 }
 
-function snapshot(): [Map<number, number>, number] {
+function snapshot(): Snap {
   const c = ui.run!.combat!;
-  return [new Map(c.enemies.map((e) => [e.uid, e.hp])), c.player.hp];
+  return { foes: new Map(c.enemies.map((e) => [e.uid, { hp: e.hp, block: e.block }])), hp: c.player.hp, block: c.player.block };
+}
+
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** La carte quitte la main et file vers sa cible (ou vers le personnage), puis s'efface dans un éclat. */
+function flyCard(index: number, to: { x: number; y: number }, ms: number): void {
+  const src = root.querySelector(`.hand .card[data-index="${index}"]`) as HTMLElement | null;
+  if (!src || reduceMotion()) return;
+  const r = src.getBoundingClientRect();
+  const ghost = src.cloneNode(true) as HTMLElement;
+  ghost.classList.remove('dragging', 'aiming', 'will-play', 'sel');
+  ghost.classList.add('card-flying');
+  Object.assign(ghost.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, transform: 'none' });
+  document.body.appendChild(ghost);
+  const dx = to.x - (r.left + r.width / 2), dy = to.y - (r.top + r.height / 2);
+  const tilt = dx > 0 ? 14 : -14;
+  const anim = ghost.animate([
+    { transform: 'translate(0, 0) scale(1) rotate(0deg)', opacity: 1, filter: 'brightness(1)' },
+    { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - 70}px) scale(.62) rotate(${tilt}deg)`, opacity: 1, filter: 'brightness(1.25)', offset: 0.5 },
+    { transform: `translate(${dx}px, ${dy}px) scale(.18) rotate(${tilt * 2}deg)`, opacity: 0, filter: 'brightness(2.2)' },
+  ], { duration: Math.max(260, Math.min(ms, 520)), easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
+  anim.onfinish = () => ghost.remove();
 }
 
 /** Point d'impact d'un monstre à l'écran (bas de son illustration). */
@@ -661,12 +775,14 @@ function playCard(index: number, target?: number): void {
     .map(enemyPoint).filter((p): p is { x: number; y: number } => !!p);
   const delay = stage.visible ? stage.cast(def, points, def.target === 'self') : 0;
   ui.selecting = null;
+  const p = stage.player;
+  flyCard(index, points[0] ?? { x: p.x, y: p.y - p.h * 0.5 }, delay);
   const apply = () => {
-    const [before, hp] = snapshot();
+    const snap = snapshot();
     try { c.playCard(index, uid); } catch (err) { console.error(err); }
     ui.busy = false;
     ui.casting = -1;
-    afterCombatAction(before, hp);
+    afterCombatAction(snap, def.element);
     render();
   };
   if (!delay) { apply(); return; }
@@ -677,18 +793,18 @@ function playCard(index: number, target?: number): void {
 
 function useActive(index: number, target?: number): void {
   if (ui.busy) return;
-  const [before, hp] = snapshot();
+  const snap = snapshot();
   ui.run!.combat!.useActive(index, target);
-  afterCombatAction(before, hp);
+  afterCombatAction(snap, 'neutre');
 }
 
 function endTurn(): void {
   if (ui.busy) return;
   const c = ui.run!.combat!;
   for (const e of c.living()) if (c.intent(e).damage > 0) ui.lunge.add(e.uid);
-  const [before, hp] = snapshot();
+  const snap = snapshot();
   c.endTurn();
-  afterCombatAction(before, hp);
+  afterCombatAction(snap);
 }
 
 function select(kind: 'card' | 'active', index: number): void {

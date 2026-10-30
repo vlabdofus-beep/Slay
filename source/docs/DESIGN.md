@@ -66,3 +66,8 @@ Voir `docs/BALANCE.md` (repères StS2, coefficient de difficulté, résultats de
 - Cadence des items : à revoir si on veut des panoplies 4 pièces dès l'acte 1.
 - 3 énergie (Slay) ou 6 PA (Dofus) ; pas de grille au départ.
 - Usage personnel ou diffusion (impact sur les assets).
+
+## Chantier visuel (pistes validées le 30/10/2026)
+1. Cadre de carte définitif : bordure bronze, argent ou or selon la rareté, grande icône du sort, reflet pour les cartes améliorées, dos de carte pour la pioche.
+2. Iconographie officielle : icônes de l'interface Dofus à la place des icônes dessinées (épées, crâne, Zaap).
+3. Réactions visuelles en combat : chiffres de dégâts colorés selon l'élément, carte qui file vers sa cible, entrée du boss comme unique moment fort.
