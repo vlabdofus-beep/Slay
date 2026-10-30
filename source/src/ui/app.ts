@@ -81,14 +81,32 @@ function bar(value: number, max: number, cls: string, extra = '', key = ''): str
   return `<span class="bar ${cls}"${key ? ` data-key="${key}"` : ''}><span class="bar-fill" style="width:${pct}%"></span><span class="bar-label">${value} / ${max}${extra}</span></span>`;
 }
 
-function statusChips(st: StatusMap): string {
+const STATUS_ICON: Record<string, string> = {
+  puissance: 'fx/puissance.webp', faiblesse: 'fx/faiblesse.webp', vulnerabilite: 'fx/vulnerabilite.webp', brulure: 'elements/feu.png',
+  poison: 'fx/poison.webp', bouclier: 'fx/bouclier.webp', renvoi: 'fx/renvoi.webp', erosion: 'fx/erosion.webp',
+  esquive: 'fx/esquive.webp', etourdi: 'fx/etourdi.webp',
+};
+/** Bons statuts (liseré doré) et mauvais (liseré rouge), vus depuis celui qui les porte. */
+const GOOD_STATUS = new Set(['puissance', 'bouclier', 'renvoi', 'esquive']);
+
+/** Statuts en icônes chiffrées, avec la même infobulle que les effets d'objets. */
+function statusChips(st: StatusMap, down = false): string {
   return Object.entries(st)
     .filter(([, v]) => v && v > 0)
     .map(([id, v]) => {
       const info = STATUS_INFO[id as keyof typeof STATUS_INFO];
-      return `<span class="chip st-${id}" title="${esc(`${info.name} : ${info.help}`)}">${esc(info.name)} ${v}</span>`;
+      return `<span class="fxb st ${GOOD_STATUS.has(id) ? 'good' : 'bad'}" tabindex="0" aria-label="${esc(`${info.name} ${v} : ${info.help}`)}">
+        <span class="fxi"><img src="${asset(STATUS_ICON[id])}" alt="" draggable="false"><b>${v}</b></span>
+        <span class="fxtip${down ? ' down' : ''}" role="tooltip"><b class="fxt">${esc(info.name)} ${v}</b><span class="fx-what"><span>${esc(info.help)}</span></span></span></span>`;
     })
     .join('');
+}
+
+/** Barre de PV avec l'armure en médaillon à gauche, comme un bouclier posé sur la barre. */
+function hpBar(hp: number, max: number, block: number, key = ''): string {
+  const armor = block > 0 ? `<span class="armor hastip" tabindex="0" aria-label="${block} armure"><img src="${asset('fx/armure.webp')}" alt="" draggable="false"><b>${block}</b>
+    <span class="fxtip" role="tooltip"><b class="fxt">Armure ${block}</b><span class="fx-what"><span>Absorbe les dégâts avant les PV. Disparaît au début du tour suivant.</span></span></span></span>` : '';
+  return `<span class="hpwrap${block > 0 ? ' armored' : ''}">${armor}${bar(hp, max, 'hp', '', key)}</span>`;
 }
 
 const TYPE_NAMES = { attaque: 'Attaque', competence: 'Compétence' };
@@ -193,9 +211,13 @@ function sheet(run: Run): string {
     const id = run.equipment[slot];
     const it = id ? ITEMS.items[id] : null;
     const fx = id ? itemEffect(id) : null;
-    const tip = it ? `${it.name} (${RARITY_NAMES[it.rarity]}) : ${statsText(it.stats).join(', ')}${fx ? `. ${itemEffectText(fx)}` : ''}` : SLOT_NAMES[slot];
-    return `<span class="slot${it ? ` rar-${it.rarity}` : ' empty'}" title="${esc(tip)}">
-      ${it ? pic(it.icon, it.name, 'slot-pic') : `<span class="slot-name">${SLOT_NAMES[slot]}</span>`}</span>`;
+    if (!it) return `<span class="slot empty"><span class="slot-name">${SLOT_NAMES[slot]}</span></span>`;
+    return `<span class="slot rar-${it.rarity} hastip" tabindex="0" aria-label="${esc(`${it.name}, ${RARITY_NAMES[it.rarity]} : ${statsText(it.stats).join(', ')}${fx ? `. ${itemEffectText(fx)}` : ''}`)}">
+      ${pic(it.icon, it.name, 'slot-pic')}
+      <span class="fxtip" role="tooltip"><b class="fxt">${esc(it.name)}</b>
+        <span class="tip-meta"><span class="rar-tag">${RARITY_NAMES[it.rarity]}</span> ${SLOT_NAMES[slot]}${it.level ? `, niveau ${it.level}` : ''}</span>
+        <span class="item-stats">${statsText(it.stats).map((t) => `<span>${esc(t)}</span>`).join('')}</span>
+        ${fx ? `<span class="fx-what"><span>${esc(itemEffectText(fx))}</span></span>` : ''}</span></span>`;
   }).join('');
   const effects = SLOTS.map((slot) => run.equipment[slot]).filter((id): id is string => !!id).map((id) => {
     const it = ITEMS.items[id];
@@ -410,7 +432,7 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
     ${floatsHtml(e.uid)}
     <span class="enemy-under">
       <span class="enemy-name">${esc(e.def.name)}</span>
-      ${bar(hp, e.maxHp, 'hp', block ? ` <span class="shield">${block}</span>` : '', `e${e.uid}`)}
+      ${hpBar(hp, e.maxHp, block, `e${e.uid}`)}
       <span class="chips">${statusChips(e.status)}</span>
       <span class="affinity">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}</span>
     </span>
@@ -474,7 +496,7 @@ function arenaHtml(run: Run): string {
   const targeting = ui.selecting !== null;
   return `<section class="arena${targeting ? ' targeting' : ''}">
       <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
-        ${bar(hp, p.maxHp, 'hp', block ? ` <span class="shield">${block}</span>` : '', 'p')}
+        ${hpBar(hp, p.maxHp, block, 'p')}
         ${floatsHtml(-1)}
         <span class="chips">${statusChips(p.status)}</span>
       </div>
@@ -735,7 +757,7 @@ function viewStyleguide(): string {
       `${medals}<div class="sg-row sg-tips"><div class="sg-static">${tipCombat}</div><div class="sg-static">${tipZaap}</div></div>`)}
     ${sgSection('Combat', "Intentions des monstres, statuts, chiffres de dégâts à la couleur de l'élément, barres de vie et armure, PA.",
       `<div class="field sg-field">${enemies}</div><div class="sg-row">${intents}</div><div class="sg-row chips">${chips}</div><div class="sg-row sg-nums">${nums}</div>
-      <div class="sg-row"><span class="sg-bar">${bar(54, 80, 'hp', ' <span class="shield">12</span>')}</span><div class="gem" role="img" aria-label="2 PA sur 3"><b>2/3</b><span>PA</span></div><div class="gem empty" role="img" aria-label="0 PA sur 3"><b>0/3</b><span>PA</span></div></div>`)}
+      <div class="sg-row"><span class="sg-bar">${hpBar(54, 80, 12)}</span><div class="gem" role="img" aria-label="2 PA sur 3"><b>2/3</b><span>PA</span></div><div class="gem empty" role="img" aria-label="0 PA sur 3"><b>0/3</b><span>PA</span></div></div>`)}
   </main>`;
 }
 
@@ -1298,7 +1320,7 @@ document.addEventListener('click', (ev) => {
 
 // Infobulles d'effets : on les garde dans l'écran (décalage horizontal, ou vers le bas près du haut de l'écran).
 function placeFxTip(b: HTMLElement): void {
-  const tip = b.querySelector('.fxtip') as HTMLElement | null;
+  const tip = b.querySelector(':scope > .fxtip') as HTMLElement | null;
   if (!tip) return;
   tip.style.setProperty('--dx', '0px');
   const r = tip.getBoundingClientRect();
@@ -1307,11 +1329,11 @@ function placeFxTip(b: HTMLElement): void {
   if (r.top < 8 && !tip.classList.contains('down')) tip.classList.add('down');
 }
 document.addEventListener('pointerover', (ev) => {
-  const b = (ev.target as HTMLElement).closest?.('.fxb') as HTMLElement | null;
+  const b = (ev.target as HTMLElement).closest?.('.fxb, .hastip') as HTMLElement | null;
   if (b) requestAnimationFrame(() => placeFxTip(b));
 });
 document.addEventListener('focusin', (ev) => {
-  const b = (ev.target as HTMLElement).closest?.('.fxb') as HTMLElement | null;
+  const b = (ev.target as HTMLElement).closest?.('.fxb, .hastip') as HTMLElement | null;
   if (b) requestAnimationFrame(() => placeFxTip(b));
 });
 
