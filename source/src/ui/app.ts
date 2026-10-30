@@ -8,8 +8,8 @@ import { ELEMENTS, SLOTS } from '../core/types.ts';
 import { DOFUS } from '../data/dofus.ts';
 import { ITEMS } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
-import { ENCOUNTERS } from '../data/monsters.ts';
-import { Run } from '../game/run.ts';
+import { ACT1_SCALE, ENCOUNTERS } from '../data/monsters.ts';
+import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   activeText, cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
@@ -169,37 +169,91 @@ function viewTitle(): string {
 
 const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', boss: 'Boss' };
 const NODE_ICON: Record<MapNode['type'], string> = {
-  combat: '<svg viewBox="0 0 24 24"><path d="M4 4l9 9m-2 2l-1.5 1.5L7 19l-2-2 2.5-2.5L9 13M20 4l-9 9m2 2l1.5 1.5L17 19l2-2-2.5-2.5L15 13"/></svg>',
+  combat: '<svg viewBox="0 0 24 24"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4M5 21l-2-2"/></svg>',
   elite: '<svg viewBox="0 0 24 24"><path d="M5 3l3 5h8l3-5M6 9a6 6 0 0012 0M9 13h.01M15 13h.01M10 17h4M8 9v9h8V9"/></svg>',
   zaap: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
   boss: '',
 };
 
+/** Monstres d'une rencontre, regroupés (« Tofu ×2 »). */
+function encounterGroups(encId: string) {
+  const counts = new Map<string, number>();
+  for (const id of ENCOUNTERS[encId].monsters) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, count]) => ({ def: LIBRARY.monsters[id], count }));
+}
+
+const hpRange = (hp: [number, number]) => {
+  const [a, b] = hp.map((h) => Math.round(h * ACT1_SCALE.hp));
+  return a === b ? `${a}` : `${a} à ${b}`;
+};
+
+/** Infobulle d'une case : ce qu'on y trouve et ce qu'on y gagne. */
+function nodeTip(run: Run, n: MapNode): string {
+  const kind = n.type === 'boss' ? 'Boss' : n.type === 'elite' ? 'Élite' : n.type === 'zaap' ? 'Zaap' : n.floor < 4 ? 'Combat facile' : 'Combat';
+  let body: string;
+  if (n.type === 'zaap') {
+    body = `<p class="tip-text">Une halte avant de repartir. Une action au choix :</p>
+      <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * ZAAP_HEAL)} PV</li><li>améliorer une carte</li><li>forgemagie : changer l'élément d'une carte</li></ul>`;
+  } else {
+    const mobs = encounterGroups(run.encounters[n.id]).map(({ def, count }) => {
+      const weak = def.weak.map((el) => elIcon(el, 'el-mini')).join('');
+      const resist = def.resist.map((el) => elIcon(el, 'el-mini')).join('');
+      return `<li>${pic(def.image, def.name, 'tip-pic')}
+        <span class="tip-mob"><b>${esc(def.name)}${count > 1 ? ` ×${count}` : ''}</b><span>${hpRange(def.hp)} PV${def.level ? `, niveau ${def.level[0]}` : ''}</span></span>
+        <span class="tip-aff">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}${!weak && !resist ? '<span>Aucune faiblesse</span>' : ''}</span>
+      </li>`;
+    }).join('');
+    const reward = n.type === 'boss' ? 'Le vaincre termine l\'acte.'
+      : n.type === 'elite' ? 'Récompense : une carte, plus souvent rare, et un objet rare.'
+      : 'Récompense : une carte. Un objet tous les deux combats.';
+    body = `<ul class="tip-mobs">${mobs}</ul><p class="tip-text">${reward}</p>`;
+  }
+  const side = n.type === 'boss' ? 'tip-below'
+    : `${n.col >= 3 ? 'tip-left' : 'tip-right'}${n.floor <= 2 ? ' tip-up' : n.floor >= 11 ? ' tip-down' : ''}`;
+  return `<div class="tip ${side}" role="tooltip"><p class="tip-head"><b>${kind}</b><span>Étage ${n.floor}</span></p>${body}</div>`;
+}
+
 function viewMap(run: Run): string {
   const m = run.map;
-  const W = 96, H = 64, PAD = 48;
-  const pos = (n: MapNode) => ({ x: PAD + n.col * W, y: PAD + (m.floors - n.floor) * H });
-  const width = PAD * 2 + (m.cols - 1) * W;
-  const height = PAD * 2 + (m.floors - 1) * H;
+  const W = 104, H = 74, GUTTER = 64, TOP = 176, BOTTOM = 70, BOSS_Y = 64;
+  const pos = (n: MapNode) => ({ x: GUTTER + n.col * W, y: n.type === 'boss' ? BOSS_Y : TOP + (m.floors - 1 - n.floor) * H });
+  const width = GUTTER * 2 + (m.cols - 1) * W;
+  const height = TOP + (m.floors - 2) * H + BOTTOM;
   const avail = new Set(run.availableNodes());
   const visited = new Set(run.path);
+  const step = (a: string, b: string) => run.path.indexOf(b) === run.path.indexOf(a) + 1 && run.path.includes(a);
   const lines = Object.values(m.nodes).flatMap((n) => n.next.map((id) => {
     const a = pos(n), b = pos(m.nodes[id]);
-    const walked = visited.has(n.id) && visited.has(id) && run.path.indexOf(id) === run.path.indexOf(n.id) + 1;
-    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${walked ? 'walked' : ''}"/>`;
+    const cls = visited.has(id) && step(n.id, id) ? 'walked' : n.id === run.position && avail.has(id) ? 'next' : '';
+    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${cls}"/>`;
   })).join('');
+  const breed = DOFUS.breeds[run.classe];
+  const boss = LIBRARY.monsters[ENCOUNTERS[run.encounters.boss].monsters[0]];
   const nodes = Object.values(m.nodes).map((n) => {
     const p = pos(n);
     const state = avail.has(n.id) ? 'avail' : n.id === run.position ? 'here' : visited.has(n.id) ? 'done' : 'locked';
-    const icon = n.type === 'boss' ? `<img src="${asset('ui/boss.png')}" alt="">` : NODE_ICON[n.type];
-    const label = `${NODE_LABEL[n.type]}, étage ${n.floor}`;
-    return `<button class="node t-${n.type} s-${state}" style="left:${p.x}px;top:${p.y}px" ${state === 'avail' ? `data-act="go" data-id="${n.id}"` : 'disabled'} aria-label="${label}" title="${label}">${icon}</button>`;
+    const icon = n.type === 'boss'
+      ? `<span class="boss-art"><img src="${asset('ui/boss.png')}" alt=""><img src="${boss.image}" alt="" onerror="this.remove()"></span>`
+      : NODE_ICON[n.type];
+    const label = `${NODE_LABEL[n.type]}, étage ${n.floor}${state === 'avail' ? ', accessible' : ''}`;
+    const go = state === 'avail' ? `data-act="go" data-id="${n.id}"` : 'aria-disabled="true" tabindex="-1"';
+    return `<div class="node-wrap t-${n.type} s-${state}" style="left:${p.x}px;top:${p.y}px" ${state === 'avail' ? '' : 'tabindex="0"'}>
+      <button class="node t-${n.type} s-${state}" ${go} aria-label="${label}">${icon}</button>
+      ${n.id === run.position ? `<span class="you" title="Tu es ici"><img src="${asset(`classes/${breed.id}.png`)}" alt="Ta position"></span>` : ''}
+      ${n.type === 'boss' ? `<span class="boss-plate">${esc(boss.name)}</span>` : ''}
+      ${nodeTip(run, n)}
+    </div>`;
   }).join('');
+  const floors = Array.from({ length: m.floors - 1 }, (_, i) => i + 1)
+    .map((f) => `<span class="floor-no${f === run.stats.floor ? ' current' : ''}" style="top:${TOP + (m.floors - 1 - f) * H}px">${f}</span>`).join('');
   return `<main class="mapview">
     <section class="map-wrap">
-      <header class="map-head"><h2>Amakna</h2><p class="muted">Choisis ta route. Le Bouftou Royal attend au sommet.</p></header>
+      <header class="map-head"><h2>Amakna</h2><p>Choisis ta route. Survole une case pour voir ce qui t'y attend.</p></header>
       <div class="map-scroll"><div class="map" style="width:${width}px;height:${height}px">
-        <svg width="${width}" height="${height}" aria-hidden="true">${lines}</svg>${nodes}
+        <svg width="${width}" height="${height}" aria-hidden="true">${lines}</svg>
+        ${floors}
+        ${run.position === null ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 38}px">Départ</span>` : ''}
+        ${nodes}
       </div></div>
       <ul class="legend">${(['combat', 'elite', 'zaap'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
     </section>

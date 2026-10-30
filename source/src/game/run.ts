@@ -43,7 +43,8 @@ export class Run {
   zaapUsed = false;
   hallwayFights = 0;
   stats = { combats: 0, elites: 0, floor: 0 };
-  private lastEncounter = '';
+  /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
+  readonly encounters: Record<string, string> = {};
 
   constructor(classe: ClassId, seed: number) {
     this.classe = classe;
@@ -53,6 +54,24 @@ export class Run {
     this.deck = starterDeck(classe);
     this.baseMaxHp = CLASS_START_HP[classe] as number;
     this.hp = this.baseMaxHp;
+    this.assignEncounters(new Rng(seed ^ 0x2c1b3c6d));
+  }
+
+  /** Étage par étage, chaque case de combat reçoit une rencontre différente de celles de ses parents. */
+  private assignEncounters(rng: Rng): void {
+    const nodes = Object.values(this.map.nodes).sort((a, b) => a.floor - b.floor || a.col - b.col);
+    for (const node of nodes) {
+      if (node.type === 'zaap') continue;
+      const tier = Run.tierOf(node);
+      const parents = nodes.filter((n) => n.next.includes(node.id)).map((n) => this.encounters[n.id]);
+      const pool = encountersOfTier(tier);
+      const fresh = pool.filter((e) => !parents.includes(e));
+      this.encounters[node.id] = rng.pick(fresh.length ? fresh : pool);
+    }
+  }
+
+  static tierOf(node: MapNode): EncounterTier {
+    return node.type === 'boss' ? 'boss' : node.type === 'elite' ? 'elite' : node.floor < FIRST_NORMAL_FLOOR ? 'faible' : 'normal';
   }
 
   // ───────────── lecture ─────────────
@@ -86,17 +105,7 @@ export class Run {
       this.zaapUsed = false;
       return;
     }
-    const tier: EncounterTier =
-      node.type === 'boss' ? 'boss' : node.type === 'elite' ? 'elite' : node.floor < FIRST_NORMAL_FLOOR ? 'faible' : 'normal';
-    this.startCombat(this.pickEncounter(tier));
-  }
-
-  private pickEncounter(tier: EncounterTier): string {
-    const pool = encountersOfTier(tier);
-    const choices = pool.length > 1 ? pool.filter((e) => e !== this.lastEncounter) : pool;
-    const enc = this.rng.pick(choices);
-    this.lastEncounter = enc;
-    return enc;
+    this.startCombat(this.encounters[id]);
   }
 
   private startCombat(encounter: string): void {

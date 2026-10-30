@@ -123,3 +123,16 @@ test('équiper un item qui donne des PV augmente aussi les PV actuels', () => {
   assert.equal(run.maxHp, 76);
   assert.equal(run.hp, 56);
 });
+
+test('chaque case de combat connaît sa rencontre à l\'avance, et c\'est celle qu\'on affronte', async () => {
+  const { ENCOUNTERS } = await import('../data/monsters.ts');
+  const run = new Run('cra', 11);
+  for (const n of Object.values(run.map.nodes)) {
+    if (n.type === 'zaap') assert.equal(run.encounters[n.id], undefined);
+    else assert.equal(ENCOUNTERS[run.encounters[n.id]].tier, Run.tierOf(n));
+  }
+  const first = run.availableNodes()[0];
+  const expected = run.encounters[first];
+  run.enterNode(first);
+  assert.equal(run.encounter, expected);
+});
