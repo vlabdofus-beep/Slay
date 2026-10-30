@@ -104,3 +104,9 @@ Chaque classe a un passif permanent, l'équivalent de la relique de départ de S
 - **Bonus** sur les dégâts et l'armure : +n par attaque jouée ce tour, par puissance, par ennemi en vie, par altération sur la cible, par carte en main, par lancer précédent de la carte.
 - **Sorts de sang** (perte de PV, synergie avec Violence), **Visée +n**, **multiplication d'un statut** (Vendetta double le poison).
 - Les nouveaux statuts servent enfin aux cartes : poison (Crâ), bouclier, renvoi, érosion, esquive, étourdi.
+
+## Bestiaire (30/10/2026)
+
+Écran `#bestiaire` (`src/ui/bestiary.ts`), ouvert depuis l'accueil, la carte et la barre du combat ; Échap ou « Reprendre la partie » ramène où l'on était. Cinq onglets avec recherche par nom : monstres (fiche complète : PV et dégâts tels qu'en jeu, faiblesses, mécaniques, actions et leur rythme, seconde phase, rencontres où on le croise), cartes (filtres classe, type, rareté, élément, version améliorée), objets (en partie, avec l'effet tiré pour la run), Dofus, effets et statuts (statuts, passifs, déclencheurs, récompenses, règles légendaires et des Dofus).
+
+Pour l'instant tout est visible. `known()` dans `bestiary.ts` est l'endroit où brancher plus tard un bestiaire qui se remplit au fil des rencontres. Les monstres qu'aucune rencontre ne fait apparaître (Tortue Bleue, Branche Invocatrice) n'y figurent pas.

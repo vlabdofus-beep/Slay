@@ -13,6 +13,7 @@ import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
 import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
 import { EGG_BY_ID } from '../data/eggs.ts';
 import { eggArt, loadEggArt } from './eggArt.ts';
+import { bestiaryAct, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
@@ -248,10 +249,10 @@ function itemEffect(id: string): ItemEffect | null {
   return ui.run?.itemEffects[id] ?? null;
 }
 
-function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: boolean; fx?: ItemEffect | null } = {}): string {
+function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: boolean; fx?: ItemEffect | null; catalog?: boolean } = {}): string {
   const run = ui.run;
   const current = run?.equipment[it.slot];
-  const replaces = current && current !== it.id ? ITEMS.items[current] : null;
+  const replaces = !opts.catalog && current && current !== it.id ? ITEMS.items[current] : null;
   const fx = opts.fx !== undefined ? opts.fx : itemEffect(it.id);
   const tag = opts.act ? 'button' : 'div';
   return `<${tag} class="item rar-${it.rarity}${opts.taken ? ' taken' : ''}${opts.dim ? ' off' : ''}" ${opts.act ? `data-act="${opts.act}" data-id="${it.id}"` : ''}${opts.dim && tag === 'button' ? ' disabled' : ''}>
@@ -324,6 +325,7 @@ function viewTitle(): string {
     <p class="brand-sub">Un deckbuilder dans le Monde des Douze</p>
     <p class="lead">Traverse Amakna jusqu'au Bouftou Royal. Chaque combat t'offre une carte, et parfois un objet : construis ta voie élémentaire.</p>
     <div class="class-row">${choice('iop')}${choice('cra')}</div>
+    <p><button class="ghost" data-act="bestiary">Ouvrir le bestiaire</button></p>
     <p class="fine">Fan game non officiel. Données issues de DofusDB, animations et décors de Dofus 3, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
   </main>`;
 }
@@ -523,6 +525,7 @@ function topbarHtml(run: Run): string {
         <button class="tb-btn" data-act="modal-deck">${uiIcon('deck')}Deck ${run.deck.length}</button>
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
         <button class="tb-btn" data-act="toggle-log" aria-pressed="${ui.logOpen}">${uiIcon('journal')}Journal</button>
+        <button class="tb-btn" data-act="bestiary" ${ui.busy ? 'disabled' : ''}>${uiIcon('deck')}Bestiaire</button>
       </span>
       ${relicBar(run)}
     </header>`;
@@ -832,10 +835,33 @@ function viewStyleguide(): string {
 /** En-tête gravé, comme sur Dofusle : nom au centre, lieu et étage en dessous. */
 function brandBar(run: Run): string {
   const where = `Acte ${run.act}, ${actName(run)}${run.stats.floor ? `, étage ${run.stats.floor} sur ${run.map.floors}` : ', au départ'}`;
-  return `<header class="brandbar"><p class="brand-name">Dofus Slay</p><p class="brand-sub">${where}</p></header>`;
+  return `<header class="brandbar"><p class="brand-name">Dofus Slay</p><p class="brand-sub">${where}</p><button class="tb-btn bb-bx" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></header>`;
 }
 
+const BX: BxHelpers = {
+  asset, pic, elIcon: (el, cls) => elIcon(el, cls), cardHtml: (def, o) => cardHtml(def, { inst: o?.inst }),
+  itemTile: (it) => itemTile(it, { fx: itemEffect(it.id), catalog: true }), get inRun() { return !!ui.run; }, eggIcon, eggBadges: (id) => eggBadges(id),
+  statusIcon: (id) => asset(STATUS_ICON[id]), powerIcon: (k) => asset(POWER_ICON[k] ?? 'fx/regle.webp'),
+  passiveBadge: (cl) => passiveBadge(cl), slotName: (s) => SLOT_NAMES[s] ?? s, rarityName: (r) => RARITY_NAMES[r] ?? r,
+};
+
 function render(): void {
+  if (location.hash === '#bestiaire') {
+    stage.hide();
+    document.body.dataset.screen = 'bestiary';
+    const q = document.activeElement instanceof HTMLInputElement && document.activeElement.matches('[data-bx-q]') ? document.activeElement.selectionStart : null;
+    root.innerHTML = viewBestiary(BX, !!ui.run);
+    if (bx.scroll) {
+      bx.scroll = false;
+      if (window.innerWidth <= 1000) root.querySelector('.bx-detail')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    if (q !== null) {
+      const input = root.querySelector('[data-bx-q]') as HTMLInputElement | null;
+      input?.focus();
+      input?.setSelectionRange(q, q);
+    }
+    return;
+  }
   if (location.hash === '#styleguide') {
     stage.hide();
     document.body.dataset.screen = 'styleguide';
@@ -1201,7 +1227,16 @@ function select(index: number): void {
 
 function handle(act: string, d: DOMStringMap): void {
   const run = ui.run;
+  if (bestiaryAct(act, d)) return;
   switch (act) {
+    case 'bestiary':
+      ui.selecting = null;
+      ui.modal = null;
+      location.hash = '#bestiaire';
+      break;
+    case 'bx-close':
+      history.replaceState(null, '', location.pathname + location.search);
+      break;
     case 'new-run': {
       const classe = d.classe as 'iop' | 'cra';
       ui.run = new Run(classe, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, ui.gender[classe]);
@@ -1409,7 +1444,19 @@ window.addEventListener('resize', () => {
   resizeT = window.setTimeout(() => { if (ui.run?.phase === 'combat' && !drag) render(); }, 120);
 });
 
+document.addEventListener('input', (ev) => {
+  const el = ev.target as HTMLInputElement;
+  if (!el.matches?.('[data-bx-q]')) return;
+  bx.q = el.value;
+  render();
+});
+
 document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && location.hash === '#bestiaire') {
+    history.replaceState(null, '', location.pathname + location.search);
+    render();
+    return;
+  }
   if (ev.key === 'Escape') {
     if (ui.modal) ui.modal = null;
     else ui.selecting = null;
@@ -1417,7 +1464,7 @@ document.addEventListener('keydown', (ev) => {
     return;
   }
   const run = ui.run;
-  if (!run || run.phase !== 'combat' || ui.modal) return;
+  if (!run || run.phase !== 'combat' || ui.modal || location.hash === '#bestiaire') return;
   if (ev.key >= '1' && ev.key <= '9') {
     const i = Number(ev.key) - 1;
     if (i < run.combat!.hand.length) {
