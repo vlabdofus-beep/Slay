@@ -1,0 +1,1820 @@
+{
+ "v": 1,
+ "source": {
+  "spells": "2026-10-29T00:10:22.298Z",
+  "monsters": "2026-10-29T00:09:45.394Z",
+  "items": "2026-10-29T00:10:26.499Z"
+ },
+ "breeds": {
+  "iop": {
+   "id": 8,
+   "n": "Iop"
+  },
+  "cra": {
+   "id": 9,
+   "n": "Crâ"
+  }
+ },
+ "spells": {
+  "13106": {
+   "n": "Pression",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 11830,
+   "de": "Érode la cible et occasionne des dommages Terre."
+  },
+  "13107": {
+   "n": "Bond",
+   "b": "iop",
+   "pa": 4,
+   "el": [],
+   "icon": 11831,
+   "de": "Téléporte le lanceur sur la case ciblée et augmente les dommages subis par les ennemis en zone."
+  },
+  "13108": {
+   "n": "Intimidation",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11835,
+   "de": "Occasionne des dommages dans le meilleur élément du lanceur aux ennemis et repousse la cible."
+  },
+  "13109": {
+   "n": "Duel",
+   "b": "iop",
+   "pa": 4,
+   "el": [],
+   "icon": 12208,
+   "de": "Rend le lanceur et l'ennemi ciblé Invulnérables à distance, leur applique l'état Pesanteur et les immobilise. La durée de l'état Pesanteur est plus importante sur le lanceur."
+  },
+  "13110": {
+   "n": "Épée Divine",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 11833,
+   "de": "Occasionne des dommages Air aux ennemis et augmente les Dommages du lanceur et des alliés en zone."
+  },
+  "13111": {
+   "n": "Épée du Destin",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 11849,
+   "de": "Occasionne des dommages Feu. Les dommages du sort sont augmentés à la récupération du sort."
+  },
+  "13112": {
+   "n": "Massacre",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11870,
+   "de": "Augmente et renvoie une partie des dommages subis par l'ennemi ciblé aux ennemis en zone autour de lui."
+  },
+  "13113": {
+   "n": "Friction",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11840,
+   "de": "Attire la cible et lui applique l'état Friction : • Sur un ennemi : attire la cible vers son attaquant ennemi. • Sur un allié : attire ses attaquants ennemis vers elle."
+  },
+  "13114": {
+   "n": "Précipitation",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 12939,
+   "de": "Augmente les PA de l'allié ciblé et lui applique l'état Précipité, l'empêchant d'utiliser son arme. Retire des PA non esquivables à cet allié au tour suivant. L'état n'est pas appliqué sur le lanceur."
+  },
+  "13115": {
+   "n": "Couperet",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 11855,
+   "de": "Occasionne des dommages Feu et retire des PM en zone."
+  },
+  "13116": {
+   "n": "Souffle",
+   "b": "iop",
+   "pa": 2,
+   "el": [
+    "air"
+   ],
+   "icon": 13328,
+   "de": "Repousse les cibles depuis le centre et occasionne des dommages Air aux ennemis en zone."
+  },
+  "13117": {
+   "n": "Épée du Jugement",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 11861,
+   "de": "Applique un bouclier sur le lanceur, occasionne des dommages Eau et applique l'état Condamné sur la cible : • Occasionne des dommages Eau plus importants à retardement sur la cible. Le bouclier est plus important et le retardement est réinitialisé sur une cible Condamnée. Sur le lanceur : applique un bouclier."
+  },
+  "13118": {
+   "n": "Puissance",
+   "b": "iop",
+   "pa": 3,
+   "el": [],
+   "icon": 11844,
+   "de": "Augmente la Puissance et les Dommages Poussée de la cible."
+  },
+  "13119": {
+   "n": "Épée Destructrice",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 11834,
+   "de": "Érode les cibles et occasionne des dommages Feu en zone."
+  },
+  "13120": {
+   "n": "Vitalité",
+   "b": "iop",
+   "pa": 3,
+   "el": [],
+   "icon": 11848,
+   "de": "Augmente la Vitalité de la cible. La Vitalité est plus importante sur le lanceur."
+  },
+  "13121": {
+   "n": "Tempête de Puissance",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 11842,
+   "de": "Occasionne des dommages Feu. N'affecte pas le lanceur. Occasionne également des dommages Feu sur l'ennemi initial si le sort est lancé sur une autre cible. Ces dommages sont plus importants après 2 lancers consécutifs sur un même ennemi."
+  },
+  "13122": {
+   "n": "Épée Céleste",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 11843,
+   "de": "Occasionne des dommages Air en zone. N'affecte pas le lanceur."
+  },
+  "13123": {
+   "n": "Concentration",
+   "b": "iop",
+   "pa": 2,
+   "el": [
+    "terre"
+   ],
+   "icon": 11838,
+   "de": "Occasionne des dommages Terre. Les dommages sont plus importants sur les invocations."
+  },
+  "13124": {
+   "n": "Colère de Iop",
+   "b": "iop",
+   "pa": 7,
+   "el": [
+    "terre"
+   ],
+   "icon": 11851,
+   "de": "Occasionne des dommages Terre. Les dommages du sort sont augmentés à la récupération du sort."
+  },
+  "13125": {
+   "n": "Épée de Iop",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 11847,
+   "de": "Occasionne des dommages Terre en zone. N'affecte pas le lanceur."
+  },
+  "13126": {
+   "n": "Déferlement",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 11832,
+   "de": "Rapproche le lanceur vers la cible et occasionne des dommages Eau aux ennemis."
+  },
+  "13130": {
+   "n": "Menace",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "eau"
+   ],
+   "icon": 11862,
+   "de": "Attire la cible et occasionne des dommages Eau aux ennemis."
+  },
+  "13131": {
+   "n": "Tannée",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 11871,
+   "de": "Occasionne des dommages Air et retire des PM en zone."
+  },
+  "13132": {
+   "n": "Détermination",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11868,
+   "de": "Rend l'allié ciblé Indéplaçable et lui applique un bouclier."
+  },
+  "13133": {
+   "n": "Endurance",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "eau"
+   ],
+   "icon": 11869,
+   "de": "Applique un bouclier sur le lanceur et occasionne des dommages Eau. Les dommages n'affectent pas le lanceur."
+  },
+  "13134": {
+   "n": "Fendoir",
+   "b": "iop",
+   "pa": 5,
+   "el": [
+    "eau"
+   ],
+   "icon": 11850,
+   "de": "Applique un bouclier sur le lanceur pour chaque ennemi dans la zone d'effet et occasionne des dommages Eau en zone. Les dommages n'affectent pas le lanceur."
+  },
+  "13135": {
+   "n": "Anneau Destructeur",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 11854,
+   "de": "Occasionne des dommages Air aux ennemis et attire les cibles vers le centre en zone. N'affecte pas le lanceur."
+  },
+  "13136": {
+   "n": "Rassemblement",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 13327,
+   "de": "Occasionne des dommages Feu aux ennemis et attire les cibles jusqu'au centre en zone. N'affecte pas le lanceur."
+  },
+  "13137": {
+   "n": "Violence",
+   "b": "iop",
+   "pa": 3,
+   "el": [],
+   "icon": 11859,
+   "de": "Repousse les cibles en zone."
+  },
+  "13138": {
+   "n": "Accumulation",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 11856,
+   "de": "Occasionne des dommages Terre. Sur le lanceur : augmente les dommages du sort."
+  },
+  "13139": {
+   "n": "Fracture",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 11852,
+   "de": "Érode les cibles et occasionne des dommages Air en zone."
+  },
+  "13140": {
+   "n": "Coup pour Coup",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11863,
+   "de": "Repousse la cible et lui applique l'état Coup pour Coup : • Sur un ennemi : repousse la cible si elle attaque le lanceur. • Sur un allié : repousse les attaquants ennemis."
+  },
+  "13141": {
+   "n": "Emprise",
+   "b": "iop",
+   "pa": 3,
+   "el": [],
+   "icon": 12209,
+   "de": "Rend l'ennemi ciblé Invulnérable et l'immobilise."
+  },
+  "13142": {
+   "n": "Vertu",
+   "b": "iop",
+   "pa": 3,
+   "el": [],
+   "icon": 11860,
+   "de": "Applique un bouclier sur les alliés en zone. Retire également de la Puissance au lanceur pour chaque allié à son contact (cumulable 4 fois)."
+  },
+  "13143": {
+   "n": "Agitation",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11853,
+   "de": "Augmente les PM de l'allié ciblé et le rend Intaclable. Augmente également sa Puissance pour chaque PM utilisé."
+  },
+  "13144": {
+   "n": "Tumulte",
+   "b": "iop",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 11865,
+   "de": "Augmente les dommages du sort pour chaque ennemi dans la zone d'effet et occasionne des dommages Feu en zone. N'affecte pas le lanceur."
+  },
+  "13145": {
+   "n": "Zénith",
+   "b": "iop",
+   "pa": 5,
+   "el": [
+    "air"
+   ],
+   "icon": 11866,
+   "de": "Occasionne des dommages Air en zone. La seconde attaque dépend des PM restants du lanceur."
+  },
+  "13146": {
+   "n": "Pugilat",
+   "b": "iop",
+   "pa": 2,
+   "el": [
+    "terre"
+   ],
+   "icon": 11781,
+   "de": "Occasionne des dommages Terre en zone. Les dommages du sort sont augmentés après chaque lancer pour le tour en cours. Les dommages n'affectent pas le lanceur."
+  },
+  "13147": {
+   "n": "Sentence",
+   "b": "iop",
+   "pa": 2,
+   "el": [
+    "feu"
+   ],
+   "icon": 11872,
+   "de": "Occasionne des dommages Feu et applique l'état Sentence sur la cible : • À la fin du tour de la cible, occasionne des dommages Feu aux ennemis en zone autour d'elle. Les dommages n'affectent pas le lanceur."
+  },
+  "13148": {
+   "n": "Conquête",
+   "b": "iop",
+   "pa": 3,
+   "el": [],
+   "icon": 11857,
+   "de": "Invoque un Stratège Iop qui peut renvoyer 50% des dommages qu'il subit en zone autour de lui. Le renvoi de dommages n'affecte pas le lanceur. Le Stratège Iop réduit de 50% les dommages immédiats alliés. Il ne peut y avoir qu'un seul Stratège Iop par équipe. Si le Stratège Iop est encore présent et que celui-ci est ré-invoqué, l'ancien est détruit pour laisser place au nouveau."
+  },
+  "13156": {
+   "n": "Fureur",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 11873,
+   "de": "Occasionne des dommages Terre. Les dommages du sort sont augmentés après chaque lancer. Les bonus se décrémentent si le sort n'est pas relancé."
+  },
+  "14676": {
+   "n": "Ferveur",
+   "b": "iop",
+   "pa": 2,
+   "el": [
+    "eau"
+   ],
+   "icon": 11839,
+   "de": "Applique un bouclier sur le lanceur et ses alliés et occasionne des dommages Eau aux ennemis en zone."
+  },
+  "14677": {
+   "n": "Vindicte",
+   "b": "iop",
+   "pa": 2,
+   "el": [],
+   "icon": 11867,
+   "de": "Érode la cible."
+  },
+  "14818": {
+   "n": "Fustigation",
+   "b": "iop",
+   "pa": 3,
+   "el": [
+    "eau"
+   ],
+   "icon": 11846,
+   "de": "Érode les cibles et occasionne des dommages Eau en zone."
+  },
+  "32426": {
+   "n": "Flèche de Recul",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 11876,
+   "de": "Occasionne des dommages Air aux ennemis et repousse la cible."
+  },
+  "32427": {
+   "n": "Flèche Cinglante",
+   "b": "cra",
+   "pa": 2,
+   "el": [
+    "air"
+   ],
+   "icon": 15409,
+   "de": "Retire des PM et occasionne des dommages Air."
+  },
+  "32428": {
+   "n": "Flèche de Dispersion",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 15159,
+   "de": "Occasionne des dommages Air aux ennemis et repousse les cibles depuis le centre en zone. La poussée est plus importante aux extrémités de la zone."
+  },
+  "32429": {
+   "n": "Flèche Perforante",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 11914,
+   "de": "Occasionne des dommages Air aux ennemis et repousse les cibles en zone. Les dommages de zone ne sont pas dégressifs et sont plus importants sur les cibles ayant du bouclier."
+  },
+  "32431": {
+   "n": "Pluie de Flèches",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 15412,
+   "de": "Retire de l'Esquive PM et occasionne des dommages Air en zone. Les dommages de zone ne sont pas dégressifs. N'affecte pas le lanceur. Les effets sont relancés à partir de la case ciblée au tour suivant."
+  },
+  "32432": {
+   "n": "Flèche Boomerang",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 15402,
+   "de": "Retire des PM et occasionne des dommages Air. N'affecte pas le lanceur. Retire des PM et vole de la vie à la cible initiale et aux ennemis entre elle et la nouvelle cible si elles sont alignées. Affecte également les Balises. Applique ces effets entre la dernière cible et le lanceur à la fin du tour de ce dernier s'il est aligné avec elle."
+  },
+  "32433": {
+   "n": "Flèche Persécutrice",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 15255,
+   "de": "Vole de la vie dans l'élément Air. Occasionne également des dommages Air à retardement si la cible n'est pas dans la ligne de vue du lanceur."
+  },
+  "32435": {
+   "n": "Flèche Glacée",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "eau"
+   ],
+   "icon": 13032,
+   "de": "Retire des PA et occasionne des dommages Eau. Les dommages du sort sont augmentés après chaque lancer (cumulable 2 fois)."
+  },
+  "32436": {
+   "n": "Flèche d'Immobilisation",
+   "b": "cra",
+   "pa": 2,
+   "el": [
+    "eau"
+   ],
+   "icon": 11885,
+   "de": "Vole des PM et occasionne des dommages Eau Les dommages du sort sont augmentés après chaque lancer."
+  },
+  "32437": {
+   "n": "Œil de Taupe",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "eau"
+   ],
+   "icon": 11883,
+   "de": "Dévoile les entités invisibles, retire de la Portée et vole de la vie dans l'élément Eau en zone."
+  },
+  "32438": {
+   "n": "Flèche d'Expiation",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 11882,
+   "de": "Réduit les soins reçus par la cible et occasionne des dommages Eau. Les dommages du sort sont augmentés pour les prochains lancers."
+  },
+  "32439": {
+   "n": "Flèche Ralentissante",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 11896,
+   "de": "Retire des PA et des PM et occasionne des dommages Eau en zone."
+  },
+  "32441": {
+   "n": "Flèche Paralysante",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 13033,
+   "de": "Retire des PA et des PM et occasionne des dommages Eau en zone."
+  },
+  "32442": {
+   "n": "Flèche de Rédemption",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 15426,
+   "de": "Vole de la vie dans l'élément Eau. Les dommages du sort sont augmentés pour chaque tentative de retrait de PA ou de PM réussie. Les dommages sont réinitialisés après utilisation du sort."
+  },
+  "32443": {
+   "n": "Flèche de Barrage",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 11904,
+   "de": "Occasionne des dommages Feu aux ennemis et repousse les cibles en zone."
+  },
+  "32444": {
+   "n": "Flèche Détonante",
+   "b": "cra",
+   "pa": 2,
+   "el": [
+    "feu"
+   ],
+   "icon": 13034,
+   "de": "Retire de la Portée, occasionne des dommages Feu et applique l'état Flèche Détonante sur la cible : • Applique les effets sans l'état sur les ennemis en zone autour de la cible à la fin de son tour. Les effets peuvent être déclenchés prématurément si la cible subit des dommages de poussée."
+  },
+  "32445": {
+   "n": "Flèche Explosive",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 11898,
+   "de": "Occasionne des dommages Feu en zone."
+  },
+  "32446": {
+   "n": "Flèche Dévorante",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 15195,
+   "de": "Vole de la vie dans l'élément Feu. N'affecte pas le lanceur. Le vol de vie est plus important après chaque lancer sur un même ennemi. Occasionne également des dommages Feu à l'ennemi initial si le sort est lancé sur une autre cible, ou à retardement s'il n'est pas relancé. Les dommages sont plus importants selon le nombre de lancers effectués sur un même ennemi."
+  },
+  "32447": {
+   "n": "Flèches Enflammées",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 11880,
+   "de": "Éloigne le lanceur des cibles, occasionne des dommages Feu aux ennemis et repousse les cibles en zone."
+  },
+  "32448": {
+   "n": "Flèche Tyrannique",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 15404,
+   "de": "Occasionne des dommages et applique un poison Feu de fin de tour sur la cible. Le poison est renouvelé si la cible est déplacée sous les effets du sort. Occasionne prématurément des dommages Feu et retire les effets du sort si la cible subit des dommages de poussée."
+  },
+  "32449": {
+   "n": "Flèche Éclatante",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 15403,
+   "de": "Vole de la vie dans l'élément Feu aux ennemis et repousse les cibles vers les extrémités en zone."
+  },
+  "32450": {
+   "n": "Flèche Fulminante",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 11923,
+   "de": "Occasionne des dommages Feu. Rebondit sur l'ennemi le plus proche dans un cercle de taille 2. Peut également rebondir sur les Balises. Les dommages du sort sont augmentés après chaque cible touchée."
+  },
+  "32453": {
+   "n": "Flèche d'Abolition",
+   "b": "cra",
+   "pa": 2,
+   "el": [
+    "terre"
+   ],
+   "icon": 15430,
+   "de": "Vole de la vie dans l'élément Terre en zone. Les dommages sont plus importants sur les cibles ayant du bouclier. La taille de la zone est augmentée après chaque lancer pour le tour en cours."
+  },
+  "32454": {
+   "n": "Œil pour Œil",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 15256,
+   "de": "Vole de la vie dans l'élément Terre en zone. N'affecte pas le lanceur. Les dommages du sort sont augmentés pour chaque attaque ennemie subie au tour précédent."
+  },
+  "32455": {
+   "n": "Flèche Vagabonde",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 15407,
+   "de": "Éloigne le lanceur de la cible et occasionne des dommages Terre aux ennemis."
+  },
+  "32456": {
+   "n": "Flèche Punitive",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 15406,
+   "de": "Érode la cible et occasionne des dommages Terre. Les dommages du sort sont augmentés pour le prochain lancer."
+  },
+  "32457": {
+   "n": "Flèche Massacrante",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 15196,
+   "de": "Augmente les dommages du sort pour chaque entité dans la zone d'effet et occasionne des dommages Terre en zone."
+  },
+  "32458": {
+   "n": "Flèche Assaillante",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 15428,
+   "de": "Applique des effets selon la position du lanceur par rapport à la cible, occasionne des dommages Terre aux ennemis et augmente la Puissance du lanceur : • Repousse la cible si le lanceur est en mêlée. • Rapproche le lanceur vers la cible s'il est à distance."
+  },
+  "32459": {
+   "n": "Carreaux Destructeurs",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 15408,
+   "de": "Occasionne des dommages Terre et retire des dommages aux ennemis et repousse les cibles en zone."
+  },
+  "32460": {
+   "n": "Flèche du Jugement",
+   "b": "cra",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 11911,
+   "de": "Retire de la Puissance et occasionne des dommages Terre. La première attaque dépend des PM restants du lanceur."
+  },
+  "32464": {
+   "n": "Pas Chassé",
+   "b": "cra",
+   "pa": 2,
+   "el": [],
+   "icon": 15414,
+   "de": "Téléporte le lanceur sur la case ciblée. Augmente les PM du lanceur au tour suivant."
+  },
+  "32465": {
+   "n": "Tirs Éloignés",
+   "b": "cra",
+   "pa": 1,
+   "el": [],
+   "icon": 15307,
+   "de": "Augmente les portées minimale et maximale de tous les sorts offensifs Crâ du lanceur. Augmente également la Portée des alliés (hors Crâs) en zone autour du lanceur et de ses Balises."
+  },
+  "32466": {
+   "n": "Tirs Puissants",
+   "b": "cra",
+   "pa": 1,
+   "el": [],
+   "icon": 15272,
+   "de": "Augmenter la Puissance, les Dommages Poussée et les Critiques du lanceur. Retire de la Portée et réduit la Portée minimale de tous ses sorts Crâ au tour suivant."
+  },
+  "32467": {
+   "n": "Balise Tactique",
+   "b": "cra",
+   "pa": 1,
+   "el": [],
+   "icon": 15415,
+   "de": "Invoque une Balise statique qui peut : • Attirer des cibles en zone si un allié lui occasionne des dommages à distance ou la pousse. • Pousser des cibles en zone si un allié lui occasionne des dommages en mêlée ou de poussée. La Balise réduit les dommages alliés subis, et elle est détruite 3 tours après son invocation. Augmente également la Puissance du lanceur pour chaque ennemi dans la ligne de "
+  },
+  "32469": {
+   "n": "Acuité Absolue",
+   "b": "cra",
+   "pa": 2,
+   "el": [],
+   "icon": 15431,
+   "de": "Augmente la portée minimale de tous les sorts offensifs Crâ du lanceur pour désactiver la ligne de vue sur tous ses sorts. Augmente également ses Critiques."
+  },
+  "32470": {
+   "n": "Tir de Repli",
+   "b": "cra",
+   "pa": 1,
+   "el": [],
+   "icon": 15417,
+   "de": "Éloigne le lanceur de l'ennemi ciblé ou rapproche le lanceur vers l'allié ciblé. Augmente également la Portée du lanceur."
+  },
+  "32471": {
+   "n": "Tir Perçant",
+   "b": "cra",
+   "pa": 1,
+   "el": [],
+   "icon": 15427,
+   "de": "Érode la cible et augmente les dommages qu'elle subit jusqu'à la prochaine attaque."
+  },
+  "32472": {
+   "n": "Représailles",
+   "b": "cra",
+   "pa": 3,
+   "el": [],
+   "icon": 15309,
+   "de": "Applique l'état Pesanteur sur les cibles et occasionne des dommages Neutre aux ennemis selon leur vie érodée en zone."
+  },
+  "32473": {
+   "n": "Vendetta",
+   "b": "cra",
+   "pa": 2,
+   "el": [],
+   "icon": 15413,
+   "de": "Pose un piège mono-cellule qui occasionne des dommages dans le meilleur élément du lanceur aux ennemis, augmente les dommages qu'ils subissent et attire les entités vers son centre en zone."
+  },
+  "32474": {
+   "n": "Balise de Survie",
+   "b": "cra",
+   "pa": 2,
+   "el": [],
+   "icon": 15416,
+   "de": "Invoque une Balise qui peut soigner tous les alliés dans sa ligne de vue au début de son tour. Elle peut également échanger de position avec le lanceur s'il l'attaque en étant dans sa ligne de vue. La balise est détruite 2 tours après son invocation."
+  },
+  "32475": {
+   "n": "Sentinelle",
+   "b": "cra",
+   "pa": 2,
+   "el": [],
+   "icon": 11925,
+   "de": "Augmente les dommages à distance et la Portée du lanceur. Dévoile également les entités invisibles en zone dans la ligne de vue du lanceur et de ses Balises. Les effets sont réduits pour chaque PM utilisé."
+  },
+  "32531": {
+   "n": "Flèche Évasive",
+   "b": "cra",
+   "pa": 2,
+   "el": [
+    "eau"
+   ],
+   "icon": 15411,
+   "de": "Éloigne le lanceur de la cible, la repousse et occasionne des dommages Eau aux ennemis."
+  },
+  "32618": {
+   "n": "Flèches Amoureuses",
+   "b": "cra",
+   "pa": 3,
+   "el": [],
+   "icon": 15274,
+   "de": "Soigne l'allié ciblé. Partage également les dommages entre le combattant allié initial et un autre combattant allié en augmentant leur Puissance si le sort est lancé sur cet autre combattant. Les soins n'affectent pas le lanceur."
+  },
+  "32708": {
+   "n": "Flèche Harcelante",
+   "b": "cra",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 11888,
+   "de": "Réduit les soins reçus par la cible et lui applique un poison Air de début de tour."
+  }
+ },
+ "monsters": {
+  "31": {
+   "n": "Larve Bleue",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": 10,
+    "feu": 10,
+    "eau": -5,
+    "air": -5
+   },
+   "gfx": 1,
+   "zones": [
+    "Port de Madrestam",
+    "Côte d'Asse",
+    "Prairies d'Astrub"
+   ]
+  },
+  "52": {
+   "n": "Arakne",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": 5,
+    "feu": 15,
+    "eau": -10,
+    "air": 15
+   },
+   "gfx": 15,
+   "zones": [
+    "Souterrains",
+    "Rivière Kawaii",
+    "Montagne basse des Craqueleurs"
+   ]
+  },
+  "59": {
+   "n": "Champ Champ",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -10,
+    "terre": 0,
+    "feu": -5,
+    "eau": 25,
+    "air": 10
+   },
+   "gfx": 21,
+   "zones": [
+    "Forêt d'Amakna",
+    "Rivière Kawaii",
+    "Campagne d'Amakna"
+   ]
+  },
+  "61": {
+   "n": "Moskito",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 20,
+    "feu": 0,
+    "eau": 10,
+    "air": -10
+   },
+   "gfx": 22,
+   "zones": [
+    "Rivière Kawaii",
+    "Clairière de Brouce Boulgoure",
+    "Campagne d'Amakna"
+   ]
+  },
+  "78": {
+   "n": "Rose Démoniaque",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": -15,
+    "feu": 35,
+    "eau": -5,
+    "air": 10
+   },
+   "gfx": 32,
+   "zones": [
+    "Rives iridescentes",
+    "Champs d'Astrub",
+    "Grange du Tournesol Affamé"
+   ]
+  },
+  "79": {
+   "n": "Pissenlit Diabolique",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": 20,
+    "feu": -5,
+    "eau": 0,
+    "air": 15
+   },
+   "gfx": 33,
+   "zones": [
+    "Rives iridescentes",
+    "Champs d'Astrub",
+    "Grange du Tournesol Affamé"
+   ]
+  },
+  "98": {
+   "n": "Tofu",
+   "l": [
+    32,
+    40
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 9,
+    "terre": -5,
+    "feu": 13,
+    "eau": 13,
+    "air": -5
+   },
+   "gfx": 9,
+   "zones": [
+    "Champ des Ingalsse",
+    "Donjon des Tofus",
+    "Tofulailler Royal"
+   ]
+  },
+  "101": {
+   "n": "Bouftou",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": 15,
+    "feu": -10,
+    "eau": -5,
+    "air": 20
+   },
+   "gfx": 3,
+   "zones": [
+    "Coin des Bouftous",
+    "Tainéla",
+    "Cour du Bouftou Royal"
+   ]
+  },
+  "103": {
+   "n": "Prespic",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": -10,
+    "feu": -15,
+    "eau": -5,
+    "air": -10
+   },
+   "gfx": 53,
+   "zones": [
+    "Forêt d'Amakna",
+    "Forêt d'Astrub",
+    "Milifutaie"
+   ]
+  },
+  "104": {
+   "n": "Sanglier",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 20,
+    "feu": -10,
+    "eau": 0,
+    "air": 10
+   },
+   "gfx": 54,
+   "zones": [
+    "Forêt d'Amakna",
+    "Forêt d'Astrub",
+    "Clairière de Brouce Boulgoure"
+   ]
+  },
+  "147": {
+   "n": "Bouftou Royal",
+   "l": [
+    30,
+    30
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 35,
+    "terre": 20,
+    "feu": 20,
+    "eau": 25,
+    "air": 5
+   },
+   "gfx": 74,
+   "zones": [
+    "Cour du Bouftou Royal"
+   ]
+  },
+  "148": {
+   "n": "Chef de Guerre Bouftou",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 15,
+    "terre": 0,
+    "feu": 0,
+    "eau": -5,
+    "air": 15
+   },
+   "gfx": 75,
+   "zones": [
+    "Coin des Bouftous",
+    "Tainéla",
+    "Cour du Bouftou Royal"
+   ]
+  },
+  "149": {
+   "n": "Boufton Noir",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": -10,
+    "feu": 15,
+    "eau": 20,
+    "air": -5
+   },
+   "gfx": 76,
+   "zones": [
+    "Coin des Bouftous",
+    "Tainéla",
+    "Cour du Bouftou Royal"
+   ]
+  },
+  "799": {
+   "n": "Tournesol Affamé",
+   "l": [
+    20,
+    20
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 25,
+    "terre": 25,
+    "feu": 25,
+    "eau": -10,
+    "air": -15
+   },
+   "gfx": 445,
+   "zones": [
+    "Grange du Tournesol Affamé"
+   ]
+  }
+ },
+ "sets": {
+  "1": {
+   "n": "Panoplie du Bouftou",
+   "items": [
+    2411,
+    2414,
+    2419,
+    2422,
+    2425,
+    2428
+   ]
+  },
+  "23": {
+   "n": "Panoplie Moskito",
+   "items": [
+    6915,
+    6916,
+    6917,
+    6918
+   ]
+  },
+  "50": {
+   "n": "Panoplie du Tofu",
+   "items": [
+    8108,
+    8109,
+    8111,
+    8112,
+    8113,
+    8114
+   ]
+  },
+  "60": {
+   "n": "Panoplie du Piou Rouge",
+   "items": [
+    8213,
+    8219,
+    8225,
+    8231,
+    8237,
+    8243
+   ]
+  },
+  "72": {
+   "n": "Panoplie du Piou Vert",
+   "items": [
+    8217,
+    8223,
+    8229,
+    8236,
+    8241,
+    8247
+   ]
+  },
+  "150": {
+   "n": "Panoplie de l'intrépide",
+   "items": [
+    10784,
+    10785,
+    10794,
+    10799,
+    10800,
+    10801
+   ]
+  },
+  "364": {
+   "n": "Microplie",
+   "items": [
+    15992,
+    15993,
+    15994,
+    15995
+   ]
+  }
+ },
+ "items": {
+  "1662": {
+   "id": 1662,
+   "n": "Ambramulette Arakne",
+   "slot": "amulette",
+   "l": 34,
+   "icon": 1018,
+   "set": null,
+   "els": [
+    "eau",
+    "feu"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "2411": {
+   "id": 2411,
+   "n": "Coiffe du Bouftou",
+   "slot": "coiffe",
+   "l": 20,
+   "icon": 16041,
+   "set": 1,
+   "els": [
+    "feu",
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "2414": {
+   "id": 2414,
+   "n": "Cape Bouffante",
+   "slot": "cape",
+   "l": 20,
+   "icon": 17044,
+   "set": 1,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "2419": {
+   "id": 2419,
+   "n": "Anneau de Bouze le Clerc",
+   "slot": "anneau",
+   "l": 20,
+   "icon": 9044,
+   "set": 1,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "2422": {
+   "id": 2422,
+   "n": "Boufbottes",
+   "slot": "bottes",
+   "l": 20,
+   "icon": 11026,
+   "set": 1,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": true
+  },
+  "2425": {
+   "id": 2425,
+   "n": "Amulette du Bouftou",
+   "slot": "amulette",
+   "l": 20,
+   "icon": 1048,
+   "set": 1,
+   "els": [
+    "feu",
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "2428": {
+   "id": 2428,
+   "n": "Ceinture du Bouftou",
+   "slot": "ceinture",
+   "l": 20,
+   "icon": 10029,
+   "set": 1,
+   "els": [
+    "feu",
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "2438": {
+   "id": 2438,
+   "n": "Boufcoiffe Royale",
+   "slot": "coiffe",
+   "l": 32,
+   "icon": 16042,
+   "set": 4,
+   "els": [
+    "feu",
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "2441": {
+   "id": 2441,
+   "n": "Anneau Royal du Bouftou",
+   "slot": "anneau",
+   "l": 31,
+   "icon": 9046,
+   "set": 4,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": true
+  },
+  "2442": {
+   "id": 2442,
+   "n": "Boufbottes Royales",
+   "slot": "bottes",
+   "l": 30,
+   "icon": 11030,
+   "set": 4,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": true
+  },
+  "2445": {
+   "id": 2445,
+   "n": "Cape Bouffante Royale",
+   "slot": "cape",
+   "l": 29,
+   "icon": 17046,
+   "set": 4,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "6915": {
+   "id": 6915,
+   "n": "Mos Kitano",
+   "slot": "anneau",
+   "l": 21,
+   "icon": 9071,
+   "set": 23,
+   "els": [
+    "eau"
+   ],
+   "dmgEls": [
+    "eau"
+   ],
+   "vita": false,
+   "genericDmg": false
+  },
+  "6916": {
+   "id": 6916,
+   "n": "Sac du Petit Moskito",
+   "slot": "cape",
+   "l": 16,
+   "icon": 81059,
+   "set": 23,
+   "els": [
+    "eau"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "6917": {
+   "id": 6917,
+   "n": "Moskitogalurette",
+   "slot": "coiffe",
+   "l": 15,
+   "icon": 16080,
+   "set": 23,
+   "els": [
+    "eau"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "6918": {
+   "id": 6918,
+   "n": "Amulette du Moskito",
+   "slot": "amulette",
+   "l": 15,
+   "icon": 1075,
+   "set": 23,
+   "els": [
+    "eau"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8108": {
+   "id": 8108,
+   "n": "Amulette du Tofu",
+   "slot": "amulette",
+   "l": 22,
+   "icon": 1095,
+   "set": 50,
+   "els": [
+    "air"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8109": {
+   "id": 8109,
+   "n": "Anneau du Tofu",
+   "slot": "anneau",
+   "l": 21,
+   "icon": 9100,
+   "set": 50,
+   "els": [
+    "air"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8111": {
+   "id": 8111,
+   "n": "Pantoufles du Tofu",
+   "slot": "bottes",
+   "l": 23,
+   "icon": 11073,
+   "set": 50,
+   "els": [
+    "air",
+    "feu"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8112": {
+   "id": 8112,
+   "n": "Cape du Tofu",
+   "slot": "cape",
+   "l": 26,
+   "icon": 17097,
+   "set": 50,
+   "els": [],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": true
+  },
+  "8113": {
+   "id": 8113,
+   "n": "Ceinture du Tofu",
+   "slot": "ceinture",
+   "l": 22,
+   "icon": 10089,
+   "set": 50,
+   "els": [
+    "air",
+    "feu"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8114": {
+   "id": 8114,
+   "n": "Kaskofu",
+   "slot": "coiffe",
+   "l": 23,
+   "icon": 16128,
+   "set": 50,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8213": {
+   "id": 8213,
+   "n": "Amulette du Piou Rouge",
+   "slot": "amulette",
+   "l": 11,
+   "icon": 1100,
+   "set": 60,
+   "els": [
+    "feu"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8217": {
+   "id": 8217,
+   "n": "Amulette du Piou Vert",
+   "slot": "amulette",
+   "l": 12,
+   "icon": 1103,
+   "set": 72,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [
+    "terre"
+   ],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8219": {
+   "id": 8219,
+   "n": "Anneau du Piou Rouge",
+   "slot": "anneau",
+   "l": 10,
+   "icon": 9106,
+   "set": 60,
+   "els": [
+    "feu"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8223": {
+   "id": 8223,
+   "n": "Anneau du Piou Vert",
+   "slot": "anneau",
+   "l": 11,
+   "icon": 9109,
+   "set": 72,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8225": {
+   "id": 8225,
+   "n": "Sandales du Piou Rouge",
+   "slot": "bottes",
+   "l": 9,
+   "icon": 11078,
+   "set": 60,
+   "els": [
+    "feu"
+   ],
+   "dmgEls": [
+    "feu"
+   ],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8229": {
+   "id": 8229,
+   "n": "Sandales du Piou Vert",
+   "slot": "bottes",
+   "l": 10,
+   "icon": 11081,
+   "set": 72,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8231": {
+   "id": 8231,
+   "n": "Cape du Piou Rouge",
+   "slot": "cape",
+   "l": 8,
+   "icon": 17103,
+   "set": 60,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8236": {
+   "id": 8236,
+   "n": "Cape du Piou Vert",
+   "slot": "cape",
+   "l": 9,
+   "icon": 17105,
+   "set": 72,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [
+    "terre"
+   ],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8237": {
+   "id": 8237,
+   "n": "Ceinture du Piou Rouge",
+   "slot": "ceinture",
+   "l": 7,
+   "icon": 10096,
+   "set": 60,
+   "els": [
+    "feu"
+   ],
+   "dmgEls": [
+    "feu"
+   ],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8241": {
+   "id": 8241,
+   "n": "Ceinture du Piou Vert",
+   "slot": "ceinture",
+   "l": 8,
+   "icon": 10099,
+   "set": 72,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "8243": {
+   "id": 8243,
+   "n": "Chapeau du Piou Rouge",
+   "slot": "coiffe",
+   "l": 12,
+   "icon": 16137,
+   "set": 60,
+   "els": [
+    "feu"
+   ],
+   "dmgEls": [
+    "feu"
+   ],
+   "vita": false,
+   "genericDmg": false
+  },
+  "8247": {
+   "id": 8247,
+   "n": "Chapeau du Piou Vert",
+   "slot": "coiffe",
+   "l": 7,
+   "icon": 16140,
+   "set": 72,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [
+    "terre"
+   ],
+   "vita": true,
+   "genericDmg": false
+  },
+  "10784": {
+   "id": 10784,
+   "n": "Amulette de l'intrépide",
+   "slot": "amulette",
+   "l": 1,
+   "icon": 1163,
+   "set": 150,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "10785": {
+   "id": 10785,
+   "n": "Anneau de l'intrépide",
+   "slot": "anneau",
+   "l": 1,
+   "icon": 9190,
+   "set": 150,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "10794": {
+   "id": 10794,
+   "n": "Bottes de l'intrépide",
+   "slot": "bottes",
+   "l": 1,
+   "icon": 11155,
+   "set": 150,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "10799": {
+   "id": 10799,
+   "n": "Ceinture de l'intrépide",
+   "slot": "ceinture",
+   "l": 1,
+   "icon": 10161,
+   "set": 150,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "10800": {
+   "id": 10800,
+   "n": "Cape de l'intrépide",
+   "slot": "cape",
+   "l": 1,
+   "icon": 17201,
+   "set": 150,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "10801": {
+   "id": 10801,
+   "n": "Chapeau de l'intrépide",
+   "slot": "coiffe",
+   "l": 1,
+   "icon": 16264,
+   "set": 150,
+   "els": [],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  },
+  "15992": {
+   "id": 15992,
+   "n": "Anneau Bille",
+   "slot": "anneau",
+   "l": 36,
+   "icon": 9301,
+   "set": 364,
+   "els": [
+    "air"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": true
+  },
+  "15993": {
+   "id": 15993,
+   "n": "Cape Lumette",
+   "slot": "cape",
+   "l": 38,
+   "icon": 17337,
+   "set": 364,
+   "els": [
+    "feu"
+   ],
+   "dmgEls": [],
+   "vita": false,
+   "genericDmg": true
+  },
+  "15994": {
+   "id": 15994,
+   "n": "Casque Noix",
+   "slot": "coiffe",
+   "l": 40,
+   "icon": 16457,
+   "set": 364,
+   "els": [
+    "eau"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": true
+  },
+  "15995": {
+   "id": 15995,
+   "n": "Amulette Perle",
+   "slot": "amulette",
+   "l": 37,
+   "icon": 1266,
+   "set": 364,
+   "els": [
+    "terre"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": true
+  },
+  "17506": {
+   "id": 17506,
+   "n": "Ceinture du Garde Royal",
+   "slot": "ceinture",
+   "l": 38,
+   "icon": 10305,
+   "set": 888,
+   "els": [
+    "air"
+   ],
+   "dmgEls": [],
+   "vita": true,
+   "genericDmg": false
+  }
+ }
+}

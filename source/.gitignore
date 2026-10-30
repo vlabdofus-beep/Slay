@@ -1,0 +1,5 @@
+node_modules
+dist
+.DS_Store
+# exports Spire Codex (référence locale, non versionnée)
+reference/

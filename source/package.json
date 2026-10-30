@@ -1,0 +1,19 @@
+{
+  "name": "dofus-slay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deckbuilder roguelike dans l'univers de Dofus (fan game non officiel)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "typecheck": "tsc",
+    "test": "node --test src/core/*.test.ts src/game/*.test.ts",
+    "sim": "node src/sim/run.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^6.0.0"
+  }
+}
