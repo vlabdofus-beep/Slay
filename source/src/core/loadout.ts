@@ -1,145 +1,70 @@
-// Calcul de ce que l'équipement et le deck donnent au joueur :
-// stats (items + bonus de panoplie), affinité par élément, paliers et effets secondaires.
+// Ce que l'équipement donne au joueur : la somme des stats fixes des objets, et leurs effets tirés pour la run.
 import { resolveCard } from './combat.ts';
-import type {
-  ActiveDef,
-  CardInstance,
-  Element,
-  ItemDef,
-  Library,
-  PanoplieDef,
-  Passives,
-  Slot,
-  Stats,
-} from './types.ts';
+import type { ItemEffect, RuleId } from './effects.ts';
+import type { CardInstance, Element, ItemDef, Library, Slot } from './types.ts';
 import { ELEMENTS } from './types.ts';
 
 export interface ItemLibrary {
   items: Record<string, ItemDef>;
-  panoplies: Record<string, PanoplieDef>;
 }
 
-/** Un item par emplacement (id d'item). */
+/** Un objet par emplacement (id d'objet). */
 export type Equipment = Partial<Record<Slot, string>>;
 
+/** Effet tiré de chaque objet pour la run en cours. */
+export type EffectTable = Record<string, ItemEffect>;
+
 export type ElementalElement = Exclude<Element, 'neutre'>;
-export type Affinity = Record<ElementalElement, number>;
-
-/** Seuils d'affinité (cartes + items de l'élément) pour les paliers 1, 2 et 3. */
-export const PALIERS = [4, 8, 12] as const;
-
-/** Valeur de l'effet secondaire selon le palier (index 0 = aucun palier). */
-export const PASSIVE_BY_PALIER: Record<ElementalElement, readonly number[]> = {
-  terre: [0, 2, 4, 6], // armure par carte Terre jouée
-  feu: [0, 1, 2, 3], // brûlure par cible touchée par une attaque Feu
-  eau: [0, 1, 2, 3], // soin par attaque Eau
-  air: [0, 1, 2, 3], // nombre de cartes Air par tour qui piochent 1
-};
-
-export function palierOf(points: number): number {
-  return PALIERS.filter((t) => points >= t).length;
-}
 
 export function equippedItems(equipment: Equipment, items: ItemLibrary): ItemDef[] {
   return Object.values(equipment)
     .filter((id): id is string => !!id)
     .map((id) => {
       const it = items.items[id];
-      if (!it) throw new Error(`Item inconnu : ${id}`);
+      if (!it) throw new Error(`Objet inconnu : ${id}`);
       return it;
     });
-}
-
-export function affinity(
-  cards: Library,
-  deck: CardInstance[],
-  equipment: Equipment,
-  items: ItemLibrary,
-): Affinity {
-  const a: Affinity = { terre: 0, feu: 0, eau: 0, air: 0 };
-  for (const inst of deck) {
-    const el = resolveCard(cards, inst).element;
-    if (el !== 'neutre') a[el]++;
-  }
-  for (const it of equippedItems(equipment, items)) {
-    for (const el of it.elements) if (el !== 'neutre') a[el]++;
-  }
-  return a;
-}
-
-/** Nombre de pièces équipées par panoplie. */
-export function setCounts(equipment: Equipment, items: ItemLibrary): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const it of equippedItems(equipment, items)) {
-    if (it.panoplie) counts[it.panoplie] = (counts[it.panoplie] ?? 0) + 1;
-  }
-  return counts;
-}
-
-function addStats(total: Required<Omit<Stats, 'dom'>> & { dom: Record<Element, number> }, s: Stats): void {
-  total.pv += s.pv ?? 0;
-  total.armure += s.armure ?? 0;
-  total.prisme += s.prisme ?? 0;
-  for (const [el, v] of Object.entries(s.dom ?? {})) total.dom[el as Element] += v ?? 0;
 }
 
 export interface Loadout {
   pvBonus: number;
   dom: Record<Element, number>;
   blockBonus: number;
-  passives: Passives;
-  actives: ActiveDef[];
-  affinity: Affinity;
-  paliers: Record<ElementalElement, number>;
-  sets: Record<string, number>;
+  /** Prospection des objets (stats et règle « prospecteur »), hors gains de la run. */
+  prospection: number;
+  effects: ItemEffect[];
 }
 
-export function computeLoadout(
-  cards: Library,
-  deck: CardInstance[],
-  equipment: Equipment,
-  items: ItemLibrary,
-): Loadout {
-  const total = { pv: 0, armure: 0, prisme: 0, dom: { terre: 0, feu: 0, eau: 0, air: 0, neutre: 0 } };
-  const equipped = equippedItems(equipment, items);
-  for (const it of equipped) addStats(total, it.stats);
+/** Prospection donnée par la règle légendaire « prospecteur ». */
+export const PROSPECTEUR_BONUS = 60;
 
-  const sets = setCounts(equipment, items);
-  for (const [setId, n] of Object.entries(sets)) {
-    const set = items.panoplies[setId];
-    if (!set) continue;
-    for (const [threshold, bonus] of Object.entries(set.bonuses)) {
-      if (n >= Number(threshold)) addStats(total, bonus);
+export function computeLoadout(equipment: Equipment, items: ItemLibrary, table: EffectTable): Loadout {
+  const l: Loadout = { pvBonus: 0, dom: { terre: 0, feu: 0, eau: 0, air: 0, neutre: 0 }, blockBonus: 0, prospection: 0, effects: [] };
+  for (const it of equippedItems(equipment, items)) {
+    l.pvBonus += it.stats.pv ?? 0;
+    l.blockBonus += it.stats.armure ?? 0;
+    l.prospection += it.stats.prospection ?? 0;
+    for (const [el, v] of Object.entries(it.stats.dom ?? {})) l.dom[el as Element] += v ?? 0;
+    const fx = table[it.id];
+    if (fx) {
+      l.effects.push(fx);
+      if (fx.kind === 'rule' && fx.rule === ('prospecteur' satisfies RuleId)) l.prospection += PROSPECTEUR_BONUS;
     }
   }
-
-  const aff = affinity(cards, deck, equipment, items);
-  const paliers = {
-    terre: palierOf(aff.terre),
-    feu: palierOf(aff.feu),
-    eau: palierOf(aff.eau),
-    air: palierOf(aff.air),
-  };
-
-  return {
-    pvBonus: total.pv,
-    dom: total.dom,
-    blockBonus: total.armure,
-    passives: {
-      terreArmure: PASSIVE_BY_PALIER.terre[paliers.terre],
-      feuBrulure: PASSIVE_BY_PALIER.feu[paliers.feu],
-      eauSoin: PASSIVE_BY_PALIER.eau[paliers.eau],
-      airPioche: PASSIVE_BY_PALIER.air[paliers.air],
-      prisme: total.prisme,
-    },
-    actives: equipped.filter((it) => it.active).map((it) => it.active as ActiveDef),
-    affinity: aff,
-    paliers,
-    sets,
-  };
+  return l;
 }
 
-/** Éléments triés par affinité décroissante. */
-export function rankedElements(a: Affinity): ElementalElement[] {
+/** Nombre de cartes du deck par élément (hors neutre). */
+export function deckElements(cards: Library, deck: CardInstance[]): Record<ElementalElement, number> {
+  const a = { terre: 0, feu: 0, eau: 0, air: 0 };
+  for (const inst of deck) {
+    const el = resolveCard(cards, inst).element;
+    if (el !== 'neutre') a[el]++;
+  }
+  return a;
+}
+
+/** Éléments triés du plus présent au moins présent dans le deck. */
+export function rankedElements(a: Record<ElementalElement, number>): ElementalElement[] {
   return (ELEMENTS as ElementalElement[]).slice().sort((x, y) => a[y] - a[x]);
 }

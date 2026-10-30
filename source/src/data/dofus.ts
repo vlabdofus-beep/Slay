@@ -1,6 +1,6 @@
 // Accès typé aux données Dofus extraites (src/data/dofus.json, généré par tools/build-dofus-data.mjs).
 import raw from './dofus.json' with { type: 'json' };
-import type { ClassId, Element, Slot } from '../core/types.ts';
+import type { ClassId, Element, ItemRarity, Slot } from '../core/types.ts';
 
 type DofusEl = 'terre' | 'feu' | 'eau' | 'air';
 
@@ -9,16 +9,16 @@ export interface DofusMonster {
   n: string; l: [number, number]; k: string; gfx: number; zones: string[];
   res: Record<'neutre' | DofusEl, number>;
 }
+/** Objet du catalogue : rareté selon le niveau Dofus, stat principale selon ses effets Dofus. */
 export interface DofusItem {
-  id: number; n: string; slot: Slot | null; l: number; icon: number; set: number | null;
-  els: DofusEl[]; dmgEls: DofusEl[]; vita: boolean; genericDmg: boolean;
+  id: number; n: string; slot: Slot; l: number; icon: number;
+  rarity: ItemRarity; stat: DofusEl | 'pv' | 'prospection' | 'armure';
 }
 export interface DofusData {
   breeds: Record<string, { id: number; n: string }>;
   spells: Record<string, DofusSpell>;
   monsters: Record<string, DofusMonster>;
-  sets: Record<string, { n: string; items: number[] }>;
-  items: Record<string, DofusItem>;
+  catalog: DofusItem[];
 }
 
 export const DOFUS = raw as unknown as DofusData;
@@ -66,8 +66,3 @@ export function weakResist(res: DofusMonster['res']): { weak: Element[]; resist:
   return { weak: els.filter((e) => res[e] === min), resist: els.filter((e) => res[e] === max) };
 }
 
-export function item(id: number): DofusItem {
-  const it = DOFUS.items[String(id)];
-  if (!it) throw new Error(`Item Dofus ${id} absent de dofus.json`);
-  return it;
-}

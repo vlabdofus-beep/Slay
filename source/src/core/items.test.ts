@@ -1,152 +1,189 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Combat, type PlayerInit } from './combat.ts';
-import { computeLoadout, type Equipment } from './loadout.ts';
-import { itemOffer } from './offers.ts';
+import { BUDGET, combos, effectPower, effectText, poolSize, rollEffect, type ItemEffect, type RuleId } from './effects.ts';
+import { computeLoadout } from './loadout.ts';
+import { itemOffer, lootChance, rarityWeights } from './offers.ts';
 import { Rng } from './rng.ts';
-import { NO_PASSIVES, type Passives } from './types.ts';
 import { ITEMS } from '../data/items.ts';
 import { LIBRARY, newCard, starterDeck } from '../data/library.ts';
 
-function combatWith(passives: Partial<Passives>, enemies: string[], hand: string[], extra: Partial<PlayerInit> = {}) {
-  const c = new Combat(LIBRARY, starterDeck('iop'), { hp: 50, maxHp: 80, passives: { ...NO_PASSIVES, ...passives }, ...extra }, enemies, 11);
+function combatWith(enemies: string[], hand: string[], extra: Partial<PlayerInit> = {}) {
+  const c = new Combat(LIBRARY, starterDeck('iop'), { hp: 50, maxHp: 80, ...extra }, enemies, 11);
   c.hand = hand.map((id) => newCard(id));
   c.player.energy = 3;
   for (const e of c.enemies) e.block = 0;
   return c;
 }
+const roll = (trigger: string, reward: string, amount: number): ItemEffect => ({ kind: 'roll', parts: [{ trigger, reward, amount }] });
+const rule = (r: RuleId): ItemEffect => ({ kind: 'rule', rule: r });
 
-test('stats d\'items et bonus de panoplie (2 puis 4 pièces)', () => {
-  const deck = starterDeck('iop');
-  // Panoplie du Piou Vert : amulette (+1 Terre), anneau (+1 Terre), sandales (+6 PV), cape (+1 Terre)
-  const two: Equipment = { amulette: 'item_8217', anneau: 'item_8223' };
-  assert.equal(computeLoadout(LIBRARY, deck, two, ITEMS).dom.terre, 3); // 1 + 1 + bonus 2 pièces
-  const four: Equipment = { ...two, bottes: 'item_8229', cape: 'item_8236' };
-  const l = computeLoadout(LIBRARY, deck, four, ITEMS);
-  assert.equal(l.dom.terre, 5); // 1 + 1 + 1 + 1 (2p) + 1 (4p)
-  assert.equal(l.blockBonus, 1); // 4p
-  assert.equal(l.pvBonus, 14); // sandales 6 + 4p 8
-  assert.equal(l.sets.piou_vert, 4);
+// ───────────── statuts ─────────────
+
+test('poison : ignore armure et bouclier, puis divisé par 2', () => {
+  const c = combatWith(['bouftou'], []);
+  const e = c.enemies[0];
+  e.hp = 50; e.status.poison = 5; e.status.bouclier = 10;
+  c.endTurn();
+  assert.equal(e.hp, 45);
+  assert.equal(e.status.poison, 2);
+  assert.equal(e.status.bouclier, 10);
 });
 
-test('affinité = cartes + items de l\'élément ; palier 1 à 4 points', () => {
-  const deck = starterDeck('iop'); // Pression = 1 point Terre
-  assert.equal(computeLoadout(LIBRARY, deck, {}, ITEMS).affinity.terre, 1);
-  deck.push(newCard('iop_accumulation'), newCard('iop_accumulation'));
-  const l = computeLoadout(LIBRARY, deck, { amulette: 'item_8217' }, ITEMS);
-  assert.equal(l.affinity.terre, 4);
-  assert.equal(l.paliers.terre, 1);
-  assert.equal(l.passives.terreArmure, 2);
-  // Un item multi donne un point à chacun de ses éléments
-  const m = computeLoadout(LIBRARY, starterDeck('iop'), { coiffe: 'item_2411' }, ITEMS); // Coiffe du Bouftou
-  assert.deepEqual([m.affinity.feu, m.affinity.terre], [1, 2]);
+test('brûlure : absorbée par l\'armure et le bouclier', () => {
+  const c = combatWith(['bouftou'], []);
+  const p = c.player;
+  p.status.brulure = 4; p.status.bouclier = 3; p.hp = 50;
+  // Le Bouftou attaque d'abord ; on neutralise son coup pour isoler la brûlure.
+  c.enemies[0].status.etourdi = 1;
+  c.endTurn();
+  assert.equal(p.hp, 49); // 4 - 3 de bouclier
+  assert.equal(p.status.bouclier, 0);
 });
 
-test('Terre : jouer une carte Terre donne de l\'armure, pas une carte neutre', () => {
-  const c = combatWith({ terreArmure: 2 }, ['moskito'], ['iop_accumulation', 'iop_coup_epee']);
+test('bouclier : persiste d\'un tour à l\'autre, contrairement à l\'armure', () => {
+  const c = combatWith(['bouftou'], []);
+  c.enemies[0].status.etourdi = 1;
+  c.player.block = 5; c.player.status.bouclier = 5;
+  c.endTurn();
+  assert.equal(c.player.block, 0);
+  assert.equal(c.player.status.bouclier, 5);
+});
+
+test('esquive : annule un coup entier ; renvoi : renvoie des dégâts à l\'attaquant', () => {
+  const c = combatWith(['bouftou'], []);
+  const e = c.enemies[0];
+  const hp = c.player.hp, ehp = e.hp;
+  c.player.status.esquive = 5; c.player.status.renvoi = 3;
+  c.endTurn();
+  if (c.intent(e).hits) assert.equal(c.player.hp, hp);
+  // l'esquive a pris les coups : pas de renvoi sur un coup esquivé
+  assert.equal(e.hp, ehp);
+  const d = combatWith(['bouftou'], []);
+  d.player.status.renvoi = 3;
+  const eh = d.enemies[0].hp;
+  const attacks = d.intent(d.enemies[0]).hits;
+  d.endTurn();
+  assert.equal(eh - d.enemies[0].hp, 3 * attacks);
+});
+
+test('étourdi : le monstre saute son action ; un boss doit en cumuler 2', () => {
+  const c = combatWith(['bouftou'], []);
+  c.enemies[0].status.etourdi = 1;
+  assert.equal(c.intent(c.enemies[0]).stunned, true);
+  const hp = c.player.hp;
+  c.endTurn();
+  assert.equal(c.player.hp, hp);
+  assert.equal(c.enemies[0].status.etourdi, 0);
+  const b = combatWith(['bouftou_royal'], []);
+  b.enemies[0].status.etourdi = 1;
+  assert.equal(b.intent(b.enemies[0]).stunned, false);
+  b.enemies[0].status.etourdi = 2;
+  assert.equal(b.intent(b.enemies[0]).stunned, true);
+});
+
+test('érosion : l\'armure gagnée par la cible est divisée par 2', () => {
+  const c = combatWith(['champ_champ'], []);
+  const e = c.enemies[0];
+  const block = Object.values(e.def.moves).flatMap((m) => m.effects).find((fx) => fx.type === 'block');
+  if (!block || block.type !== 'block') return;
+  e.moveId = Object.entries(e.def.moves).find(([, m]) => m.effects.includes(block))![0];
+  e.status.erosion = 2;
+  c.endTurn();
+  assert.equal(e.block, Math.floor(block.amount / 2));
+});
+
+// ───────────── effets d'objets ─────────────
+
+test('un effet ne se déclenche que sur sa condition (2e carte Air du tour)', () => {
+  const c = combatWith(['bouftou'], ['iop_zenith', 'iop_zenith', 'iop_zenith'], { effects: [roll('deuxieme_air', 'puissance', 1)] });
+  c.player.energy = 9;
   c.enemies[0].hp = 999;
   c.playCard(0);
-  assert.equal(c.player.block, 2);
-  c.playCard(0); // Coup d'épée est neutre
-  assert.equal(c.player.block, 2);
-});
-
-test('Feu : les attaques Feu appliquent la brûlure à chaque cible touchée', () => {
-  const c = combatWith({ feuBrulure: 1 }, ['prespic', 'prespic'], ['iop_tempete', 'iop_epee_destructrice']);
-  c.playCard(0, 1);
-  assert.equal(c.enemies[1].status.brulure, 1);
-  assert.equal(c.enemies[0].status.brulure ?? 0, 0);
-  c.player.energy = 3;
-  c.playCard(0); // zone : les deux cibles
-  assert.deepEqual(c.enemies.map((e) => e.status.brulure), [1, 2]);
-});
-
-test('Eau : les attaques Eau soignent en plus du drain', () => {
-  const c = new Combat(LIBRARY, starterDeck('cra'), { hp: 50, maxHp: 75, passives: { ...NO_PASSIVES, eauSoin: 2 } }, ['prespic'], 4);
-  c.hand = [newCard('cra_oeil_de_taupe')];
-  c.enemies[0].block = 0;
-  c.playCard(0); // drain 3 + soin 2
-  assert.equal(c.player.hp, 55);
-});
-
-test('Air : seules les N premières cartes Air du tour piochent', () => {
-  const c = combatWith({ airPioche: 1 }, ['bouftou'], ['iop_souffle', 'iop_souffle']);
-  c.enemies[0].hp = 999;
+  assert.equal(c.player.status.puissance ?? 0, 0);
   c.playCard(0);
-  assert.equal(c.hand.length, 2); // 1 Couper restant + 1 pioché
+  assert.equal(c.player.status.puissance, 1);
   c.playCard(0);
-  assert.equal(c.hand.length, 1); // pas de 2e pioche
+  assert.equal(c.player.status.puissance, 1);
 });
 
-test('Prisme : +N dégâts par élément différent déjà joué ce tour', () => {
-  const c = combatWith({ prisme: 2 }, ['prespic', 'prespic'], ['iop_tempete', 'iop_accumulation']);
+test('« quand un sort Feu achève un ennemi » : prospection pour le prochain combat', () => {
+  const c = combatWith(['bouftou', 'bouftou'], ['iop_sentence'], { effects: [roll('acheve_feu', 'prospection', 15)] });
+  c.enemies[0].hp = 1;
+  c.playCard(0, 0);
+  assert.equal(c.prospection.next, 15);
+});
+
+test('règles légendaires : première carte moins chère, brûlure tenace', () => {
+  const c = combatWith(['bouftou'], ['iop_epee_destin', 'iop_epee_destin'], { effects: [rule('premiere_gratuite'), rule('brulure_tenace')] });
   c.enemies[0].hp = 999;
-  c.playCard(0, 1); // Feu sur le 2e Prespic
-  const before = c.enemies[0].hp;
-  c.playCard(0, 0); // Terre sur le 1er (neutre à la Terre) : 8 + 2
-  assert.equal(before - c.enemies[0].hp, 10);
+  assert.equal(c.costOf(c.hand[0]), 1);
+  c.playCard(0);
+  assert.equal(c.player.energy, 2);
+  assert.equal(c.costOf(c.hand[0]), 2);
+  c.enemies[0].status.brulure = 3;
+  const burn = c.enemies[0].status.brulure!;
+  c.hand = [];
+  c.endTurn();
+  assert.equal(c.enemies[0].status.brulure, burn);
 });
 
-test('un actif ne sert qu\'une fois par combat et se recharge au combat suivant', () => {
-  const l = computeLoadout(LIBRARY, starterDeck('iop'), { cape: 'item_2445' }, ITEMS); // Cape Bouffante Royale : Carapace
-  const init = { hp: 80, maxHp: 90, actives: l.actives };
-  const c = new Combat(LIBRARY, starterDeck('iop'), init, ['bouftou'], 1);
-  assert.ok(c.legalActions().some((a) => a.type === 'active'));
-  c.useActive(0);
-  assert.equal(c.player.block, 12);
-  assert.throws(() => c.useActive(0), /déjà utilisé/);
-  assert.ok(!c.legalActions().some((a) => a.type === 'active'));
-  const next = new Combat(LIBRARY, starterDeck('iop'), init, ['bouftou'], 2);
-  assert.ok(next.legalActions().some((a) => a.type === 'active'));
-});
-
-test('offre en découverte : 3 items de familles différentes', () => {
-  const ctx = { cards: LIBRARY, items: ITEMS, deck: starterDeck('iop'), equipment: {} };
-  for (let s = 1; s <= 50; s++) {
-    const offer = itemOffer(ctx, 'commun', new Rng(s)).map((id) => ITEMS.items[id]);
-    assert.equal(offer.length, 3);
-    const kind = (it: (typeof offer)[number]) => (it.panoplie ? ITEMS.panoplies[it.panoplie].kind : undefined);
-    const fam = offer.map((it) =>
-      it.elements.length === 0 ? 'neutre' : it.elements.length > 1 || kind(it) === 'multi' || kind(it) === 'duo' ? 'multi' : it.elements[0]);
-    assert.equal(new Set(fam).size, 3);
-  }
-});
-
-test('offre avec une voie : 1 item de la voie, au moins 1 hors voie, jamais un item déjà porté', () => {
-  const deck = starterDeck('iop');
-  deck.push(newCard('iop_accumulation'), newCard('iop_accumulation'), newCard('iop_colere'));
-  const equipment: Equipment = { amulette: 'item_8217' };
-  const ctx = { cards: LIBRARY, items: ITEMS, deck, equipment };
-  for (let s = 1; s <= 100; s++) {
-    const offer = itemOffer(ctx, 'commun', new Rng(s)).map((id) => ITEMS.items[id]);
-    assert.ok(offer[0].elements.includes('terre'));
-    assert.ok(offer.some((it) => !it.elements.includes('terre')));
-    assert.ok(!offer.some((it) => it.id === 'item_8217'));
-    assert.equal(new Set(offer.map((it) => it.id)).size, 3);
-  }
-});
-
-test('les offres poussent à compléter une panoplie commencée', () => {
-  const deck = starterDeck('iop');
-  deck.push(newCard('iop_accumulation'), newCard('iop_accumulation'), newCard('iop_colere'));
-  const count = (equipment: Equipment) => {
-    let n = 0;
-    for (let s = 1; s <= 300; s++) {
-      const offer = itemOffer({ cards: LIBRARY, items: ITEMS, deck, equipment }, 'commun', new Rng(s));
-      n += offer.filter((id) => ITEMS.items[id].panoplie === 'piou_vert').length;
+test('la base d\'effets est vaste et chaque tirage tient dans le budget de sa rareté', () => {
+  const size = poolSize();
+  assert.ok(size.commun >= 300 && size.rare >= 300, JSON.stringify(size));
+  assert.ok(size.legendaire >= 20);
+  const rng = new Rng(9);
+  for (let i = 0; i < 300; i++) {
+    for (const r of ['commun', 'rare', 'mythique'] as const) {
+      const fx = rollEffect(r, rng);
+      assert.equal(fx.kind, 'roll');
+      const p = effectPower(fx);
+      assert.ok(p >= BUDGET[r] * 0.55 && p <= BUDGET[r] * 1.55, `${r} ${effectText(fx)} = ${p}`);
+      if (r === 'mythique') assert.ok(fx.kind === 'roll' && fx.parts.length === 2, effectText(fx));
     }
-    return n;
-  };
-  // Avec une pièce du Piou Vert déjà portée, ses pièces reviennent plus souvent qu'avec une pièce
-  // d'une autre panoplie Terre (Coiffe du Bouftou).
-  assert.ok(count({ amulette: 'item_8217' }) > count({ coiffe: 'item_2411' }));
+    assert.equal(rollEffect('legendaire', rng).kind, 'rule');
+  }
+  // Pas de boucle évidente : « quand tu gagnes de l'armure, gagne de l'armure »
+  assert.ok(!combos(BUDGET.commun).some((p) => p.trigger === 'armure_gagnee' && p.reward === 'armure'));
 });
 
-test('une offre rare ne propose que des items rares', () => {
-  const ctx = { cards: LIBRARY, items: ITEMS, deck: starterDeck('cra'), equipment: {} };
-  const offer = itemOffer(ctx, 'rare', new Rng(3));
-  assert.equal(offer.length, 3);
-  assert.ok(offer.every((id) => ITEMS.items[id].rarity === 'rare' && ITEMS.items[id].active));
+// ───────────── objets et butin ─────────────
+
+test('stats fixes des objets : la somme de l\'équipement', () => {
+  const pv = Object.values(ITEMS.items).find((it) => it.rarity === 'commun' && it.stats.pv)!;
+  const fire = Object.values(ITEMS.items).find((it) => it.slot !== pv.slot && it.stats.dom?.feu)!;
+  const l = computeLoadout({ [pv.slot]: pv.id, [fire.slot]: fire.id }, ITEMS, {});
+  assert.equal(l.pvBonus, pv.stats.pv);
+  assert.equal(l.dom.feu, fire.stats.dom!.feu);
+  assert.equal(l.effects.length, 0);
+});
+
+test('catalogue : 132 objets Dofus réels, 4 raretés dans chaque emplacement, aucune panoplie', () => {
+  const all = Object.values(ITEMS.items);
+  assert.equal(all.length, 132);
+  for (const slot of ['coiffe', 'cape', 'amulette', 'anneau', 'ceinture', 'bottes'] as const) {
+    const mine = all.filter((it) => it.slot === slot);
+    for (const r of ['commun', 'rare', 'mythique', 'legendaire'] as const) assert.ok(mine.some((it) => it.rarity === r), `${slot} ${r}`);
+  }
+});
+
+test('prospection : plus de butin et des raretés plus hautes, avec rendement décroissant', () => {
+  assert.equal(lootChance('elite', 0), 1);
+  assert.ok(lootChance('normal', 100) > lootChance('normal', 0));
+  assert.ok(lootChance('normal', 1000) <= 0.9);
+  const w0 = rarityWeights('normal', 0), w1 = rarityWeights('normal', 100);
+  assert.ok(w1.mythique / w1.commun > w0.mythique / w0.commun);
+  assert.equal(rarityWeights('elite', 500).commun, 0);
+});
+
+test('offre : 3 objets différents, jamais un objet déjà porté', () => {
+  const equipped = Object.values(ITEMS.items).find((it) => it.rarity === 'rare')!;
+  const ctx = { cards: LIBRARY, items: ITEMS, deck: starterDeck('cra'), equipment: { [equipped.slot]: equipped.id }, table: {} };
+  for (let s = 1; s < 30; s++) {
+    const offer = itemOffer(ctx, 'elite', 0, new Rng(s));
+    assert.equal(new Set(offer).size, 3);
+    assert.ok(!offer.includes(equipped.id));
+  }
 });
 
 test('les cartes reprennent nom, élément et coût (via les PA) de leur sort Dofus', async () => {

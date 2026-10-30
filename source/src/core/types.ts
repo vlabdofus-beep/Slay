@@ -7,9 +7,21 @@ export const ELEMENTS: readonly Element[] = ['terre', 'feu', 'eau', 'air'];
 
 export type ClassId = 'iop' | 'cra' | 'eniripsa' | 'xelor' | 'osamodas';
 
-/** puissance : +dégâts fixes. faiblesse : -25 % dégâts infligés. vulnerabilite : +50 % dégâts subis.
- *  brulure : dégâts en fin de round égaux aux cumuls, puis -1. */
-export type StatusId = 'puissance' | 'faiblesse' | 'vulnerabilite' | 'brulure';
+/** Statuts. Durées : faiblesse, vulnérabilité, érosion et renvoi perdent 1 en fin de round ;
+ *  puissance, bouclier et esquive restent tout le combat ; étourdi est consommé par l'action sautée.
+ *  - puissance : +N dégâts par coup
+ *  - faiblesse : -25 % de dégâts infligés
+ *  - vulnerabilite : +50 % de dégâts subis
+ *  - brulure : en fin de round, N dégâts (l'armure et le bouclier absorbent), puis -1
+ *  - poison : en fin de round, N dégâts qui ignorent armure et bouclier, puis divisé par 2
+ *  - bouclier : absorbe les dégâts après l'armure, ne disparaît pas en fin de tour
+ *  - renvoi : chaque coup reçu renvoie N dégâts à l'attaquant
+ *  - erosion : armure et soins reçus divisés par 2
+ *  - esquive : chaque charge annule entièrement un coup reçu
+ *  - etourdi : saute sa prochaine action (les boss doivent en cumuler 2) */
+export type StatusId =
+  | 'puissance' | 'faiblesse' | 'vulnerabilite' | 'brulure'
+  | 'poison' | 'bouclier' | 'renvoi' | 'erosion' | 'esquive' | 'etourdi';
 export type StatusMap = Partial<Record<StatusId, number>>;
 
 /** Pour un effet de statut : 'target' = la cible de la carte (ou le joueur pour un monstre),
@@ -72,6 +84,8 @@ export interface MonsterDef {
   dofusId?: number;
   image?: string;
   level?: [number, number];
+  /** Boss : il faut 2 étourdis pour lui faire sauter une action. */
+  boss?: boolean;
 }
 
 export interface CardInstance {
@@ -87,12 +101,12 @@ export interface Library {
   monsters: Record<string, MonsterDef>;
 }
 
-// ───────────── Items, panoplies, affinités ─────────────
+// ───────────── Objets ─────────────
 
 export type Slot = 'coiffe' | 'cape' | 'amulette' | 'anneau' | 'ceinture' | 'bottes';
 export const SLOTS: readonly Slot[] = ['coiffe', 'cape', 'amulette', 'anneau', 'ceinture', 'bottes'];
 
-/** Stats d'équipement. Tout est additif. */
+/** Stat fixe d'un objet (elle ne change jamais d'une run à l'autre). Tout est additif. */
 export interface Stats {
   /** PV max */
   pv?: number;
@@ -100,56 +114,20 @@ export interface Stats {
   armure?: number;
   /** Dégâts fixes ajoutés par coup, par élément */
   dom?: Partial<Record<Element, number>>;
-  /** Voie multi : +N dégâts par coup, par élément différent déjà joué ce tour */
-  prisme?: number;
+  /** Prospection : chance de butin et rareté des objets trouvés */
+  prospection?: number;
 }
 
-export interface ActiveDef {
-  name: string;
-  target: CardTarget;
-  effects: Effect[];
-}
-
-export type ItemRarity = 'commun' | 'rare';
+export type ItemRarity = 'commun' | 'rare' | 'mythique' | 'legendaire';
+export const ITEM_RARITIES: readonly ItemRarity[] = ['commun', 'rare', 'mythique', 'legendaire'];
 
 export interface ItemDef {
   id: string;
   name: string;
   slot: Slot;
   rarity: ItemRarity;
-  /** Éléments de l'item : 1 point d'affinité chacun. Vide = neutre. */
-  elements: Element[];
   stats: Stats;
-  panoplie?: string;
-  /** Réservé aux items rares : utilisable une fois par combat, rechargé au début de chaque combat. */
-  active?: ActiveDef;
   dofusId?: number;
   icon?: string;
   level?: number;
 }
-
-export interface PanoplieDef {
-  id: string;
-  name: string;
-  /** Famille : mono-élément, duo, multi (prisme) ou neutre. Sert à orienter les offres. */
-  kind?: 'mono' | 'duo' | 'multi' | 'neutre';
-  items: string[];
-  /** Bonus cumulatifs par nombre de pièces équipées (ex. 2 et 4). */
-  bonuses: Record<number, Stats>;
-}
-
-/** Effets secondaires élémentaires débloqués par les paliers d'affinité. */
-export interface Passives {
-  /** Jouer une carte Terre donne N armure */
-  terreArmure: number;
-  /** Les attaques Feu appliquent N brûlure à chaque cible touchée */
-  feuBrulure: number;
-  /** Les attaques Eau soignent N */
-  eauSoin: number;
-  /** Les N premières cartes Air jouées chaque tour piochent 1 carte */
-  airPioche: number;
-  /** Voie multi (voir Stats.prisme) */
-  prisme: number;
-}
-
-export const NO_PASSIVES: Passives = { terreArmure: 0, feuBrulure: 0, eauSoin: 0, airPioche: 0, prisme: 0 };

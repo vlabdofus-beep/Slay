@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateMap, MAP_FLOORS } from '../core/map.ts';
-import { resolveCard } from '../core/combat.ts';
-import { LIBRARY } from '../data/library.ts';
+import { ITEMS } from '../data/items.ts';
 import { playGreedy } from '../sim/policy.ts';
 import { Run } from './run.ts';
 
@@ -82,44 +81,50 @@ test('une run se joue de bout en bout (victoire ou défaite), de façon détermi
   assert.ok(outcomes.includes('victory'), 'au moins une victoire sur 40 runs');
 });
 
-test('cadence des récompenses : item commun tous les 2 combats de couloir, rare après un élite', () => {
-  const run = new Run('iop', 3);
-  const rewards: (string | null)[] = [];
-  while (run.phase !== 'defeat' && run.phase !== 'victory' && rewards.length < 6) {
-    if (run.phase === 'map') {
-      const next = run.availableNodes().map((id) => run.map.nodes[id]);
-      run.enterNode((next.find((n) => n.type === 'combat') ?? next[0]).id);
-    } else if (run.phase === 'combat') {
-      playGreedy(run.combat!);
-      run.checkCombatEnd();
-    } else if (run.phase === 'reward') {
-      rewards.push(run.node!.type === 'elite' ? `elite:${run.reward!.itemRarity}` : run.reward!.itemRarity);
-      run.leaveReward();
-    } else if (run.phase === 'zaap') {
-      run.leaveZaap();
+test('butin : les élites donnent toujours un objet (jamais commun), la prospection est conservée dans la récompense', () => {
+  let elites = 0;
+  for (let seed = 1; seed <= 12 && elites < 3; seed++) {
+    const run = new Run('iop', seed);
+    while (run.phase !== 'defeat' && run.phase !== 'victory') {
+      if (run.phase === 'map') {
+        const next = run.availableNodes().map((id) => run.map.nodes[id]);
+        run.enterNode((next.find((n) => n.type === 'elite') ?? next[0]).id);
+      } else if (run.phase === 'combat') {
+        run.combat!.player.hp = run.combat!.player.maxHp = 999; // on veut voir des élites, pas perdre
+        playGreedy(run.combat!);
+        run.checkCombatEnd();
+      } else if (run.phase === 'reward') {
+        const r = run.reward!;
+        assert.ok(r.prospection >= 0);
+        if (run.node!.type === 'elite') {
+          elites++;
+          assert.equal(r.itemSource, 'elite');
+          assert.equal(r.items.length, 3);
+          assert.ok(r.items.every((id) => ITEMS.items[id].rarity !== 'commun'));
+        }
+        run.leaveReward();
+      } else if (run.phase === 'zaap') run.leaveZaap();
     }
   }
-  const hallway = rewards.filter((r) => !String(r).startsWith('elite'));
-  assert.deepEqual(hallway.slice(0, 4), [null, 'commun', null, 'commun']);
-  for (const r of rewards.filter((x) => String(x).startsWith('elite'))) assert.equal(r, 'elite:rare');
+  assert.ok(elites >= 1);
 });
 
-test('forgemagie : change l\'élément de la carte et de ses dégâts, une seule action par Zaap', () => {
-  const run = new Run('iop', 1);
-  run.phase = 'zaap';
-  const strike = run.deck.find((c) => c.id === 'iop_coup_epee')!;
-  run.zaapForge(strike.uid, 'feu');
-  const def = resolveCard(LIBRARY, strike);
-  assert.equal(def.element, 'feu');
-  assert.ok(def.effects.every((fx) => fx.type !== 'damage' || fx.element === 'feu'));
-  assert.equal(run.loadout().affinity.feu, 1);
-  assert.throws(() => run.zaapRest(), /déjà utilisé/);
+test('chaque objet a un effet tiré pour la run, identique pour une même graine', () => {
+  const a = new Run('cra', 5), b = new Run('cra', 5), c = new Run('cra', 6);
+  assert.deepEqual(a.itemEffects, b.itemEffects);
+  assert.notDeepEqual(a.itemEffects, c.itemEffects);
+  for (const it of Object.values(ITEMS.items)) {
+    const fx = a.itemEffects[it.id];
+    assert.ok(fx, it.id);
+    assert.equal(fx.kind === 'rule', it.rarity === 'legendaire', it.id);
+  }
 });
 
 test('équiper un item qui donne des PV augmente aussi les PV actuels', () => {
   const run = new Run('cra', 2);
   run.hp = 50;
-  run.equip('item_10784'); // Amulette de l'intrépide : +6 PV
+  const id = Object.values(ITEMS.items).find((it) => it.rarity === 'commun' && it.stats.pv)!.id; // +6 PV
+  run.equip(id);
   assert.equal(run.maxHp, 76);
   assert.equal(run.hp, 56);
 });

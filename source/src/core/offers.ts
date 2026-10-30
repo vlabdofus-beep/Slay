@@ -1,73 +1,88 @@
-// Génération des offres « 1 item parmi 3 », orientées par la voie du joueur.
+// Butin : chance d'objet après un combat, rareté des objets proposés, et offre « 1 objet parmi 3 ».
 //
-//   Phase découverte (aucun élément au palier 1) : 3 items de familles différentes, au hasard.
-//   Ensuite :
-//     A. un item de la voie dominante (pièces de panoplies déjà commencées favorisées) ;
-//     B. deux voies proches (top 2 au palier 1 et écart ≤ 2) → un item de la 2e voie ;
-//        sinon → 2e élément ou multi (Piou, prismatiques), et à partir du palier 2 une chance sur deux
-//        de renforcer encore la voie dominante (l'offre « s'accentue ») ;
-//     C. un joker hors voie dominante, pour toujours pouvoir pivoter.
+// La prospection augmente les deux : plus d'objets après les combats normaux, et des raretés plus hautes.
+// Rendement décroissant (p / (p + 100)) pour éviter l'effet boule de neige ; le légendaire reste
+// quasi inaccessible hors élites.
+import type { EffectTable, Equipment, ItemLibrary } from './loadout.ts';
+import { deckElements, rankedElements } from './loadout.ts';
+import { TRIGGER_BY_ID } from './effects.ts';
 import { Rng } from './rng.ts';
-import type { ElementalElement, Equipment, ItemLibrary } from './loadout.ts';
-import { PALIERS, affinity, palierOf, rankedElements, setCounts } from './loadout.ts';
 import type { CardInstance, ItemDef, ItemRarity, Library } from './types.ts';
+import { ITEM_RARITIES } from './types.ts';
+
+export type LootSource = 'normal' | 'elite';
+
+/** Poids de rareté sans prospection. */
+export const LOOT_WEIGHTS: Record<LootSource, Record<ItemRarity, number>> = {
+  normal: { commun: 72, rare: 24, mythique: 4, legendaire: 0.25 },
+  elite: { commun: 0, rare: 55, mythique: 35, legendaire: 10 },
+};
+
+/** Part « utile » de la prospection, de 0 à 1 (rendement décroissant). */
+export const prospFactor = (p: number) => Math.max(0, p) / (Math.max(0, p) + 100);
+
+/** Chance qu'un combat normal donne un objet : 45 % sans prospection, jusqu'à 90 %. Les élites en donnent toujours. */
+export function lootChance(source: LootSource, prospection: number): number {
+  return source === 'elite' ? 1 : 0.45 + 0.45 * prospFactor(prospection);
+}
+
+/** Poids de rareté avec prospection : les raretés au-dessus de commun sont multipliées (jusqu'à ×3). */
+export function rarityWeights(source: LootSource, prospection: number): Record<ItemRarity, number> {
+  const m = 1 + 2 * prospFactor(prospection);
+  const w = LOOT_WEIGHTS[source];
+  return { commun: w.commun, rare: w.rare * m, mythique: w.mythique * m * m, legendaire: w.legendaire * m * m };
+}
+
+export function rollRarity(source: LootSource, prospection: number, rng: Rng): ItemRarity {
+  const w = rarityWeights(source, prospection);
+  const total = ITEM_RARITIES.reduce((s, r) => s + w[r], 0);
+  let roll = rng.next() * total;
+  for (const r of ITEM_RARITIES) {
+    roll -= w[r];
+    if (roll < 0) return r;
+  }
+  return 'commun';
+}
 
 export interface OfferContext {
   cards: Library;
   items: ItemLibrary;
   deck: CardInstance[];
   equipment: Equipment;
+  table: EffectTable;
 }
 
-const has = (el: ElementalElement) => (it: ItemDef) => it.elements.includes(el);
-
-function weightedPick(rng: Rng, items: ItemDef[], weight: (it: ItemDef) => number): ItemDef | undefined {
-  const total = items.reduce((s, it) => s + weight(it), 0);
-  if (total <= 0) return undefined;
-  let roll = rng.next() * total;
-  for (const it of items) {
-    roll -= weight(it);
-    if (roll < 0) return it;
-  }
-  return items[items.length - 1];
+/** Élément dont parle l'effet tiré d'un objet (déclencheur élémentaire), s'il y en a un. */
+export function effectElement(ctx: OfferContext, it: ItemDef): string | null {
+  const fx = ctx.table[it.id];
+  if (!fx || fx.kind !== 'roll') return null;
+  return TRIGGER_BY_ID[fx.parts[0].trigger]?.el ?? null;
 }
 
-export function itemOffer(ctx: OfferContext, rarity: ItemRarity, rng: Rng, count = 3): string[] {
-  // Multi = item à plusieurs éléments, ou pièce d'une panoplie multi / duo (la Microplie a 1 élément par pièce).
-  const setKind = (it: ItemDef) => (it.panoplie ? ctx.items.panoplies[it.panoplie]?.kind : undefined);
-  const isMulti = (it: ItemDef) => it.elements.length > 1 || setKind(it) === 'multi' || setKind(it) === 'duo';
-  const family = (it: ItemDef) => (it.elements.length === 0 ? 'neutre' : isMulti(it) ? 'multi' : it.elements[0]);
+/**
+ * Trois objets, chacun avec sa rareté tirée à part. Emplacements différents autant que possible.
+ * Si le deck a un élément dominant (3 cartes ou plus), une chance sur deux qu'un des trois en parle :
+ * l'offre accompagne la voie sans l'imposer.
+ */
+export function itemOffer(ctx: OfferContext, source: LootSource, prospection: number, rng: Rng, count = 3): string[] {
   const equipped = new Set(Object.values(ctx.equipment));
-  const pool = Object.values(ctx.items.items).filter((it) => it.rarity === rarity && !equipped.has(it.id));
-  const aff = affinity(ctx.cards, ctx.deck, ctx.equipment, ctx.items);
-  const [dom, second] = rankedElements(aff);
-  const sets = setCounts(ctx.equipment, ctx.items);
-  // Pièces d'une panoplie commencée : poids x3, l'offre pousse à la compléter.
-  const weight = (it: ItemDef) => (it.panoplie && sets[it.panoplie] ? 3 : 1);
-
+  const all = Object.values(ctx.items.items).filter((it) => !equipped.has(it.id));
+  const els = deckElements(ctx.cards, ctx.deck);
+  const [dom] = rankedElements(els);
+  const lean = els[dom] >= 3 && rng.next() < 0.5;
   const chosen: ItemDef[] = [];
-  const take = (candidates: ItemDef[], w: (it: ItemDef) => number = weight) => {
-    const it = weightedPick(rng, candidates.filter((x) => !chosen.includes(x)), w);
-    if (it) chosen.push(it);
-    return !!it;
-  };
-
-  if (aff[dom] < PALIERS[0]) {
-    // Découverte : familles différentes
-    const families = rng.shuffle([...new Set(pool.map(family))]);
-    for (const f of families) {
-      if (chosen.length >= count) break;
-      take(pool.filter((it) => family(it) === f));
+  for (let i = 0; i < count; i++) {
+    const rarity = rollRarity(source, prospection, rng);
+    let pool = all.filter((it) => it.rarity === rarity && !chosen.includes(it));
+    const freshSlot = pool.filter((it) => !chosen.some((c) => c.slot === it.slot));
+    if (freshSlot.length) pool = freshSlot;
+    if (lean && i === 0) {
+      const onPath = pool.filter((it) => effectElement(ctx, it) === dom);
+      if (onPath.length) pool = onPath;
     }
-  } else {
-    const twoPaths = aff[second] >= PALIERS[0] && aff[dom] - aff[second] <= 2;
-    take(pool.filter(has(dom)));
-    if (twoPaths) take(pool.filter(has(second)));
-    else if (palierOf(aff[dom]) >= 2 && rng.next() < 0.5) take(pool.filter(has(dom)));
-    else take(pool.filter((it) => has(second)(it) || isMulti(it)));
-    take(pool.filter((it) => !has(dom)(it)));
+    if (!pool.length) pool = all.filter((it) => !chosen.includes(it));
+    if (!pool.length) break;
+    chosen.push(rng.pick(pool));
   }
-  // Compléments si une catégorie était vide
-  while (chosen.length < Math.min(count, pool.length)) take(pool);
-  return chosen.map((it) => it.id);
+  return rng.shuffle(chosen).map((it) => it.id);
 }

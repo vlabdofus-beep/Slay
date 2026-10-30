@@ -1133,688 +1133,1194 @@
    ]
   }
  },
- "sets": {
-  "1": {
-   "n": "Panoplie du Bouftou",
-   "items": [
-    2411,
-    2414,
-    2419,
-    2422,
-    2425,
-    2428
-   ]
+ "catalog": [
+  {
+   "id": 2474,
+   "n": "Chapeau de l'Aventurier",
+   "slot": "coiffe",
+   "l": 9,
+   "icon": 16044,
+   "rarity": "commun",
+   "stat": "terre"
   },
-  "23": {
-   "n": "Panoplie Moskito",
-   "items": [
-    6915,
-    6916,
-    6917,
-    6918
-   ]
-  },
-  "50": {
-   "n": "Panoplie du Tofu",
-   "items": [
-    8108,
-    8109,
-    8111,
-    8112,
-    8113,
-    8114
-   ]
-  },
-  "60": {
-   "n": "Panoplie du Piou Rouge",
-   "items": [
-    8213,
-    8219,
-    8225,
-    8231,
-    8237,
-    8243
-   ]
-  },
-  "72": {
-   "n": "Panoplie du Piou Vert",
-   "items": [
-    8217,
-    8223,
-    8229,
-    8236,
-    8241,
-    8247
-   ]
-  },
-  "150": {
-   "n": "Panoplie de l'intrépide",
-   "items": [
-    10784,
-    10785,
-    10794,
-    10799,
-    10800,
-    10801
-   ]
-  },
-  "364": {
-   "n": "Microplie",
-   "items": [
-    15992,
-    15993,
-    15994,
-    15995
-   ]
-  }
- },
- "items": {
-  "1662": {
-   "id": 1662,
-   "n": "Ambramulette Arakne",
-   "slot": "amulette",
+  {
+   "id": 2070,
+   "n": "Shako",
+   "slot": "coiffe",
    "l": 34,
-   "icon": 1018,
-   "set": null,
-   "els": [
-    "eau",
-    "feu"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+   "icon": 16058,
+   "rarity": "commun",
+   "stat": "feu"
   },
-  "2411": {
+  {
+   "id": 8244,
+   "n": "Chapeau du Piou Bleu",
+   "slot": "coiffe",
+   "l": 11,
+   "icon": 16138,
+   "rarity": "commun",
+   "stat": "eau"
+  },
+  {
+   "id": 704,
+   "n": "Dantgoule",
+   "slot": "coiffe",
+   "l": 36,
+   "icon": 16010,
+   "rarity": "commun",
+   "stat": "air"
+  },
+  {
+   "id": 699,
+   "n": "Le Troma",
+   "slot": "coiffe",
+   "l": 22,
+   "icon": 16005,
+   "rarity": "commun",
+   "stat": "pv"
+  },
+  {
+   "id": 712,
+   "n": "Gulliver",
+   "slot": "coiffe",
+   "l": 32,
+   "icon": 16018,
+   "rarity": "commun",
+   "stat": "armure"
+  },
+  {
    "id": 2411,
    "n": "Coiffe du Bouftou",
    "slot": "coiffe",
    "l": 20,
    "icon": 16041,
-   "set": 1,
-   "els": [
-    "feu",
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
+   "rarity": "commun",
+   "stat": "terre"
   },
-  "2414": {
-   "id": 2414,
-   "n": "Cape Bouffante",
-   "slot": "cape",
-   "l": 20,
-   "icon": 17044,
-   "set": 1,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "2419": {
-   "id": 2419,
-   "n": "Anneau de Bouze le Clerc",
-   "slot": "anneau",
-   "l": 20,
-   "icon": 9044,
-   "set": 1,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "2422": {
-   "id": 2422,
-   "n": "Boufbottes",
-   "slot": "bottes",
-   "l": 20,
-   "icon": 11026,
-   "set": 1,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": true
-  },
-  "2425": {
-   "id": 2425,
-   "n": "Amulette du Bouftou",
-   "slot": "amulette",
-   "l": 20,
-   "icon": 1048,
-   "set": 1,
-   "els": [
-    "feu",
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "2428": {
-   "id": 2428,
-   "n": "Ceinture du Bouftou",
-   "slot": "ceinture",
-   "l": 20,
-   "icon": 10029,
-   "set": 1,
-   "els": [
-    "feu",
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "2438": {
-   "id": 2438,
-   "n": "Boufcoiffe Royale",
+  {
+   "id": 12857,
+   "n": "Coiffe de Redolphe",
    "slot": "coiffe",
-   "l": 32,
-   "icon": 16042,
-   "set": 4,
-   "els": [
-    "feu",
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
+   "l": 85,
+   "icon": 16322,
+   "rarity": "rare",
+   "stat": "terre"
   },
-  "2441": {
-   "id": 2441,
-   "n": "Anneau Royal du Bouftou",
-   "slot": "anneau",
-   "l": 31,
-   "icon": 9046,
-   "set": 4,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": true
+  {
+   "id": 12417,
+   "n": "Chapeau du Vulkain",
+   "slot": "coiffe",
+   "l": 52,
+   "icon": 16314,
+   "rarity": "rare",
+   "stat": "feu"
   },
-  "2442": {
-   "id": 2442,
-   "n": "Boufbottes Royales",
-   "slot": "bottes",
-   "l": 30,
-   "icon": 11030,
-   "set": 4,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": true
+  {
+   "id": 706,
+   "n": "Crystal O'Boul",
+   "slot": "coiffe",
+   "l": 72,
+   "icon": 16012,
+   "rarity": "rare",
+   "stat": "eau"
   },
-  "2445": {
+  {
+   "id": 8147,
+   "n": "Casque du Craqueleur Légendaire",
+   "slot": "coiffe",
+   "l": 80,
+   "icon": 16133,
+   "rarity": "rare",
+   "stat": "air"
+  },
+  {
+   "id": 2097,
+   "n": "Champo",
+   "slot": "coiffe",
+   "l": 43,
+   "icon": 16036,
+   "rarity": "rare",
+   "stat": "pv"
+  },
+  {
+   "id": 7553,
+   "n": "Chapodindo",
+   "slot": "coiffe",
+   "l": 50,
+   "icon": 16118,
+   "rarity": "rare",
+   "stat": "prospection"
+  },
+  {
+   "id": 17098,
+   "n": "Barbe de Zatoïshwan",
+   "slot": "coiffe",
+   "l": 154,
+   "icon": 16473,
+   "rarity": "mythique",
+   "stat": "terre"
+  },
+  {
+   "id": 8451,
+   "n": "Couvre-chef du Rat Blanc",
+   "slot": "coiffe",
+   "l": 105,
+   "icon": 16160,
+   "rarity": "mythique",
+   "stat": "feu"
+  },
+  {
+   "id": 23255,
+   "n": "Kwaflaque",
+   "slot": "coiffe",
+   "l": 128,
+   "icon": 16618,
+   "rarity": "mythique",
+   "stat": "eau"
+  },
+  {
+   "id": 33598,
+   "n": "Masque de Fojumo",
+   "slot": "coiffe",
+   "l": 142,
+   "icon": 16898,
+   "rarity": "mythique",
+   "stat": "air"
+  },
+  {
+   "id": 8828,
+   "n": "Perruque du Poolay",
+   "slot": "coiffe",
+   "l": 142,
+   "icon": 16196,
+   "rarity": "mythique",
+   "stat": "pv"
+  },
+  {
+   "id": 15742,
+   "n": "Casque des égarés",
+   "slot": "coiffe",
+   "l": 200,
+   "icon": 16450,
+   "rarity": "legendaire",
+   "stat": "terre"
+  },
+  {
+   "id": 20465,
+   "n": "Masque Paztek",
+   "slot": "coiffe",
+   "l": 200,
+   "icon": 16554,
+   "rarity": "legendaire",
+   "stat": "feu"
+  },
+  {
+   "id": 14286,
+   "n": "Binocle Airvoyant",
+   "slot": "coiffe",
+   "l": 192,
+   "icon": 16367,
+   "rarity": "legendaire",
+   "stat": "eau"
+  },
+  {
+   "id": 14082,
+   "n": "Masque du Granduk",
+   "slot": "coiffe",
+   "l": 200,
+   "icon": 16364,
+   "rarity": "legendaire",
+   "stat": "air"
+  },
+  {
    "id": 2445,
    "n": "Cape Bouffante Royale",
    "slot": "cape",
    "l": 29,
    "icon": 17046,
-   "set": 4,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+   "rarity": "commun",
+   "stat": "terre"
   },
-  "6915": {
-   "id": 6915,
-   "n": "Mos Kitano",
-   "slot": "anneau",
-   "l": 21,
-   "icon": 9071,
-   "set": 23,
-   "els": [
-    "eau"
-   ],
-   "dmgEls": [
-    "eau"
-   ],
-   "vita": false,
-   "genericDmg": false
-  },
-  "6916": {
-   "id": 6916,
-   "n": "Sac du Petit Moskito",
+  {
+   "id": 6927,
+   "n": "Cape du Prespic",
    "slot": "cape",
-   "l": 16,
-   "icon": 81059,
-   "set": 23,
-   "els": [
-    "eau"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
+   "l": 37,
+   "icon": 17075,
+   "rarity": "commun",
+   "stat": "feu"
   },
-  "6917": {
-   "id": 6917,
-   "n": "Moskitogalurette",
-   "slot": "coiffe",
-   "l": 15,
-   "icon": 16080,
-   "set": 23,
-   "els": [
-    "eau"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "6918": {
-   "id": 6918,
-   "n": "Amulette du Moskito",
-   "slot": "amulette",
-   "l": 15,
-   "icon": 1075,
-   "set": 23,
-   "els": [
-    "eau"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "8108": {
-   "id": 8108,
-   "n": "Amulette du Tofu",
-   "slot": "amulette",
-   "l": 22,
-   "icon": 1095,
-   "set": 50,
-   "els": [
-    "air"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8109": {
-   "id": 8109,
-   "n": "Anneau du Tofu",
-   "slot": "anneau",
-   "l": 21,
-   "icon": 9100,
-   "set": 50,
-   "els": [
-    "air"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8111": {
-   "id": 8111,
-   "n": "Pantoufles du Tofu",
-   "slot": "bottes",
-   "l": 23,
-   "icon": 11073,
-   "set": 50,
-   "els": [
-    "air",
-    "feu"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "8112": {
-   "id": 8112,
-   "n": "Cape du Tofu",
+  {
+   "id": 937,
+   "n": "Cape Bleutée",
    "slot": "cape",
-   "l": 26,
-   "icon": 17097,
-   "set": 50,
-   "els": [],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": true
+   "l": 7,
+   "icon": 17192,
+   "rarity": "commun",
+   "stat": "eau"
   },
-  "8113": {
-   "id": 8113,
-   "n": "Ceinture du Tofu",
-   "slot": "ceinture",
-   "l": 22,
-   "icon": 10089,
-   "set": 50,
-   "els": [
-    "air",
-    "feu"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8114": {
-   "id": 8114,
-   "n": "Kaskofu",
-   "slot": "coiffe",
-   "l": 23,
-   "icon": 16128,
-   "set": 50,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "8213": {
-   "id": 8213,
-   "n": "Amulette du Piou Rouge",
-   "slot": "amulette",
-   "l": 11,
-   "icon": 1100,
-   "set": 60,
-   "els": [
-    "feu"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8217": {
-   "id": 8217,
-   "n": "Amulette du Piou Vert",
-   "slot": "amulette",
-   "l": 12,
-   "icon": 1103,
-   "set": 72,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [
-    "terre"
-   ],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8219": {
-   "id": 8219,
-   "n": "Anneau du Piou Rouge",
-   "slot": "anneau",
-   "l": 10,
-   "icon": 9106,
-   "set": 60,
-   "els": [
-    "feu"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "8223": {
-   "id": 8223,
-   "n": "Anneau du Piou Vert",
-   "slot": "anneau",
-   "l": 11,
-   "icon": 9109,
-   "set": 72,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8225": {
-   "id": 8225,
-   "n": "Sandales du Piou Rouge",
-   "slot": "bottes",
-   "l": 9,
-   "icon": 11078,
-   "set": 60,
-   "els": [
-    "feu"
-   ],
-   "dmgEls": [
-    "feu"
-   ],
-   "vita": false,
-   "genericDmg": false
-  },
-  "8229": {
-   "id": 8229,
-   "n": "Sandales du Piou Vert",
-   "slot": "bottes",
-   "l": 10,
-   "icon": 11081,
-   "set": 72,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "8231": {
-   "id": 8231,
-   "n": "Cape du Piou Rouge",
+  {
+   "id": 2382,
+   "n": "Cape Maimpa",
    "slot": "cape",
-   "l": 8,
-   "icon": 17103,
-   "set": 60,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+   "l": 36,
+   "icon": 17037,
+   "rarity": "commun",
+   "stat": "air"
   },
-  "8236": {
+  {
+   "id": 1021,
+   "n": "Ailes en bois",
+   "slot": "cape",
+   "l": 20,
+   "icon": 17022,
+   "rarity": "commun",
+   "stat": "pv"
+  },
+  {
+   "id": 759,
+   "n": "Cape du Poolay Chogrelotant",
+   "slot": "cape",
+   "l": 33,
+   "icon": 17003,
+   "rarity": "commun",
+   "stat": "armure"
+  },
+  {
    "id": 8236,
    "n": "Cape du Piou Vert",
    "slot": "cape",
    "l": 9,
    "icon": 17105,
-   "set": 72,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [
-    "terre"
-   ],
-   "vita": false,
-   "genericDmg": false
+   "rarity": "commun",
+   "stat": "terre"
   },
-  "8237": {
-   "id": 8237,
-   "n": "Ceinture du Piou Rouge",
-   "slot": "ceinture",
-   "l": 7,
-   "icon": 10096,
-   "set": 60,
-   "els": [
-    "feu"
-   ],
-   "dmgEls": [
-    "feu"
-   ],
-   "vita": true,
-   "genericDmg": false
+  {
+   "id": 7231,
+   "n": "Cape Terrdala",
+   "slot": "cape",
+   "l": 63,
+   "icon": 17112,
+   "rarity": "rare",
+   "stat": "terre"
   },
-  "8241": {
-   "id": 8241,
-   "n": "Ceinture du Piou Vert",
-   "slot": "ceinture",
-   "l": 8,
-   "icon": 10099,
-   "set": 72,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+  {
+   "id": 19088,
+   "n": "Cape Riktus",
+   "slot": "cape",
+   "l": 90,
+   "icon": 17387,
+   "rarity": "rare",
+   "stat": "feu"
   },
-  "8243": {
-   "id": 8243,
-   "n": "Chapeau du Piou Rouge",
-   "slot": "coiffe",
-   "l": 12,
-   "icon": 16137,
-   "set": 60,
-   "els": [
-    "feu"
-   ],
-   "dmgEls": [
-    "feu"
-   ],
-   "vita": false,
-   "genericDmg": false
+  {
+   "id": 2534,
+   "n": "Kwape de Glace",
+   "slot": "cape",
+   "l": 41,
+   "icon": 17053,
+   "rarity": "rare",
+   "stat": "eau"
   },
-  "8247": {
-   "id": 8247,
-   "n": "Chapeau du Piou Vert",
-   "slot": "coiffe",
-   "l": 7,
-   "icon": 16140,
-   "set": 72,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [
-    "terre"
-   ],
-   "vita": true,
-   "genericDmg": false
+  {
+   "id": 6943,
+   "n": "Scaracape Blanche",
+   "slot": "cape",
+   "l": 45,
+   "icon": 17071,
+   "rarity": "rare",
+   "stat": "air"
   },
-  "10784": {
-   "id": 10784,
-   "n": "Amulette de l'intrépide",
+  {
+   "id": 7011,
+   "n": "Cape du Désir O'Boul",
+   "slot": "cape",
+   "l": 67,
+   "icon": 17083,
+   "rarity": "rare",
+   "stat": "pv"
+  },
+  {
+   "id": 2446,
+   "n": "Gelocape",
+   "slot": "cape",
+   "l": 60,
+   "icon": 17047,
+   "rarity": "rare",
+   "stat": "prospection"
+  },
+  {
+   "id": 8443,
+   "n": "Cape du Rat Noir",
+   "slot": "cape",
+   "l": 105,
+   "icon": 17123,
+   "rarity": "mythique",
+   "stat": "terre"
+  },
+  {
+   "id": 17093,
+   "n": "Cape de Moon",
+   "slot": "cape",
+   "l": 103,
+   "icon": 17348,
+   "rarity": "mythique",
+   "stat": "feu"
+  },
+  {
+   "id": 12087,
+   "n": "Cape Mouthante",
+   "slot": "cape",
+   "l": 124,
+   "icon": 17224,
+   "rarity": "mythique",
+   "stat": "eau"
+  },
+  {
+   "id": 15359,
+   "n": "Gruchape",
+   "slot": "cape",
+   "l": 130,
+   "icon": 17303,
+   "rarity": "mythique",
+   "stat": "air"
+  },
+  {
+   "id": 32207,
+   "n": "Cape de Katigrou",
+   "slot": "cape",
+   "l": 144,
+   "icon": 17667,
+   "rarity": "mythique",
+   "stat": "pv"
+  },
+  {
+   "id": 18588,
+   "n": "Capikténia",
+   "slot": "cape",
+   "l": 171,
+   "icon": 17379,
+   "rarity": "legendaire",
+   "stat": "terre"
+  },
+  {
+   "id": 17097,
+   "n": "Cape du Bretteur Céleste",
+   "slot": "cape",
+   "l": 162,
+   "icon": 17349,
+   "rarity": "legendaire",
+   "stat": "feu"
+  },
+  {
+   "id": 19253,
+   "n": "Cape de l'Œil Attentif",
+   "slot": "cape",
+   "l": 200,
+   "icon": 17394,
+   "rarity": "legendaire",
+   "stat": "eau"
+  },
+  {
+   "id": 19601,
+   "n": "Cape de Crânonier",
+   "slot": "cape",
+   "l": 200,
+   "icon": 17401,
+   "rarity": "legendaire",
+   "stat": "air"
+  },
+  {
+   "id": 458,
+   "n": "Amulette du Chafer",
    "slot": "amulette",
-   "l": 1,
-   "icon": 1163,
-   "set": 150,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+   "l": 19,
+   "icon": 1003,
+   "rarity": "commun",
+   "stat": "terre"
   },
-  "10785": {
-   "id": 10785,
-   "n": "Anneau de l'intrépide",
+  {
+   "id": 157,
+   "n": "La Gougnole",
+   "slot": "amulette",
+   "l": 17,
+   "icon": 1007,
+   "rarity": "commun",
+   "stat": "feu"
+  },
+  {
+   "id": 280,
+   "n": "Collier de l'Arc en Ciel",
+   "slot": "amulette",
+   "l": 9,
+   "icon": 1011,
+   "rarity": "commun",
+   "stat": "eau"
+  },
+  {
+   "id": 10980,
+   "n": "Amulette d'Hectaupe",
+   "slot": "amulette",
+   "l": 32,
+   "icon": 1159,
+   "rarity": "commun",
+   "stat": "air"
+  },
+  {
+   "id": 8218,
+   "n": "Amulette du Piou Rose",
+   "slot": "amulette",
+   "l": 8,
+   "icon": 1105,
+   "rarity": "commun",
+   "stat": "pv"
+  },
+  {
+   "id": 6723,
+   "n": "Amulette de l'Homme Ours",
+   "slot": "amulette",
+   "l": 20,
+   "icon": 1074,
+   "rarity": "commun",
+   "stat": "armure"
+  },
+  {
+   "id": 1481,
+   "n": "Entente",
+   "slot": "amulette",
+   "l": 23,
+   "icon": 1011,
+   "rarity": "commun",
+   "stat": "terre"
+  },
+  {
+   "id": 9150,
+   "n": "Amublop Reinette",
+   "slot": "amulette",
+   "l": 50,
+   "icon": 1129,
+   "rarity": "rare",
+   "stat": "terre"
+  },
+  {
+   "id": 2424,
+   "n": "Amukwak de Flammes",
+   "slot": "amulette",
+   "l": 42,
+   "icon": 1047,
+   "rarity": "rare",
+   "stat": "feu"
+  },
+  {
+   "id": 10836,
+   "n": "Boufbamu",
+   "slot": "amulette",
+   "l": 64,
+   "icon": 1158,
+   "rarity": "rare",
+   "stat": "eau"
+  },
+  {
+   "id": 9155,
+   "n": "Amublop Coco Royale",
+   "slot": "amulette",
+   "l": 80,
+   "icon": 1134,
+   "rarity": "rare",
+   "stat": "air"
+  },
+  {
+   "id": 12069,
+   "n": "Amulette de Nelween",
+   "slot": "amulette",
+   "l": 74,
+   "icon": 1187,
+   "rarity": "rare",
+   "stat": "pv"
+  },
+  {
+   "id": 13170,
+   "n": "Amulette de Pwâk",
+   "slot": "amulette",
+   "l": 53,
+   "icon": 1220,
+   "rarity": "rare",
+   "stat": "prospection"
+  },
+  {
+   "id": 12095,
+   "n": "Amulette de Cantile",
+   "slot": "amulette",
+   "l": 156,
+   "icon": 1193,
+   "rarity": "mythique",
+   "stat": "terre"
+  },
+  {
+   "id": 17094,
+   "n": "Amulette de Moon",
+   "slot": "amulette",
+   "l": 102,
+   "icon": 1270,
+   "rarity": "mythique",
+   "stat": "feu"
+  },
+  {
+   "id": 6461,
+   "n": "La Feuille de Printemps",
+   "slot": "amulette",
+   "l": 123,
+   "icon": 1062,
+   "rarity": "mythique",
+   "stat": "eau"
+  },
+  {
+   "id": 12089,
+   "n": "Amulette de Frigostine",
+   "slot": "amulette",
+   "l": 147,
+   "icon": 1192,
+   "rarity": "mythique",
+   "stat": "air"
+  },
+  {
+   "id": 15064,
+   "n": "Amulette de l'Orfélin",
+   "slot": "amulette",
+   "l": 157,
+   "icon": 1251,
+   "rarity": "mythique",
+   "stat": "pv"
+  },
+  {
+   "id": 14281,
+   "n": "Phylactère Mic",
+   "slot": "amulette",
+   "l": 197,
+   "icon": 1240,
+   "rarity": "legendaire",
+   "stat": "terre"
+  },
+  {
+   "id": 14090,
+   "n": "Amulette Cryochrone",
+   "slot": "amulette",
+   "l": 200,
+   "icon": 1233,
+   "rarity": "legendaire",
+   "stat": "feu"
+  },
+  {
+   "id": 18004,
+   "n": "Amulette de Shokkoth",
+   "slot": "amulette",
+   "l": 200,
+   "icon": 1286,
+   "rarity": "legendaire",
+   "stat": "eau"
+  },
+  {
+   "id": 17581,
+   "n": "Collier du Valet Veinard",
+   "slot": "amulette",
+   "l": 200,
+   "icon": 1278,
+   "rarity": "legendaire",
+   "stat": "air"
+  },
+  {
+   "id": 767,
+   "n": "Gantie Royal",
+   "slot": "anneau",
+   "l": 6,
+   "icon": 9008,
+   "rarity": "commun",
+   "stat": "terre"
+  },
+  {
+   "id": 12658,
+   "n": "Cosmobracelet",
+   "slot": "anneau",
+   "l": 39,
+   "icon": 9242,
+   "rarity": "commun",
+   "stat": "feu"
+  },
+  {
+   "id": 1631,
+   "n": "Artefact Eau",
    "slot": "anneau",
    "l": 1,
-   "icon": 9190,
-   "set": 150,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+   "icon": 9021,
+   "rarity": "commun",
+   "stat": "eau"
   },
-  "10794": {
-   "id": 10794,
-   "n": "Bottes de l'intrépide",
+  {
+   "id": 6791,
+   "n": "Anneau Champêtre",
+   "slot": "anneau",
+   "l": 15,
+   "icon": 9065,
+   "rarity": "commun",
+   "stat": "air"
+  },
+  {
+   "id": 2419,
+   "n": "Anneau de Bouze le Clerc",
+   "slot": "anneau",
+   "l": 20,
+   "icon": 9044,
+   "rarity": "commun",
+   "stat": "pv"
+  },
+  {
+   "id": 1657,
+   "n": "Fécaliseur du Guerrier",
+   "slot": "anneau",
+   "l": 26,
+   "icon": 9041,
+   "rarity": "commun",
+   "stat": "armure"
+  },
+  {
+   "id": 8223,
+   "n": "Anneau du Piou Vert",
+   "slot": "anneau",
+   "l": 11,
+   "icon": 9109,
+   "rarity": "commun",
+   "stat": "terre"
+  },
+  {
+   "id": 6956,
+   "n": "Anneau du Mulou",
+   "slot": "anneau",
+   "l": 51,
+   "icon": 9103,
+   "rarity": "rare",
+   "stat": "terre"
+  },
+  {
+   "id": 17457,
+   "n": "Anneau Welle",
+   "slot": "anneau",
+   "l": 59,
+   "icon": 9311,
+   "rarity": "rare",
+   "stat": "feu"
+  },
+  {
+   "id": 14496,
+   "n": "Bracelet du Blanc Pa Wabbit",
+   "slot": "anneau",
+   "l": 84,
+   "icon": 9274,
+   "rarity": "rare",
+   "stat": "eau"
+  },
+  {
+   "id": 10171,
+   "n": "Mitaines de Chisp",
+   "slot": "anneau",
+   "l": 44,
+   "icon": 9173,
+   "rarity": "rare",
+   "stat": "air"
+  },
+  {
+   "id": 33571,
+   "n": "Bague des Scalptaras",
+   "slot": "anneau",
+   "l": 82,
+   "icon": 9414,
+   "rarity": "rare",
+   "stat": "pv"
+  },
+  {
+   "id": 7131,
+   "n": "Anneau Piaume",
+   "slot": "anneau",
+   "l": 56,
+   "icon": 9090,
+   "rarity": "rare",
+   "stat": "armure"
+  },
+  {
+   "id": 12090,
+   "n": "Anneau de Frigostine",
+   "slot": "anneau",
+   "l": 144,
+   "icon": 9222,
+   "rarity": "mythique",
+   "stat": "terre"
+  },
+  {
+   "id": 23269,
+   "n": "Alliance des Firefoux",
+   "slot": "anneau",
+   "l": 136,
+   "icon": 9344,
+   "rarity": "mythique",
+   "stat": "feu"
+  },
+  {
+   "id": 25753,
+   "n": "Anneau du rat bontarien",
+   "slot": "anneau",
+   "l": 110,
+   "icon": 9362,
+   "rarity": "mythique",
+   "stat": "eau"
+  },
+  {
+   "id": 14009,
+   "n": "Willkillsano",
+   "slot": "anneau",
+   "l": 150,
+   "icon": 9263,
+   "rarity": "mythique",
+   "stat": "air"
+  },
+  {
+   "id": 16004,
+   "n": "Anneau Tranchant",
+   "slot": "anneau",
+   "l": 129,
+   "icon": 9304,
+   "rarity": "mythique",
+   "stat": "pv"
+  },
+  {
+   "id": 13629,
+   "n": "Anneau d'Henual",
+   "slot": "anneau",
+   "l": 196,
+   "icon": 9256,
+   "rarity": "legendaire",
+   "stat": "terre"
+  },
+  {
+   "id": 23622,
+   "n": "Anneau de Koumiho",
+   "slot": "anneau",
+   "l": 164,
+   "icon": 9346,
+   "rarity": "legendaire",
+   "stat": "feu"
+  },
+  {
+   "id": 26007,
+   "n": "Ceste de Ravageur",
+   "slot": "anneau",
+   "l": 200,
+   "icon": 9360,
+   "rarity": "legendaire",
+   "stat": "eau"
+  },
+  {
+   "id": 13124,
+   "n": "Anneau d'Allister",
+   "slot": "anneau",
+   "l": 197,
+   "icon": 9248,
+   "rarity": "legendaire",
+   "stat": "air"
+  },
+  {
+   "id": 356,
+   "n": "Ceinture d'Endurance",
+   "slot": "ceinture",
+   "l": 27,
+   "icon": 10003,
+   "rarity": "commun",
+   "stat": "terre"
+  },
+  {
+   "id": 2233,
+   "n": "La Croqueuse",
+   "slot": "ceinture",
+   "l": 28,
+   "icon": 10020,
+   "rarity": "commun",
+   "stat": "feu"
+  },
+  {
+   "id": 17302,
+   "n": "Ceinture des Pamous",
+   "slot": "ceinture",
+   "l": 30,
+   "icon": 10299,
+   "rarity": "commun",
+   "stat": "eau"
+  },
+  {
+   "id": 8257,
+   "n": "Ceinture en Mousse",
+   "slot": "ceinture",
+   "l": 20,
+   "icon": 10102,
+   "rarity": "commun",
+   "stat": "air"
+  },
+  {
+   "id": 1720,
+   "n": "Puissance de Crocoburio",
+   "slot": "ceinture",
+   "l": 34,
+   "icon": 10018,
+   "rarity": "commun",
+   "stat": "pv"
+  },
+  {
+   "id": 15241,
+   "n": "Kamature",
+   "slot": "ceinture",
+   "l": 1,
+   "icon": 10267,
+   "rarity": "commun",
+   "stat": "prospection"
+  },
+  {
+   "id": 8238,
+   "n": "Ceinture du Piou Bleu",
+   "slot": "ceinture",
+   "l": 12,
+   "icon": 10097,
+   "rarity": "commun",
+   "stat": "armure"
+  },
+  {
+   "id": 2809,
+   "n": "Ceinture Chafeuse",
+   "slot": "ceinture",
+   "l": 49,
+   "icon": 10053,
+   "rarity": "rare",
+   "stat": "terre"
+  },
+  {
+   "id": 10849,
+   "n": "Ceinture d'Hulkrap",
+   "slot": "ceinture",
+   "l": 51,
+   "icon": 10169,
+   "rarity": "rare",
+   "stat": "feu"
+  },
+  {
+   "id": 11375,
+   "n": "Slipapier",
+   "slot": "ceinture",
+   "l": 61,
+   "icon": 10188,
+   "rarity": "rare",
+   "stat": "eau"
+  },
+  {
+   "id": 12040,
+   "n": "Ceinture d'Hichète",
+   "slot": "ceinture",
+   "l": 56,
+   "icon": 10207,
+   "rarity": "rare",
+   "stat": "air"
+  },
+  {
+   "id": 14493,
+   "n": "Ceinture du Wa Wobot",
+   "slot": "ceinture",
+   "l": 83,
+   "icon": 10253,
+   "rarity": "rare",
+   "stat": "pv"
+  },
+  {
+   "id": 8008,
+   "n": "Ceinture du Koalak",
+   "slot": "ceinture",
+   "l": 60,
+   "icon": 10087,
+   "rarity": "rare",
+   "stat": "prospection"
+  },
+  {
+   "id": 15208,
+   "n": "Ceinture Précieuse",
+   "slot": "ceinture",
+   "l": 101,
+   "icon": 10271,
+   "rarity": "mythique",
+   "stat": "terre"
+  },
+  {
+   "id": 15357,
+   "n": "Ceintruche",
+   "slot": "ceinture",
+   "l": 128,
+   "icon": 10273,
+   "rarity": "mythique",
+   "stat": "feu"
+  },
+  {
+   "id": 13328,
+   "n": "Ceintrouille",
+   "slot": "ceinture",
+   "l": 106,
+   "icon": 10233,
+   "rarity": "mythique",
+   "stat": "eau"
+  },
+  {
+   "id": 15063,
+   "n": "Ceinture de l'Orfélin",
+   "slot": "ceinture",
+   "l": 158,
+   "icon": 10265,
+   "rarity": "mythique",
+   "stat": "air"
+  },
+  {
+   "id": 33584,
+   "n": "Sangle de Carlita",
+   "slot": "ceinture",
+   "l": 104,
+   "icon": 10368,
+   "rarity": "mythique",
+   "stat": "pv"
+  },
+  {
+   "id": 26023,
+   "n": "Bois de la Liche",
+   "slot": "ceinture",
+   "l": 200,
+   "icon": 10350,
+   "rarity": "legendaire",
+   "stat": "terre"
+  },
+  {
+   "id": 15771,
+   "n": "Ceinture de Soissanth",
+   "slot": "ceinture",
+   "l": 171,
+   "icon": 10286,
+   "rarity": "legendaire",
+   "stat": "feu"
+  },
+  {
+   "id": 18006,
+   "n": "Poulpagne",
+   "slot": "ceinture",
+   "l": 200,
+   "icon": 10313,
+   "rarity": "legendaire",
+   "stat": "eau"
+  },
+  {
+   "id": 14098,
+   "n": "Ceinture du Nocturlabe",
+   "slot": "ceinture",
+   "l": 200,
+   "icon": 10245,
+   "rarity": "legendaire",
+   "stat": "air"
+  },
+  {
+   "id": 8341,
+   "n": "Bottananas",
    "slot": "bottes",
    "l": 1,
-   "icon": 11155,
-   "set": 150,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+   "icon": 11090,
+   "rarity": "commun",
+   "stat": "terre"
   },
-  "10799": {
-   "id": 10799,
-   "n": "Ceinture de l'intrépide",
-   "slot": "ceinture",
-   "l": 1,
-   "icon": 10161,
-   "set": 150,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "10800": {
-   "id": 10800,
-   "n": "Cape de l'intrépide",
-   "slot": "cape",
-   "l": 1,
-   "icon": 17201,
-   "set": 150,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "10801": {
-   "id": 10801,
-   "n": "Chapeau de l'intrépide",
-   "slot": "coiffe",
-   "l": 1,
-   "icon": 16264,
-   "set": 150,
-   "els": [],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
-  },
-  "15992": {
-   "id": 15992,
-   "n": "Anneau Bille",
-   "slot": "anneau",
-   "l": 36,
-   "icon": 9301,
-   "set": 364,
-   "els": [
-    "air"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": true
-  },
-  "15993": {
-   "id": 15993,
-   "n": "Cape Lumette",
-   "slot": "cape",
-   "l": 38,
-   "icon": 17337,
-   "set": 364,
-   "els": [
-    "feu"
-   ],
-   "dmgEls": [],
-   "vita": false,
-   "genericDmg": true
-  },
-  "15994": {
-   "id": 15994,
-   "n": "Casque Noix",
-   "slot": "coiffe",
+  {
+   "id": 17496,
+   "n": "Bottes du Monarque",
+   "slot": "bottes",
    "l": 40,
-   "icon": 16457,
-   "set": 364,
-   "els": [
-    "eau"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": true
+   "icon": 11301,
+   "rarity": "commun",
+   "stat": "feu"
   },
-  "15995": {
-   "id": 15995,
-   "n": "Amulette Perle",
-   "slot": "amulette",
-   "l": 37,
-   "icon": 1266,
-   "set": 364,
-   "els": [
-    "terre"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": true
+  {
+   "id": 298,
+   "n": "Sandales Tofuesques",
+   "slot": "bottes",
+   "l": 3,
+   "icon": 11004,
+   "rarity": "commun",
+   "stat": "eau"
   },
-  "17506": {
-   "id": 17506,
-   "n": "Ceinture du Garde Royal",
-   "slot": "ceinture",
-   "l": 38,
-   "icon": 10305,
-   "set": 888,
-   "els": [
-    "air"
-   ],
-   "dmgEls": [],
-   "vita": true,
-   "genericDmg": false
+  {
+   "id": 924,
+   "n": "Puissantes Bottes de Klime",
+   "slot": "bottes",
+   "l": 12,
+   "icon": 11009,
+   "rarity": "commun",
+   "stat": "air"
+  },
+  {
+   "id": 11082,
+   "n": "Bottes de Boufbowl",
+   "slot": "bottes",
+   "l": 28,
+   "icon": 11157,
+   "rarity": "commun",
+   "stat": "pv"
+  },
+  {
+   "id": 15240,
+   "n": "Kamatongues",
+   "slot": "bottes",
+   "l": 1,
+   "icon": 11257,
+   "rarity": "commun",
+   "stat": "prospection"
+  },
+  {
+   "id": 17733,
+   "n": "Bottes Dragocourse",
+   "slot": "bottes",
+   "l": 40,
+   "icon": 11309,
+   "rarity": "commun",
+   "stat": "armure"
+  },
+  {
+   "id": 2063,
+   "n": "Bottes Volatiles",
+   "slot": "bottes",
+   "l": 41,
+   "icon": 11017,
+   "rarity": "rare",
+   "stat": "terre"
+  },
+  {
+   "id": 15017,
+   "n": "Bottes Donion",
+   "slot": "bottes",
+   "l": 41,
+   "icon": 11254,
+   "rarity": "rare",
+   "stat": "feu"
+  },
+  {
+   "id": 20850,
+   "n": "Mawabottes",
+   "slot": "bottes",
+   "l": 57,
+   "icon": 11340,
+   "rarity": "rare",
+   "stat": "eau"
+  },
+  {
+   "id": 10061,
+   "n": "Bottes du Vampyre",
+   "slot": "bottes",
+   "l": 41,
+   "icon": 11139,
+   "rarity": "rare",
+   "stat": "air"
+  },
+  {
+   "id": 8278,
+   "n": "Mules du Dragon Cochon",
+   "slot": "bottes",
+   "l": 94,
+   "icon": 11087,
+   "rarity": "rare",
+   "stat": "pv"
+  },
+  {
+   "id": 17213,
+   "n": "Bottes des 1001 Griffes",
+   "slot": "bottes",
+   "l": 60,
+   "icon": 11290,
+   "rarity": "rare",
+   "stat": "prospection"
+  },
+  {
+   "id": 32206,
+   "n": "Palmes de Monsieur Pingouin",
+   "slot": "bottes",
+   "l": 138,
+   "icon": 11383,
+   "rarity": "mythique",
+   "stat": "terre"
+  },
+  {
+   "id": 6744,
+   "n": "Fourbabottes",
+   "slot": "bottes",
+   "l": 104,
+   "icon": 11047,
+   "rarity": "mythique",
+   "stat": "feu"
+  },
+  {
+   "id": 12412,
+   "n": "Bottes de Grozilla",
+   "slot": "bottes",
+   "l": 155,
+   "icon": 11204,
+   "rarity": "mythique",
+   "stat": "eau"
+  },
+  {
+   "id": 33599,
+   "n": "Geta de Fojumo",
+   "slot": "bottes",
+   "l": 144,
+   "icon": 11387,
+   "rarity": "mythique",
+   "stat": "air"
+  },
+  {
+   "id": 15360,
+   "n": "Gruchaussures",
+   "slot": "bottes",
+   "l": 127,
+   "icon": 11265,
+   "rarity": "mythique",
+   "stat": "pv"
+  },
+  {
+   "id": 15428,
+   "n": "Bottes de la Cour Sombre",
+   "slot": "bottes",
+   "l": 200,
+   "icon": 11268,
+   "rarity": "legendaire",
+   "stat": "terre"
+  },
+  {
+   "id": 14933,
+   "n": "Bottes Refois",
+   "slot": "bottes",
+   "l": 198,
+   "icon": 11253,
+   "rarity": "legendaire",
+   "stat": "feu"
+  },
+  {
+   "id": 10438,
+   "n": "Les Maidartes",
+   "slot": "bottes",
+   "l": 161,
+   "icon": 11169,
+   "rarity": "legendaire",
+   "stat": "eau"
+  },
+  {
+   "id": 12107,
+   "n": "Bottes de Boréale",
+   "slot": "bottes",
+   "l": 189,
+   "icon": 11192,
+   "rarity": "legendaire",
+   "stat": "air"
   }
- }
+ ]
 }

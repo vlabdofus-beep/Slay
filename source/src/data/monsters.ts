@@ -93,6 +93,7 @@ export const MONSTERS: MonsterDef[] = [
     coup_de_tete: { name: 'Coup de tête', effects: [hit(16, 'terre')] },
   }, cycle('pietinement', 'appel_troupeau', 'coup_de_tete')),
 ];
+for (const m of MONSTERS) if (m.id === 'bouftou_royal') m.boss = true;
 
 export type EncounterTier = 'faible' | 'normal' | 'elite' | 'boss';
 

@@ -1,12 +1,13 @@
 // Une partie (run) : carte de l'acte, combats, récompenses, Zaap. Aucune dépendance au DOM :
 // l'interface ne fait qu'appeler ces méthodes et afficher l'état.
 import { Combat } from '../core/combat.ts';
-import { computeLoadout, type Equipment, type Loadout } from '../core/loadout.ts';
+import { rollEffect } from '../core/effects.ts';
+import { computeLoadout, type EffectTable, type Equipment, type Loadout } from '../core/loadout.ts';
 import { generateMap, type ActMap, type MapNode } from '../core/map.ts';
-import { itemOffer } from '../core/offers.ts';
+import { itemOffer, lootChance, type LootSource } from '../core/offers.ts';
 import { Rng } from '../core/rng.ts';
-import type { CardInstance, ClassId, Element, ItemRarity } from '../core/types.ts';
-import { ITEMS } from '../data/items.ts';
+import type { CardInstance, ClassId } from '../core/types.ts';
+import { ITEMS, ITEM_LIST } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY, newCard, rewardPool, starterDeck } from '../data/library.ts';
 import { ACT1_SCALE, ENCOUNTERS, encountersOfTier, type EncounterTier } from '../data/monsters.ts';
 
@@ -16,8 +17,11 @@ export interface Reward {
   cards: string[];
   cardTaken: string | null;
   items: string[];
-  itemRarity: ItemRarity | null;
+  /** Source du butin (élite : objets plus rares), null si le combat n'a pas donné d'objet. */
+  itemSource: LootSource | null;
   itemTaken: string | null;
+  /** Prospection au moment du butin. */
+  prospection: number;
 }
 
 export const ZAAP_HEAL = 0.3;
@@ -43,7 +47,14 @@ export class Run {
   encounter: string | null = null;
   reward: Reward | null = null;
   zaapUsed = false;
-  hallwayFights = 0;
+  /** Effet de chaque objet pour cette run (tiré à la création : un même objet garde son effet toute la run). */
+  readonly itemEffects: EffectTable = {};
+  /** Prospection gagnée pour le reste de la run, et pour le prochain combat seulement. */
+  prospRun = 0;
+  prospNext = 0;
+  /** Effets hors équipement (outils de simulation : chiffrage d'un effet isolé). */
+  extraEffects: import('../core/effects.ts').ItemEffect[] = [];
+  extraProspection = 0;
   stats = { combats: 0, elites: 0, floor: 0 };
   /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
   readonly encounters: Record<string, string> = {};
@@ -58,6 +69,8 @@ export class Run {
     this.baseMaxHp = CLASS_START_HP[classe] as number;
     this.hp = this.baseMaxHp;
     this.assignEncounters(new Rng(seed ^ 0x2c1b3c6d));
+    const fxRng = new Rng(seed ^ 0x7f4a7c15);
+    for (const it of ITEM_LIST) this.itemEffects[it.id] = rollEffect(it.rarity, fxRng);
   }
 
   /** Étage par étage, chaque case de combat reçoit une rencontre différente de celles de ses parents. */
@@ -80,7 +93,12 @@ export class Run {
   // ───────────── lecture ─────────────
 
   loadout(): Loadout {
-    return computeLoadout(LIBRARY, this.deck, this.equipment, ITEMS);
+    return computeLoadout(this.equipment, ITEMS, this.itemEffects);
+  }
+
+  /** Prospection actuelle : objets + gains de la run + bonus du prochain combat. */
+  prospection(): number {
+    return this.loadout().prospection + this.prospRun + this.prospNext + this.extraProspection;
   }
 
   get maxHp(): number {
@@ -116,7 +134,7 @@ export class Run {
     this.encounter = encounter;
     this.combat = new Combat(
       LIBRARY, this.deck,
-      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, passives: l.passives, actives: l.actives },
+      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects] },
       ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), ACT1_SCALE,
     );
     this.phase = 'combat';
@@ -141,17 +159,27 @@ export class Run {
       return;
     }
     if (type === 'elite') this.stats.elites++;
-    let itemRarity: ItemRarity | null = null;
-    if (type === 'elite') itemRarity = 'rare';
-    else if (++this.hallwayFights % 2 === 0) itemRarity = 'commun';
+    // Butin : la prospection de ce combat inclut le bonus gagné au combat précédent ;
+    // les gains de ce combat-ci valent pour la suite.
+    const prosp = this.prospection();
+    const gained = c.result().prospection;
+    this.prospRun += gained.run;
+    this.prospNext = gained.next;
+    const source: LootSource = type === 'elite' ? 'elite' : 'normal';
+    const drops = this.rng.next() < lootChance(source, prosp);
     this.reward = {
       cards: this.cardOffer(type === 'elite' ? 0.5 : 0.25),
       cardTaken: null,
-      items: itemRarity ? itemOffer({ cards: LIBRARY, items: ITEMS, deck: this.deck, equipment: this.equipment }, itemRarity, this.rng) : [],
-      itemRarity,
+      items: drops ? itemOffer(this.offerContext(), source, prosp, this.rng) : [],
+      itemSource: drops ? source : null,
       itemTaken: null,
+      prospection: prosp,
     };
     this.phase = 'reward';
+  }
+
+  offerContext() {
+    return { cards: LIBRARY, items: ITEMS, deck: this.deck, equipment: this.equipment, table: this.itemEffects };
   }
 
   private cardOffer(rareChance: number): string[] {
@@ -216,16 +244,6 @@ export class Run {
     if (!card || card.upgraded) throw new Error('Carte non améliorable');
     this.useZaap();
     card.upgraded = true;
-  }
-
-  /** Forgemagie : change l'élément d'une carte (et de ses dégâts). */
-  zaapForge(uid: number, element: Element): void {
-    const card = this.deck.find((c) => c.uid === uid);
-    if (!card) throw new Error('Carte introuvable');
-    const current = card.element ?? LIBRARY.cards[card.id].element;
-    if (current === element) throw new Error('La carte a déjà cet élément');
-    this.useZaap();
-    card.element = element;
   }
 
   leaveZaap(): void {

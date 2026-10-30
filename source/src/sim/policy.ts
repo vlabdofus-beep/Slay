@@ -7,18 +7,14 @@ interface Playable {
   effects: Effect[];
   mode: CardTarget;
   cost: number;
-  /** null = actif d'item */
-  element: Element | null;
-  type: CardType | null;
+  element: Element;
+  type: CardType;
 }
 
 function describe(c: Combat, a: Move): Playable {
-  if (a.type === 'play') {
-    const def = c.cardDef(c.hand[a.handIndex]);
-    return { effects: def.effects, mode: def.target, cost: def.cost, element: def.element, type: def.type };
-  }
-  const act = c.player.actives[a.index].def;
-  return { effects: act.effects, mode: act.target, cost: 0, element: null, type: null };
+  const inst = c.hand[a.handIndex];
+  const def = c.cardDef(inst);
+  return { effects: def.effects, mode: def.target, cost: c.costOf(inst), element: def.element, type: def.type };
 }
 
 /** Valeur approximative d'un coup : sert de base d'équilibrage, pas de vrai « bon joueur ». */
@@ -37,7 +33,7 @@ function value(c: Combat, a: Move): number {
       case 'drain':
         dealsDamage = true;
         for (const e of targets) {
-          const d = c.estimateDamage(fx, e, p.element);
+          const d = c.estimateDamage(fx, e);
           const eff = Math.min(d, e.hp + e.block);
           v += eff;
           if (d >= e.hp + e.block) v += 6;
@@ -62,20 +58,13 @@ function value(c: Combat, a: Move): number {
         else if (fx.status === 'vulnerabilite') v += 2.5 * fx.amount * n;
         else if (fx.status === 'faiblesse') v += 1.5 * fx.amount * n;
         else if (fx.status === 'brulure') v += 0.7 * ((fx.amount * (fx.amount + 1)) / 2) * n;
+        else if (fx.status === 'poison') v += 0.8 * fx.amount * 1.8 * n;
+        else v += 1.5 * fx.amount * n;
         break;
       }
     }
   }
-  // Effets secondaires élémentaires
-  const pas = c.player.passives;
-  if (p.element === 'terre') v += blockValue(pas.terreArmure);
-  if (p.element === 'feu' && p.type === 'attaque' && dealsDamage) {
-    v += 0.7 * ((pas.feuBrulure * (pas.feuBrulure + 1)) / 2) * targets.length;
-  }
-  if (p.element === 'eau' && p.type === 'attaque') v += 0.8 * Math.min(pas.eauSoin, missingHp);
-  if (p.element === 'air' && c.player.airPlayed < pas.airPioche) v += 2;
-  // Actif : à garder pour un moment utile, donc légère pénalité fixe.
-  const cost = a.type === 'active' ? 1 : p.cost;
+  const cost = p.cost;
   return v / Math.max(cost, 0.5);
 }
 
@@ -98,7 +87,6 @@ export function playGreedy(c: Combat): void {
   while (c.outcome === 'ongoing') {
     const best = pickBest(c);
     if (!best) c.endTurn();
-    else if (best.type === 'play') c.playCard(best.handIndex, best.target);
-    else c.useActive(best.index, best.target);
+    else c.playCard(best.handIndex, best.target);
   }
 }

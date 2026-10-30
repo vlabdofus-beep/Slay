@@ -32,7 +32,7 @@ test('une faiblesse élémentaire s\'applique sur chaque coup d\'une attaque mul
   assert.equal(before - c.enemies[0].hp, 18); // floor(6*1.5)=9, deux fois
 });
 
-test('l\'armure absorbe avant les PV, la brûlure la contourne', () => {
+test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () => {
   const c = setup(['bouftou'], ['iop_sentence']);
   const e = c.enemies[0];
   e.block = 3;
@@ -43,7 +43,6 @@ test('l\'armure absorbe avant les PV, la brûlure la contourne', () => {
   c.hand = [];
   c.endTurn();
   assert.equal(e.status.brulure, 1); // -1 par round
-  assert.ok(before - e.hp >= 1 + 2); // brûlure de 2 en fin de round
 });
 
 test('le drain rend les PV réellement retirés', () => {
@@ -103,7 +102,7 @@ test('fin de combat propre : seuls les PV survivent', () => {
   const c = new Combat(LIBRARY, starterDeck('iop'), { hp: 80, maxHp: 80 }, ['tofu'], 5);
   playGreedy(c);
   const r = c.result();
-  assert.deepEqual(Object.keys(r).sort(), ['hp', 'outcome', 'turns']);
+  assert.deepEqual(Object.keys(r).sort(), ['hp', 'outcome', 'prospection', 'turns']);
   assert.throws(() => c.playCard(0), /terminé/);
 });
 

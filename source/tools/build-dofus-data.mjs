@@ -24,8 +24,13 @@ const MONSTER_IDS = [
   148, 799, // élites : Chef de Guerre Bouftou, Tournesol Affamé
   147, // boss : Bouftou Royal
 ];
-const SET_IDS = [72, 60, 23, 50, 364, 150, 1]; // Piou Vert, Piou Rouge, Moskito, Tofu, Microplie, Intrépide, Bouftou
-const RARE_ITEM_IDS = [2438, 2445, 1662, 2441, 17506, 2442];
+// Catalogue d'objets : par emplacement, des objets réels répartis en 4 raretés selon leur niveau Dofus.
+const BANDS = [
+  { rarity: 'commun', min: 1, max: 40, n: 7 },
+  { rarity: 'rare', min: 41, max: 100, n: 6 },
+  { rarity: 'mythique', min: 101, max: 160, n: 5 },
+  { rarity: 'legendaire', min: 161, max: 200, n: 4 },
+];
 
 // ── Conversions ──
 const SLOT = { Chapeau: 'coiffe', Cape: 'cape', Amulette: 'amulette', Anneau: 'anneau', Ceinture: 'ceinture', Bottes: 'bottes' };
@@ -34,6 +39,24 @@ const EL_FX = { 118: 'terre', 422: 'terre', 126: 'feu', 424: 'feu', 123: 'eau', 
 const DMG_FX = { 422: 'terre', 424: 'feu', 426: 'eau', 428: 'air' };
 const VITA = 125;
 const GENERIC_DMG = [112, 138]; // Dommages, Puissance
+
+// Stat principale d'un objet : celle que l'objet pousse le plus (valeurs ramenées à une échelle commune).
+const CHAR = { 118: 'terre', 126: 'feu', 123: 'eau', 119: 'air' };
+const RES = [210, 211, 212, 213, 214, 240, 241, 242, 243, 244];
+function primaryStat(it) {
+  const score = { terre: 0, feu: 0, eau: 0, air: 0, pv: 0, prospection: 0, armure: 0 };
+  for (const [id, a, b] of it.fx) {
+    const v = Math.max(a, b);
+    if (CHAR[id]) score[CHAR[id]] += v;
+    else if (DMG_FX[id]) score[DMG_FX[id]] += v * 6;
+    else if (id === VITA) score.pv += v * 0.45;
+    else if (id === 176) score.prospection += v * 1.6;
+    else if (id === 124) score.armure += v * 0.8;
+    else if (RES.includes(id)) score.armure += v * (id >= 240 ? 0.6 : 2.5);
+  }
+  const best = Object.entries(score).sort((x, y) => y[1] - x[1])[0];
+  return best[1] > 0 ? best[0] : null;
+}
 
 function itemInfo(it) {
   const type = itemsDb.types[String(it.t)];
@@ -53,7 +76,7 @@ function itemInfo(it) {
 }
 
 const out = { v: 1, source: { spells: spellsDb.builtAt, monsters: monstersDb.builtAt, items: itemsDb.builtAt },
-  breeds: {}, spells: {}, monsters: {}, sets: {}, items: {} };
+  breeds: {}, spells: {}, monsters: {}, catalog: [] };
 
 for (const [id, key] of Object.entries(BREEDS)) out.breeds[key] = { id: Number(id), n: spellsDb.breeds[id] };
 for (const s of spellsDb.spells) {
@@ -69,19 +92,30 @@ for (const id of MONSTER_IDS) {
   out.monsters[id] = { n: m.n, l: m.l, k: m.k, res, gfx: m.g, zones: sub };
 }
 
-for (const sid of SET_IDS) {
-  const pieces = itemsDb.items.filter((it) => it.s === sid).map(itemInfo).filter((it) => it.slot);
-  if (!pieces.length) throw new Error(`Panoplie ${sid} vide`);
-  out.sets[sid] = { n: itemsDb.sets[String(sid)], items: pieces.map((p) => p.id) };
-  for (const p of pieces) out.items[p.id] = p;
-}
-for (const id of RARE_ITEM_IDS) {
-  const it = itemsDb.items.find((x) => x.id === id);
-  if (!it) throw new Error(`Item ${id} introuvable`);
-  out.items[id] = itemInfo(it);
+// Sélection : dans chaque emplacement et chaque bande de niveau, on alterne les stats principales pour que
+// chaque rareté propose de tout (éléments, PV, prospection, armure). Tirage déterministe (ordre des ids).
+const ORDER = ['terre', 'feu', 'eau', 'air', 'pv', 'prospection', 'armure'];
+out.catalog = [];
+for (const slot of Object.values(SLOT)) {
+  for (const band of BANDS) {
+    const cands = itemsDb.items
+      .filter((it) => SLOT[itemsDb.types[String(it.t)]] === slot && it.l >= band.min && it.l <= band.max)
+      .map((it) => ({ it, stat: primaryStat(it) }))
+      .filter((x) => x.stat)
+      .sort((a, b) => ((a.it.id * 2654435761) >>> 0) - ((b.it.id * 2654435761) >>> 0));
+    const picked = [];
+    for (let round = 0; picked.length < band.n && round < 10; round++) {
+      for (const stat of ORDER) {
+        if (picked.length >= band.n) break;
+        const c = cands.find((x) => x.stat === stat && !picked.includes(x));
+        if (c && picked.filter((p) => p.stat === stat).length <= round) picked.push(c);
+      }
+    }
+    for (const { it, stat } of picked) out.catalog.push({ id: it.id, n: it.n, slot, l: it.l, icon: it.i, rarity: band.rarity, stat });
+  }
 }
 
 const dest = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data', 'dofus.json');
 writeFileSync(dest, JSON.stringify(out, null, 1) + '\n');
 console.log(`Écrit ${dest} : ${Object.keys(out.spells).length} sorts, ${Object.keys(out.monsters).length} monstres, ` +
-  `${Object.keys(out.sets).length} panoplies, ${Object.keys(out.items).length} items`);
+  `${out.catalog.length} objets`);

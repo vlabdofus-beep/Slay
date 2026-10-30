@@ -1,7 +1,8 @@
 // Interface du jeu : rendu DOM simple (re-rendu complet à chaque action) + délégation d'événements.
 // Toute la logique est dans src/game/run.ts et src/core ; ce fichier ne fait qu'afficher et relayer.
 import { BASE_ENERGY, resolveCard, type Enemy } from '../core/combat.ts';
-import { PALIERS, PASSIVE_BY_PALIER, type ElementalElement } from '../core/loadout.ts';
+import { effectText as itemEffectText, type ItemEffect } from '../core/effects.ts';
+import { lootChance, prospFactor } from '../core/offers.ts';
 import type { MapNode } from '../core/map.ts';
 import type { CardDef, CardInstance, ClassId, Element, ItemDef, StatusMap } from '../core/types.ts';
 import { ELEMENTS, SLOTS } from '../core/types.ts';
@@ -11,15 +12,15 @@ import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
 import { ACT1_SCALE, ENCOUNTERS } from '../data/monsters.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
-  activeText, cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
+  cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
 import { buildCharacter, drawAnim, type Character } from './scene/rt.js';
 import { BREED, STAGE, stage } from './scene/stage.ts';
 
 // ───────────── état de l'interface ─────────────
 
-type Selecting = { kind: 'card' | 'active'; index: number } | null;
-type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'forge'; uid?: number } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' };
+type Selecting = { kind: 'card'; index: number } | null;
+type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' };
 
 const ui = {
   run: null as Run | null,
@@ -60,12 +61,7 @@ const CLASS_INFO: Record<'iop' | 'cra', { pitch: string }> = {
   iop: { pitch: 'Au contact, il frappe fort et encaisse. Ses sorts couvrent les quatre éléments.' },
   cra: { pitch: 'À distance, il affaiblit, brûle et vole la vie. Moins de PV, plus de ressources.' },
 };
-const PASSIVE_TEXT: Record<ElementalElement, (v: number) => string> = {
-  terre: (v) => `Chaque carte Terre donne ${v} armure.`,
-  feu: (v) => `Les attaques Feu appliquent ${v} Brûlure.`,
-  eau: (v) => `Les attaques Eau soignent ${v} PV.`,
-  air: (v) => `Les ${v > 1 ? `${v} premières cartes` : 'première carte'} Air du tour ${v > 1 ? 'piochent' : 'pioche'} 1 carte.`,
-};
+const RARITY_NAMES: Record<string, string> = { commun: 'Commun', rare: 'Rare', mythique: 'Mythique', legendaire: 'Légendaire' };
 
 // ───────────── petits composants ─────────────
 
@@ -95,18 +91,18 @@ function statusChips(st: StatusMap): string {
 
 const TYPE_NAMES = { attaque: 'Attaque', competence: 'Compétence' };
 
-function cardHtml(def: CardDef, opts: { inst?: CardInstance; act?: string; data?: string; disabled?: boolean; selected?: boolean; live?: boolean; hint?: string } = {}): string {
+function cardHtml(def: CardDef, opts: { inst?: CardInstance; act?: string; data?: string; disabled?: boolean; selected?: boolean; live?: boolean; hint?: string; cost?: number } = {}): string {
   const c = opts.live ? ui.run?.combat ?? null : null;
   const upgraded = opts.inst?.upgraded;
-  const forged = opts.inst?.element && opts.inst.element !== LIBRARY.cards[opts.inst.id].element;
+  const cost = opts.cost ?? def.cost;
   const attrs = opts.act ? `data-act="${opts.act}" ${opts.data ?? ''}` : '';
   const tag = opts.act ? 'button' : 'div';
   const lore = def.lore ? ` title="${esc(def.lore)}"` : '';
   return `<${tag} class="card el-${def.element} rar-${def.rarity}${upgraded ? ' upg' : ''}${opts.selected ? ' sel' : ''}${opts.disabled ? ' off' : ''}" ${attrs}${opts.disabled && tag === 'button' ? ' disabled' : ''}${lore}>
-    <span class="card-cost" aria-label="${def.cost} PA">${def.cost}</span>
+    <span class="card-cost${cost < def.cost ? ' cheaper' : ''}" aria-label="${cost} PA">${cost}</span>
     <span class="card-art">${def.icon ? pic(def.icon, def.name, 'card-pic') : `<span class="pic card-pic">${uiIcon(def.type === 'attaque' ? 'combat' : def.type === 'competence' ? 'defense' : 'buff', 'card-ico')}</span>`}</span>
     <span class="card-name">${esc(def.name)}${upgraded ? '<i class="upg-mark">+</i>' : ''}</span>
-    <span class="card-type">${elIcon(def.element, 'el-mini')}${TYPE_NAMES[def.type]} ${ELEMENT_NAMES[def.element]}${forged ? ' (forgemagée)' : ''}</span>
+    <span class="card-type">${elIcon(def.element, 'el-mini')}${TYPE_NAMES[def.type]} ${ELEMENT_NAMES[def.element]}</span>
     <span class="card-text">${cardText(def, c)}</span>
     ${opts.hint ? `<span class="card-hint">${opts.hint}</span>` : ''}
   </${tag}>`;
@@ -117,59 +113,53 @@ function cardBack(cls = ''): string {
   return `<span class="card-back ${cls}" aria-hidden="true"><span class="cb-ring">${uiIcon('dofus', 'cb-egg')}</span></span>`;
 }
 
-function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: boolean } = {}): string {
+/** Effet d'un objet pour la run en cours (tiré à la création de la run). */
+function itemEffect(id: string): ItemEffect | null {
+  return ui.run?.itemEffects[id] ?? null;
+}
+
+function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: boolean; fx?: ItemEffect | null } = {}): string {
   const run = ui.run;
   const current = run?.equipment[it.slot];
   const replaces = current && current !== it.id ? ITEMS.items[current] : null;
-  const set = it.panoplie ? ITEMS.panoplies[it.panoplie] : null;
-  const owned = set && run ? set.items.filter((id) => Object.values(run.equipment).includes(id)).length : 0;
-  const els = it.elements.length ? it.elements.map((e) => elIcon(e, 'el-mini')).join('') : elIcon('neutre', 'el-mini');
+  const fx = opts.fx !== undefined ? opts.fx : itemEffect(it.id);
   const tag = opts.act ? 'button' : 'div';
   return `<${tag} class="item rar-${it.rarity}${opts.taken ? ' taken' : ''}${opts.dim ? ' off' : ''}" ${opts.act ? `data-act="${opts.act}" data-id="${it.id}"` : ''}${opts.dim && tag === 'button' ? ' disabled' : ''}>
-    ${pic(it.icon, it.name, 'item-pic')}
-    <span class="item-body">
-      <span class="item-name">${esc(it.name)}</span>
-      <span class="item-meta">${SLOT_NAMES[it.slot]} ${els}${it.rarity === 'rare' ? ' <em>rare</em>' : ''}</span>
-      <span class="item-stats">${statsText(it.stats).map((s) => `<span>${esc(s)}</span>`).join('')}</span>
-      ${it.active ? `<span class="item-active"><b>${esc(it.active.name)}</b> ${activeText(it.active)}</span>` : ''}
-      ${set ? `<span class="item-set">${esc(set.name)} ${owned}/${set.items.length}</span>` : ''}
-      ${replaces ? `<span class="item-replace">Remplace ${esc(replaces.name)}</span>` : ''}
-    </span>
+    <span class="item-head">${pic(it.icon, it.name, 'item-pic')}
+      <span class="item-id"><span class="item-name">${esc(it.name)}</span>
+      <span class="item-meta"><span class="rar-tag">${RARITY_NAMES[it.rarity]}</span> ${SLOT_NAMES[it.slot]}${it.level ? `, niveau ${it.level}` : ''}</span></span></span>
+    <span class="item-stats">${statsText(it.stats).map((t) => `<span>${esc(t)}</span>`).join('')}</span>
+    ${fx ? `<span class="item-fx${fx.kind === 'rule' ? ' rule' : ''}">${esc(itemEffectText(fx))}</span>` : ''}
+    ${replaces ? `<span class="item-replace">Remplace ${esc(replaces.name)}</span>` : ''}
   </${tag}>`;
 }
 
 // ───────────── fiche du personnage (carte, récompense, Zaap) ─────────────
 
 function sheet(run: Run): string {
-  const l = run.loadout();
   const breed = DOFUS.breeds[run.classe];
+  const prosp = run.prospection();
   const slots = SLOTS.map((slot) => {
     const id = run.equipment[slot];
     const it = id ? ITEMS.items[id] : null;
-    return `<span class="slot${it ? '' : ' empty'}" title="${esc(it ? `${it.name} : ${statsText(it.stats).join(', ')}` : SLOT_NAMES[slot])}">
+    const fx = id ? itemEffect(id) : null;
+    const tip = it ? `${it.name} (${RARITY_NAMES[it.rarity]}) : ${statsText(it.stats).join(', ')}${fx ? `. ${itemEffectText(fx)}` : ''}` : SLOT_NAMES[slot];
+    return `<span class="slot${it ? ` rar-${it.rarity}` : ' empty'}" title="${esc(tip)}">
       ${it ? pic(it.icon, it.name, 'slot-pic') : `<span class="slot-name">${SLOT_NAMES[slot]}</span>`}</span>`;
   }).join('');
-  const sets = Object.entries(l.sets).map(([id, n]) => {
-    const p = ITEMS.panoplies[id];
-    const active = Object.keys(p.bonuses).map(Number).filter((t) => n >= t);
-    return `<li>${esc(p.name)} <span class="muted">${n}/${p.items.length}</span>${active.length ? ` <span class="ok">bonus ${active.join(' et ')} pièces</span>` : ''}</li>`;
-  }).join('');
-  const aff = (ELEMENTS as ElementalElement[]).map((el) => {
-    const pts = l.affinity[el];
-    const pal = l.paliers[el];
-    const max = PALIERS[PALIERS.length - 1];
-    const ticks = PALIERS.map((t) => `<i style="left:${(100 * t) / max}%"></i>`).join('');
-    const txt = pal ? PASSIVE_TEXT[el](PASSIVE_BY_PALIER[el][pal]) : `Palier 1 à ${PALIERS[0]} points.`;
-    return `<li class="aff el-${el}">${elIcon(el, 'el-mini')}<span class="aff-bar"><span style="width:${Math.min(100, (100 * pts) / max)}%"></span>${ticks}</span><span class="aff-pts">${pts}</span><span class="aff-txt">${txt}</span></li>`;
+  const effects = SLOTS.map((slot) => run.equipment[slot]).filter((id): id is string => !!id).map((id) => {
+    const it = ITEMS.items[id];
+    const fx = itemEffect(id);
+    return fx ? `<li class="rar-${it.rarity}"><b>${esc(it.name)}</b> ${esc(itemEffectText(fx))}</li>` : '';
   }).join('');
   return `<aside class="sheet">
     <div class="who"><img class="who-pic" src="${asset(`classes/${breed.id}.png`)}" alt=""><span><b>${esc(breed.n)}</b><span class="muted">${run.stats.floor ? `Étage ${run.stats.floor} sur ${run.map.floors}` : 'Au départ'}</span></span></div>
     ${bar(run.hp, run.maxHp, 'hp')}
     <button class="link" data-act="modal-deck">Voir le deck (${run.deck.length} cartes)</button>
     <h3>Équipement</h3><div class="slots">${slots}</div>
-    ${sets ? `<ul class="sets">${sets}</ul>` : ''}
-    <h3>Affinités</h3><ul class="affs">${aff}</ul>
-    ${l.passives.prisme ? `<p class="prisme">Prisme ${l.passives.prisme} : +${l.passives.prisme} dégâts par élément différent déjà joué ce tour.</p>` : ''}
+    ${effects ? `<ul class="fx-list">${effects}</ul>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
+    <h3>Prospection</h3>
+    <p class="prosp"><b>${prosp}</b> <span class="muted">${Math.round(100 * lootChance('normal', prosp))} % de chance d'objet après un combat, raretés ×${(1 + 2 * prospFactor(prosp)).toFixed(1)}</span></p>
   </aside>`;
 }
 
@@ -258,7 +248,7 @@ function nodeTip(run: Run, n: MapNode): string {
   let body: string;
   if (n.type === 'zaap') {
     body = `<p class="tip-text">Une halte avant de repartir. Une action au choix :</p>
-      <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * ZAAP_HEAL)} PV</li><li>améliorer une carte</li><li>forgemagie : changer l'élément d'une carte</li></ul>`;
+      <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * ZAAP_HEAL)} PV</li><li>améliorer une carte</li></ul>`;
   } else {
     const mobs = encounterGroups(run.encounters[n.id]).map(({ def, count }) => {
       const weak = def.weak.map((el) => elIcon(el, 'el-mini')).join('');
@@ -269,8 +259,8 @@ function nodeTip(run: Run, n: MapNode): string {
       </li>`;
     }).join('');
     const reward = n.type === 'boss' ? 'Le vaincre termine l\'acte.'
-      : n.type === 'elite' ? 'Récompense : une carte, plus souvent rare, et un objet rare.'
-      : 'Récompense : une carte. Un objet tous les deux combats.';
+      : n.type === 'elite' ? 'Récompense : une carte, plus souvent rare, et toujours un objet rare, mythique ou légendaire.'
+      : `Récompense : une carte, et ${Math.round(100 * lootChance('normal', run.prospection()))} % de chance d'objet (prospection ${run.prospection()}).`;
     body = `<ul class="tip-mobs">${mobs}</ul><p class="tip-text">${reward}</p>`;
   }
   const side = n.type === 'boss' ? 'tip-below'
@@ -343,7 +333,7 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
   const resist = e.def.resist.map((el) => elIcon(el, 'el-mini')).join('');
   const can = targeting && !e.dead;
   return `<button class="enemy${dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
-    ${dead || e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
+    ${dead || e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e, c)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
     ${pic(e.def.image, e.def.name, 'enemy-pic')}
     ${floatsHtml(e.uid)}
     <span class="enemy-under">
@@ -383,19 +373,11 @@ function arenaHtml(run: Run): string {
   const v = shown.get(-1);
   const hp = v?.hp ?? p.hp, block = v?.block ?? p.block;
   const targeting = ui.selecting !== null;
-  const passives = [
-    p.passives.terreArmure && PASSIVE_TEXT.terre(p.passives.terreArmure),
-    p.passives.feuBrulure && PASSIVE_TEXT.feu(p.passives.feuBrulure),
-    p.passives.eauSoin && PASSIVE_TEXT.eau(p.passives.eauSoin),
-    p.passives.airPioche && PASSIVE_TEXT.air(p.passives.airPioche),
-    p.passives.prisme && `Prisme ${p.passives.prisme}.`,
-  ].filter(Boolean);
   return `<section class="arena${targeting ? ' targeting' : ''}">
       <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
         ${bar(hp, p.maxHp, 'hp', block ? ` <span class="shield">${block}</span>` : '', 'p')}
         ${floatsHtml(-1)}
         <span class="chips">${statusChips(p.status)}</span>
-        ${passives.length ? `<span class="passives">${passives.join(' ')}</span>` : ''}
       </div>
       <div class="foes" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
       ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}
@@ -410,16 +392,14 @@ function viewCombat(run: Run): string {
     const def = c.cardDef(inst);
     const sel = ui.selecting?.kind === 'card' && ui.selecting.index === i;
     const o = i - (n - 1) / 2;
-    return `<div class="hand-slot" data-cid="${inst.uid}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: def.cost > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '' })}</div>`;
+    return `<div class="hand-slot" data-cid="${inst.uid}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: c.costOf(inst) > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '', cost: c.costOf(inst) })}</div>`;
   }).join('');
-  const actives = p.actives.map((a, i) => `<button class="active${a.used ? ' used' : ''}${ui.selecting?.kind === 'active' && ui.selecting.index === i ? ' sel' : ''}" data-act="active" data-index="${i}" ${a.used ? 'disabled' : ''} title="${esc(activeText(a.def))}">${esc(a.def.name)}</button>`).join('');
   return `<main class="combatview${ui.busy ? ' busy' : ''}">
     ${topbarHtml(run)}
     ${arenaHtml(run)}
     <footer class="tray">
       <button class="pile pile-draw" data-act="pile" data-pile="draw" title="Pioche : ${c.drawPile.length} cartes" aria-label="Pioche, ${c.drawPile.length} cartes">${c.drawPile.length ? cardBack('pb-2') + cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.drawPile.length}</b></button>
       <div class="gem${p.energy ? '' : ' empty'}" role="img" aria-label="${p.energy} PA sur ${BASE_ENERGY}"><b>${p.energy}/${BASE_ENERGY}</b><span>PA</span></div>
-      ${actives ? `<div class="actives">${actives}</div>` : ''}
       <div class="hand fan${n > 7 ? ' crowded' : ''}">${hand || '<p class="muted">Main vide.</p>'}</div>
       <button class="end-turn" data-act="end-turn">Finir le tour</button>
       <button class="pile pile-discard" data-act="pile" data-pile="discard" title="Défausse : ${c.discardPile.length} cartes" aria-label="Défausse, ${c.discardPile.length} cartes">${c.discardPile.length ? cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.discardPile.length}</b></button>
@@ -439,11 +419,11 @@ function viewReward(run: Run): string {
   const items = r.items.map((id) => itemTile(ITEMS.items[id], r.itemTaken ? { taken: r.itemTaken === id, dim: r.itemTaken !== id } : { act: 'take-item' })).join('');
   return `<main class="rewardview">
     <section class="reward">
-      <h2 class="with-ico">${uiIcon(r.itemRarity === 'rare' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
+      <h2 class="with-ico">${uiIcon(r.itemSource === 'elite' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
       <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}.</p>
       <h3>${r.cardTaken ? 'Carte ajoutée au deck' : 'Ajoute une carte à ton deck'}</h3>
       <div class="row cards">${cards}</div>
-      ${items ? `<h3>${r.itemTaken ? 'Objet équipé' : r.itemRarity === 'rare' ? 'Choisis un objet rare' : 'Choisis un objet'}</h3><div class="row items">${items}</div>` : ''}
+      ${items ? `<h3>${r.itemTaken ? 'Objet équipé' : 'Choisis un objet'}</h3><p class="muted small">Prospection ${r.prospection}. La stat d'un objet est fixe ; son effet a été tiré pour cette run.</p><div class="row items">${items}</div>` : `<p class="muted small">Pas d'objet cette fois (prospection ${r.prospection}).</p>`}
       <button class="primary" data-act="leave-reward">${r.cardTaken || r.itemTaken ? 'Reprendre la route' : 'Passer et reprendre la route'}</button>
     </section>
     ${sheet(run)}
@@ -460,7 +440,6 @@ function viewZaap(run: Run): string {
       <div class="row options">
         <button class="option" data-act="zaap-rest" ${used || heal === 0 ? 'disabled' : ''}>${uiIcon('repos', 'option-ico')}<b>Se reposer</b><span>Récupère ${heal} PV.</span></button>
         <button class="option" data-act="modal-upgrade" ${used || run.deck.every((c) => c.upgraded) ? 'disabled' : ''}>${uiIcon('ameliorer', 'option-ico')}<b>Améliorer une carte</b><span>Une carte de ton deck devient sa version +.</span></button>
-        <button class="option" data-act="modal-forge" ${used ? 'disabled' : ''}>${uiIcon('forge', 'option-ico')}<b>Forgemagie</b><span>Change l'élément d'une carte pour nourrir une voie.</span></button>
       </div>
       <button class="primary" data-act="leave-zaap">${used ? 'Reprendre la route' : 'Repartir sans rien faire'}</button>
     </section>
@@ -494,17 +473,6 @@ function viewModal(run: Run): string {
     title = 'Améliorer une carte';
     body = run.deck.filter((c) => !c.upgraded).map((inst) =>
       cardHtml(resolveCard(LIBRARY, { ...inst, upgraded: true }), { inst: { ...inst, upgraded: true }, act: 'zaap-upgrade', data: `data-uid="${inst.uid}"` })).join('');
-  } else if (m.kind === 'forge') {
-    if (m.uid === undefined) {
-      title = 'Forgemagie : choisis une carte';
-      body = run.deck.map((inst) => cardHtml(resolveCard(LIBRARY, inst), { inst, act: 'forge-pick', data: `data-uid="${inst.uid}"` })).join('');
-    } else {
-      const inst = run.deck.find((c) => c.uid === m.uid)!;
-      const def = resolveCard(LIBRARY, inst);
-      title = `Forgemagie : ${def.name}`;
-      body = `<div class="forge">${cardHtml(def, { inst })}<div class="forge-els">${(ELEMENTS as Element[]).filter((el) => el !== def.element).map((el) =>
-        `<button class="forge-el el-${el}" data-act="zaap-forge" data-uid="${inst.uid}" data-el="${el}">${elIcon(el)}${ELEMENT_NAMES[el]}</button>`).join('')}</div></div>`;
-    }
   }
   return `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-box">
     <header><h2>${esc(title)}</h2><button class="link" data-act="close-modal">Fermer</button></header>
@@ -538,8 +506,7 @@ function viewStyleguide(): string {
   const saved = ui.run;
   const demo = new Run('iop', 7);
   ui.run = demo;
-  demo.equip('item_8217');
-  demo.equip('item_2445');
+  for (const r of ['rare', 'legendaire'] as const) demo.equip(Object.values(ITEMS.items).find((it) => it.rarity === r && !demo.equipment[it.slot])!.id);
   const combatNode = demo.availableNodes()[0];
   const tipCombat = nodeTip(demo, demo.map.nodes[combatNode]);
   const zaapNode = Object.values(demo.map.nodes).find((n) => n.type === 'zaap');
@@ -568,8 +535,6 @@ function viewStyleguide(): string {
     ${accents.map((a) => `<button class="primary sg-btn" style="--accent:var(${a}); --accent-deep: color-mix(in srgb, var(${a}) 62%, #000)">Reprendre la route</button>`).join('')}
     <button class="end-turn">Finir le tour</button>
     <button class="link">Voir le deck</button>
-    <button class="active">Carapace</button>
-    <button class="forge-el el-feu">${elIcon('feu')}Feu</button>
   </div>
   <div class="sg-row"><div class="sg-panel">Cadre gravé : pierre, double filet doré, coins biseautés. Utilisé pour la fiche, les récompenses, le Zaap, les fenêtres et les infobulles.</div></div>`;
 
@@ -582,11 +547,11 @@ function viewStyleguide(): string {
   const cardStates = [
     cardHtml(pickCard('iop_colere'), {}) ,
     cardHtml(pickCard('iop_epee_destin', { upgraded: true }), { inst: { uid: 0, id: 'iop_epee_destin', upgraded: true } }),
-    cardHtml(pickCard('iop_coup_epee', { element: 'eau' }), { inst: { uid: 0, id: 'iop_coup_epee', upgraded: false, element: 'eau' } }),
+    cardHtml(pickCard('iop_epee_destin'), { cost: 0 }),
     cardHtml(pickCard('iop_sentence'), { selected: true }),
     cardHtml(pickCard('iop_epee_jugement'), { disabled: true }),
   ].join('');
-  const cardLabels = ['Rare', 'Améliorée', 'Forgemagée', 'Sélectionnée', 'Pas assez de PA'];
+  const cardLabels = ['Rare', 'Améliorée', 'Coût réduit', 'Sélectionnée', 'Pas assez de PA'];
   const byRar = (r: string) => Object.values(LIBRARY.cards).find((c) => c.classe === 'iop' && c.rarity === r)!;
   const frames = [
     cardHtml(byRar('base')), cardHtml(byRar('commune')), cardHtml(byRar('rare')),
@@ -599,7 +564,10 @@ function viewStyleguide(): string {
   const nums = (['terre', 'feu', 'eau', 'air', 'neutre', 'soin', 'armure'] as const)
     .map((el, i) => `<span class="sg-num"><span class="num n-${el}" style="animation:none;position:static;transform:none">${el === 'soin' ? '+6' : el === 'armure' ? 'Bloqué' : `−${8 + i}`}</span><small>${el}</small></span>`).join('');
 
-  const items = [itemTile(ITEMS.items.item_8223), itemTile(ITEMS.items.item_2438), itemTile(ITEMS.items.item_15993, { taken: true })].join('');
+  const items = (['commun', 'rare', 'mythique', 'legendaire'] as const).map((r, i) => {
+    const it = Object.values(ITEMS.items).filter((x) => x.rarity === r)[i + 2];
+    return itemTile(it, { taken: r === 'mythique' });
+  }).join('');
 
   const states = ['avail', 'here', 'done', 'locked'] as const;
   const stateNames = { avail: 'Accessible', here: 'Position actuelle', done: 'Visitée', locked: 'Pas encore accessible' };
@@ -607,7 +575,7 @@ function viewStyleguide(): string {
     `<figure class="sg-node"><span class="sg-node-box"><span class="node t-${t} s-${st}">${NODE_ICON[t]}</span></span><figcaption>${stateNames[st]}</figcaption></figure>`).join('')}</div>`).join('')
     + `<div class="sg-medal-row"><b>Boss</b><figure class="sg-node big"><span class="sg-node-box"><span class="node t-boss s-locked"><span class="boss-art"><img src="${asset('ui/boss.png')}" alt=""></span></span></span><figcaption>Grand médaillon doré et plaque</figcaption></figure></div>`;
 
-  const chips = statusChips({ puissance: 2, faiblesse: 1, vulnerabilite: 2, brulure: 3 });
+  const chips = statusChips({ puissance: 2, faiblesse: 1, vulnerabilite: 2, brulure: 3, poison: 4, bouclier: 6, renvoi: 2, erosion: 1, esquive: 1, etourdi: 1 });
   const intents = `<span class="intent sg-intent i-attack">${intentIcon('attack')}7</span>
     <span class="intent sg-intent i-attack">${intentIcon('attack')}3×2</span>
     <span class="intent sg-intent i-defend">${intentIcon('defend')}Envol</span><span class="intent sg-intent i-buff">${intentIcon('buff')}Cri de guerre</span><span class="intent sg-intent i-debuff">${intentIcon('debuff')}Toile</span>`;
@@ -624,7 +592,7 @@ function viewStyleguide(): string {
     ${sgSection('Cadres de carte', "Le métal du cadre dit la rareté, comme les objets de Dofus. L'étoile bleue porte le coût en PA ; la fenêtre prend la couleur de l'élément.",
       `<div class="sg-row cards">${frames}</div><div class="sg-row sg-labels">${frameLabels.map((l) => `<span>${l}</span>`).join('')}</div>`)}
     ${sgSection('Icônes', "Icônes de l'interface et des objets de Dofus, jamais redessinées.", `<div class="sg-row">${icons}</div>`)}
-    ${sgSection('Objets', 'Pièce de panoplie, objet rare avec actif, objet équipé.', `<div class="row items">${items}</div>`)}
+    ${sgSection('Objets', 'Quatre raretés. La stat vient de l\'objet Dofus et ne change pas ; l\'effet est tiré à chaque run : budget croissant du commun au mythique, règle unique pour le légendaire.', `<div class="row items">${items}</div>`)}
     ${sgSection("Carte de l'acte", "La taille et le liseré des médaillons disent l'enjeu. L'infobulle s'ouvre au survol ou au focus.",
       `${medals}<div class="sg-row sg-tips"><div class="sg-static">${tipCombat}</div><div class="sg-static">${tipZaap}</div></div>`)}
     ${sgSection('Combat', "Intentions des monstres, statuts, chiffres de dégâts à la couleur de l'élément, barres de vie et armure, PA.",
@@ -958,7 +926,7 @@ function playCard(index: number, target?: number): void {
   if (ui.busy || !c.hand[index]) return;
   const inst = c.hand[index];
   const def = c.cardDef(inst);
-  if (def.cost > c.player.energy) return;
+  if (c.costOf(inst) > c.player.energy) return;
   const living = c.living();
   const uid = def.target === 'enemy' ? (target ?? living[0]?.uid) : undefined;
   const points = (def.target === 'enemy' ? [uid as number] : def.target === 'all_enemies' ? living.map((e) => e.uid) : [])
@@ -974,15 +942,6 @@ function playCard(index: number, target?: number): void {
   settle();
 }
 
-function useActive(index: number, target?: number): void {
-  if (ui.busy) return;
-  const before = snapshot();
-  ui.run!.combat!.useActive(index, target);
-  schedule(before, snapshot(), 'neutre', 0);
-  ui.selecting = null;
-  settle();
-}
-
 function endTurn(): void {
   if (ui.busy) return;
   const c = ui.run!.combat!;
@@ -994,19 +953,17 @@ function endTurn(): void {
   settle();
 }
 
-function select(kind: 'card' | 'active', index: number): void {
+function select(index: number): void {
   const c = ui.run!.combat!;
   if (ui.busy) return;
-  const target = kind === 'card' ? c.cardDef(c.hand[index]).target : c.player.actives[index].def.target;
-  if (kind === 'card' && c.cardDef(c.hand[index]).cost > c.player.energy) return;
+  const target = c.cardDef(c.hand[index]).target;
+  if (c.costOf(c.hand[index]) > c.player.energy) return;
   const living = c.living();
   if (target === 'enemy' && living.length > 1) {
-    ui.selecting = ui.selecting?.kind === kind && ui.selecting.index === index ? null : { kind, index };
+    ui.selecting = ui.selecting?.index === index ? null : { kind: 'card', index };
     return;
   }
-  const t = target === 'enemy' ? living[0].uid : undefined;
-  if (kind === 'card') playCard(index, t);
-  else useActive(index, t);
+  playCard(index, target === 'enemy' ? living[0].uid : undefined);
 }
 
 function handle(act: string, d: DOMStringMap): void {
@@ -1030,16 +987,11 @@ function handle(act: string, d: DOMStringMap): void {
       run!.enterNode(d.id!);
       break;
     case 'play':
-      select('card', Number(d.index));
-      break;
-    case 'active':
-      select('active', Number(d.index));
+      select(Number(d.index));
       break;
     case 'target': {
       const s = ui.selecting;
-      if (!s) break;
-      if (s.kind === 'card') playCard(s.index, Number(d.uid));
-      else useActive(s.index, Number(d.uid));
+      if (s) playCard(s.index, Number(d.uid));
       break;
     }
     case 'cancel':
@@ -1072,18 +1024,8 @@ function handle(act: string, d: DOMStringMap): void {
     case 'modal-upgrade':
       ui.modal = { kind: 'upgrade' };
       break;
-    case 'modal-forge':
-      ui.modal = { kind: 'forge' };
-      break;
-    case 'forge-pick':
-      ui.modal = { kind: 'forge', uid: Number(d.uid) };
-      break;
     case 'zaap-upgrade':
       run!.zaapUpgrade(Number(d.uid));
-      ui.modal = null;
-      break;
-    case 'zaap-forge':
-      run!.zaapForge(Number(d.uid), d.el as Element);
       ui.modal = null;
       break;
     case 'leave-zaap':
@@ -1176,7 +1118,7 @@ document.addEventListener('click', (ev) => {
   const el = (ev.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
   if (!el || (el as HTMLButtonElement).disabled) {
     // Clic hors d'une cible pendant le ciblage : on annule.
-    if (ui.selecting && !(ev.target as HTMLElement).closest('.hand, .actives')) {
+    if (ui.selecting && !(ev.target as HTMLElement).closest('.hand')) {
       ui.selecting = null;
       render();
     }
@@ -1208,7 +1150,7 @@ document.addEventListener('keydown', (ev) => {
   if (ev.key >= '1' && ev.key <= '9') {
     const i = Number(ev.key) - 1;
     if (i < run.combat!.hand.length) {
-      select('card', i);
+      select(i);
       render();
     }
   } else if (ev.key === 'e' || ev.key === 'E') {

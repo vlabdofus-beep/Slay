@@ -101,3 +101,27 @@ a rendu le jeu plus facile : on a pu remonter à **×1**, c'est-à-dire les vale
 ## Endpoints Spire Codex utiles pour la suite
 `/api/characters` (PV et decks de départ), `/api/acts` (structure de la carte), `/api/runs/stats/...`
 (taux de victoire communautaires), `/api/intents`, `/api/keywords`.
+
+## Objets à effets tirés (refonte du 30/10/2026)
+
+Chiffrage par simulation (`node src/sim/calibrate.ts N [triggers|rewards|prosp|rules|rarity]`) : le bot joue des runs
+complètes sans objets avec un seul effet ajouté, mêmes graines pour toutes les configurations ; on mesure l'étage moyen.
+Étalon : « au début de chaque tour, inflige n dégâts » → **1 point ≈ 0,107 étage**.
+
+Principaux enseignements (4 000 runs pour les déclencheurs, 1 000 pour les récompenses) :
+- Ce qui protège les PV vaut bien plus qu'un dégât : soin ≈ 2,8 points par PV, bouclier 2,2, armure 1,8, esquive 9 par charge.
+  Les PV sont la ressource de la run.
+- La pioche vaut peu pour le bot (≈ 1,1) ; on la chiffre à 2 pour un joueur humain.
+- Brûlure et poison posés une fois par tour valent ≈ 0,5-0,7 par point (dégâts en fin de round, absorbés pour la brûlure) ;
+  leur valeur croît avec la pile, d'où des plafonds (4 brûlure, 6 poison par déclenchement).
+- Déclencheurs élémentaires (deck orienté) : « une carte X » ≈ 3 par combat, « première carte X du tour » ≈ 2,4,
+  « 2e carte X du tour » ≈ 0,6 (0,8 retenu pour un joueur qui construit sa voie), « première carte X du combat » ≈ 1,6.
+- Prospection : +50 ≈ 6,6 points, +100 ≈ 10 points → 8 prospection par point de budget.
+- Légendaires : les règles « build-around » (brûlure tenace, air perçant, étourdi fragile…) valent ≈ 0 seules, c'est
+  voulu ; les plus fortes seules : première carte moins chère (ramenée de 0 PA à -1 PA après mesure à 43), +1 PA (24),
+  première carte lancée deux fois (23), ricochet (17), Eau vampire (13).
+- Effets tirés au hasard, deck non orienté : commun ≈ 2,8 points, rare ≈ 6,4, mythique ≈ 9,8 (≈ 55 % du budget, car
+  la moitié des effets parlent d'un élément ou d'une condition que le deck du bot ne remplit pas).
+
+Runs complètes (1 500 runs, bot glouton, chemin au hasard) : sans objets 0-1 % de victoires sur le boss ; avec objets
+Iop 34 %, Crâ 43 % ; ≈ 3,6 objets portés (1,9 commun, 1,4 rare, 0,6 mythique, 0,2 légendaire).
