@@ -27,6 +27,7 @@ test('calcDamage : puissance, faiblesse, vulnérabilité, faiblesse/résistance 
 test('une faiblesse élémentaire s\'applique sur chaque coup d\'une attaque multi-coups', () => {
   const c = setup(['tofu'], ['iop_zenith']); // 6 air x2, Tofu faible à l'air
   c.enemies[0].hp = 999;
+  c.enemies[0].status = {}; // sans son esquive d'Agilité
   const before = c.enemies[0].hp;
   c.playCard(0);
   assert.equal(before - c.enemies[0].hp, 18); // floor(6*1.5)=9, deux fois
@@ -48,8 +49,8 @@ test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () =
 test('le drain rend les PV réellement retirés', () => {
   const c = setup(['prespic'], ['cra_fleche_devorante'], 50);
   c.enemies[0].block = 0;
-  c.playCard(0); // drain 6 feu, Prespic neutre au feu => 6 PV perdus, 6 rendus
-  assert.equal(c.player.hp, 56);
+  c.playCard(0); // drain 6 feu, Prespic neutre au feu => 6 PV perdus, 6 rendus ; ses épines renvoient 1
+  assert.equal(c.player.hp, 55);
 });
 
 test('une attaque de zone et un statut de zone touchent tous les ennemis', () => {
@@ -102,7 +103,7 @@ test('fin de combat propre : seuls les PV survivent', () => {
   const c = new Combat(LIBRARY, starterDeck('iop'), { hp: 80, maxHp: 80 }, ['tofu'], 5);
   playGreedy(c);
   const r = c.result();
-  assert.deepEqual(Object.keys(r).sort(), ['hp', 'outcome', 'prospection', 'revived', 'turns']);
+  assert.deepEqual(Object.keys(r).sort(), ['hp', 'kamasStolen', 'outcome', 'prospection', 'revived', 'turns']);
   assert.throws(() => c.playCard(0), /terminé/);
 });
 

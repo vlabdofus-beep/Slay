@@ -14,7 +14,7 @@ import { EGG_BY_ID } from '../data/eggs.ts';
 import { eggArt, loadEggArt } from './eggArt.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
-  cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
+  cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
 import { buildCharacter, drawAnim, type Character } from './scene/rt.js';
 import { BREED, STAGE, stage } from './scene/stage.ts';
@@ -102,6 +102,34 @@ function statusChips(st: StatusMap, down = false): string {
     .join('');
 }
 
+const POWER_ICON: Record<string, string> = {
+  carapace: 'fx/armure.webp', epines: 'fx/renvoi.webp', colere: 'fx/puissance.webp', enroulement: 'fx/bouclier.webp',
+  rituel: 'fx/regle.webp', spores: 'fx/vulnerabilite.webp', explosion: 'fx/degats_zone.webp', division: 'fx/poison.webp',
+  voleur: 'fx/kamas.webp', gardien: 'fx/bouclier.webp', regeneration: 'fx/soin.webp', esquive: 'fx/esquive.webp',
+  cameleon: 'fx/erosion.webp', rage: 'ui/combat.webp', sommeil: 'fx/reduction.webp', plafond: 'ui/defense.webp', artefact: 'fx/regle.webp',
+};
+
+/** Mécaniques d'un monstre : icônes à liseré violet, compteur vivant (tours avant explosion, kamas volés…). */
+function powerBadges(e: Enemy, c: NonNullable<Run['combat']>): string {
+  return (e.def.powers ?? []).map((p) => {
+    const info = powerInfo(p);
+    let n: string | number | undefined = info.n;
+    let extra = '';
+    if (p.kind === 'explosion' || (p.kind === 'voleur' && p.turns < 99)) {
+      const left = c.countdown(e);
+      n = left ?? n;
+      extra = ` Encore ${left} tour${left === 1 ? '' : 's'}.`;
+    }
+    if (p.kind === 'voleur' && e.m.stolen) extra += ` Il a déjà volé ${e.m.stolen} kamas.`;
+    if (p.kind === 'artefact') { n = e.m.artefact; extra = ` Encore ${e.m.artefact}.`; }
+    if (p.kind === 'sommeil') { n = e.m.asleep; extra = e.m.asleep ? ` Encore ${e.m.asleep} tour${e.m.asleep > 1 ? 's' : ''} de sommeil.` : ' Réveillé.'; }
+    if ((p.kind === 'division' && e.m.split) || (p.kind === 'artefact' && !e.m.artefact) || (p.kind === 'sommeil' && !e.m.asleep)) return '';
+    return `<span class="fxb st power" tabindex="0" aria-label="${esc(`${info.name} : ${info.help}${extra}`)}">
+      <span class="fxi"><img src="${asset(POWER_ICON[p.kind])}" alt="" draggable="false">${n !== undefined ? `<b>${n}</b>` : ''}</span>
+      <span class="fxtip" role="tooltip"><b class="fxt">${esc(info.name)}</b><span class="fx-what"><span>${esc(info.help + extra)}</span></span></span></span>`;
+  }).join('');
+}
+
 /** Barre de PV avec l'armure en médaillon à gauche, comme un bouclier posé sur la barre. */
 function hpBar(hp: number, max: number, block: number, key = ''): string {
   const armor = block > 0 ? `<span class="armor hastip" tabindex="0" aria-label="${block} armure"><img src="${asset('fx/armure.webp')}" alt="" draggable="false"><b>${block}</b>
@@ -118,7 +146,7 @@ function cardHtml(def: CardDef, opts: { inst?: CardInstance; act?: string; data?
   const attrs = opts.act ? `data-act="${opts.act}" ${opts.data ?? ''}` : '';
   const tag = opts.act ? 'button' : 'div';
   const lore = def.lore ? ` title="${esc(def.lore)}"` : '';
-  return `<${tag} class="card el-${def.element} rar-${def.rarity}${upgraded ? ' upg' : ''}${opts.selected ? ' sel' : ''}${opts.disabled ? ' off' : ''}" ${attrs}${opts.disabled && tag === 'button' ? ' disabled' : ''}${lore}>
+  return `<${tag} class="card el-${def.element} rar-${def.rarity}${def.status ? ' is-status' : ''}${upgraded ? ' upg' : ''}${opts.selected ? ' sel' : ''}${opts.disabled ? ' off' : ''}" ${attrs}${opts.disabled && tag === 'button' ? ' disabled' : ''}${lore}>
     <span class="card-cost${cost < def.cost ? ' cheaper' : ''}" aria-label="${cost} PA">${cost}</span>
     <span class="card-art">${def.icon ? pic(def.icon, def.name, 'card-pic') : `<span class="pic card-pic">${uiIcon(def.type === 'attaque' ? 'combat' : def.type === 'competence' ? 'defense' : 'buff', 'card-ico')}</span>`}</span>
     <span class="card-name">${esc(def.name)}${upgraded ? '<i class="upg-mark">+</i>' : ''}</span>
@@ -432,6 +460,7 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
     ${floatsHtml(e.uid)}
     <span class="enemy-under">
       <span class="enemy-name">${esc(e.def.name)}</span>
+      ${e.def.powers?.length ? `<span class="chips powers">${powerBadges(e, c)}</span>` : ''}
       ${hpBar(hp, e.maxHp, block, `e${e.uid}`)}
       <span class="chips">${statusChips(e.status)}</span>
       <span class="affinity">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}</span>
@@ -513,7 +542,7 @@ function viewCombat(run: Run): string {
     const def = c.cardDef(inst);
     const sel = ui.selecting?.kind === 'card' && ui.selecting.index === i;
     const o = i - (n - 1) / 2;
-    return `<div class="hand-slot" data-cid="${inst.uid}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: c.costOf(inst) > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '', cost: c.costOf(inst) })}</div>`;
+    return `<div class="hand-slot" data-cid="${inst.uid}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: !!def.unplayable || c.costOf(inst) > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '', cost: c.costOf(inst) })}</div>`;
   }).join('');
   return `<main class="combatview${ui.busy ? ' busy' : ''}">
     ${topbarHtml(run)}
@@ -541,7 +570,7 @@ function viewReward(run: Run): string {
   return `<main class="rewardview">
     <section class="reward">
       <h2 class="with-ico">${uiIcon(r.itemSource === 'elite' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
-      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}. Tu ramasses ${KAMAS(r.kamas)} kamas.</p>
+      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}. Tu ramasses ${KAMAS(r.kamas)} kamas.${r.stolen ? ` Des voleurs se sont enfuis avec ${r.stolen} kamas.` : ''}</p>
       <h3>${r.cardTaken ? 'Carte ajoutée au deck' : 'Ajoute une carte à ton deck'}</h3>
       <div class="row cards">${cards}</div>
       ${items ? `<h3>${r.itemTaken ? 'Objet équipé' : 'Choisis un objet'}</h3><p class="muted small">Prospection ${r.prospection}. La stat d'un objet est fixe ; son effet a été tiré pour cette run.</p><div class="row items">${items}</div>` : `<p class="muted small">Pas d'objet cette fois (prospection ${r.prospection}).</p>`}

@@ -863,6 +863,48 @@
     "Prairies d'Astrub"
    ]
   },
+  "34": {
+   "n": "Larve Verte",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 5,
+    "feu": -5,
+    "eau": 5,
+    "air": 10
+   },
+   "gfx": 2,
+   "zones": [
+    "Port de Madrestam",
+    "Côte d'Asse",
+    "Prairies d'Astrub"
+   ]
+  },
+  "46": {
+   "n": "Larve Orange",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": -5,
+    "feu": -5,
+    "eau": 25,
+    "air": 10
+   },
+   "gfx": 12,
+   "zones": [
+    "Port de Madrestam",
+    "Côte d'Asse",
+    "Prairies d'Astrub"
+   ]
+  },
   "47": {
    "n": "Abraknyde",
    "l": [
@@ -945,6 +987,66 @@
     "Bois de Litneg"
    ]
   },
+  "55": {
+   "n": "Gelée Bleuet",
+   "l": [
+    54,
+    62
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 17,
+   "zones": [
+    "Péninsule des gelées",
+    "Gelaxième dimension"
+   ]
+  },
+  "56": {
+   "n": "Gelée Menthe",
+   "l": [
+    54,
+    62
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 18,
+   "zones": [
+    "Péninsule des gelées",
+    "Gelaxième dimension"
+   ]
+  },
+  "57": {
+   "n": "Gelée Fraise",
+   "l": [
+    54,
+    62
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 19,
+   "zones": [
+    "Péninsule des gelées",
+    "Gelaxième dimension"
+   ]
+  },
   "59": {
    "n": "Champ Champ",
    "l": [
@@ -987,6 +1089,46 @@
     "Campagne d'Amakna"
    ]
   },
+  "62": {
+   "n": "Gob-trotteur",
+   "l": [
+    32,
+    40
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -2,
+    "terre": 7,
+    "feu": -8,
+    "eau": -3,
+    "air": 6
+   },
+   "gfx": 23,
+   "zones": [
+    "Campement des Bworks",
+    "Orée de la forêt des Abraknydes",
+    "Campement des Gobelins"
+   ]
+  },
+  "63": {
+   "n": "Crabe",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": 25,
+    "feu": 25,
+    "eau": -20,
+    "air": 30
+   },
+   "gfx": 24,
+   "zones": [
+    "Rivage sufokien"
+   ]
+  },
   "64": {
    "n": "Wabbit",
    "l": [
@@ -1006,6 +1148,68 @@
     "Île de la Cawotte",
     "Îlot de la Couronne",
     "Château du Wa Wabbit"
+   ]
+  },
+  "65": {
+   "n": "Black Wabbit",
+   "l": [
+    46,
+    54
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 14,
+    "terre": -1,
+    "feu": 9,
+    "eau": 15,
+    "air": 20
+   },
+   "gfx": 26,
+   "zones": [
+    "Île de la Cawotte",
+    "Îlot de la Couronne",
+    "Château du Wa Wabbit"
+   ]
+  },
+  "74": {
+   "n": "Bwork Archer",
+   "l": [
+    37,
+    48
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": -11,
+    "feu": 5,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 29,
+   "zones": [
+    "Campement des Bworks",
+    "Village des Bworks",
+    "Donjon des Bworks"
+   ]
+  },
+  "76": {
+   "n": "Dragoeuf Calcaire",
+   "l": [
+    62,
+    70
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 17,
+    "terre": 22,
+    "feu": 12,
+    "eau": 9,
+    "air": -10
+   },
+   "gfx": 31,
+   "zones": [
+    "Presqu'île des Dragoeufs",
+    "Épreuve de Draegnerys"
    ]
   },
   "78": {
@@ -1050,6 +1254,26 @@
     "Grange du Tournesol Affamé"
    ]
   },
+  "81": {
+   "n": "Kwak de Vent",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 75,
+    "terre": -50,
+    "feu": 10,
+    "eau": 10,
+    "air": 75
+   },
+   "gfx": 34,
+   "zones": [
+    "Montagne des Craqueleurs",
+    "Nid du Kwakwa"
+   ]
+  },
   "83": {
    "n": "Kwak de Flamme",
    "l": [
@@ -1088,6 +1312,46 @@
    "zones": [
     "Montagne des Craqueleurs",
     "Nid du Kwakwa"
+   ]
+  },
+  "88": {
+   "n": "Dragoeuf Ardoise",
+   "l": [
+    62,
+    70
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 17,
+    "terre": 12,
+    "feu": -10,
+    "eau": 22,
+    "air": 9
+   },
+   "gfx": 41,
+   "zones": [
+    "Presqu'île des Dragoeufs",
+    "Épreuve de Draegnerys"
+   ]
+  },
+  "96": {
+   "n": "Tiwabbit",
+   "l": [
+    41,
+    49
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 5,
+    "feu": 0,
+    "eau": -1,
+    "air": 0
+   },
+   "gfx": 48,
+   "zones": [
+    "Île de la Cawotte",
+    "Château du Wa Wabbit"
    ]
   },
   "98": {
@@ -1215,6 +1479,69 @@
     "Montagne basse des Craqueleurs"
    ]
   },
+  "110": {
+   "n": "Chafer Invisible",
+   "l": [
+    25,
+    37
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 0,
+    "feu": 0,
+    "eau": -10,
+    "air": 22
+   },
+   "gfx": 57,
+   "zones": [
+    "Cimetière",
+    "Bois des Arak-haï",
+    "Bois de Litneg"
+   ]
+  },
+  "111": {
+   "n": "Tofu Maléfique",
+   "l": [
+    32,
+    40
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -10,
+    "terre": 20,
+    "feu": -20,
+    "eau": 30,
+    "air": -15
+   },
+   "gfx": 58,
+   "zones": [
+    "Cimetière",
+    "Cryptes du cimetière",
+    "Maison Fantôme"
+   ]
+  },
+  "112": {
+   "n": "Boo",
+   "l": [
+    25,
+    29
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": 14,
+    "feu": -4,
+    "eau": 14,
+    "air": -4
+   },
+   "gfx": 59,
+   "zones": [
+    "Marécages d'Amakna",
+    "Coin des Boos",
+    "Marécages nauséabonds"
+   ]
+  },
   "113": {
    "n": "Dragon Cochon",
    "l": [
@@ -1253,6 +1580,47 @@
     "Centre du labyrinthe du Minotoror",
     "Expédition de l'Audace - Salle du Minotot",
     "Expédition de la Bravoure - Salle du Minotot"
+   ]
+  },
+  "123": {
+   "n": "Cochon de Lait",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 15,
+    "terre": 0,
+    "feu": -15,
+    "eau": -20,
+    "air": 60
+   },
+   "gfx": 68,
+   "zones": [
+    "Montagne des Craqueleurs",
+    "Plaine des Porkass"
+   ]
+  },
+  "134": {
+   "n": "Boufton Blanc",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": 20,
+    "feu": -5,
+    "eau": -10,
+    "air": 15
+   },
+   "gfx": 73,
+   "zones": [
+    "Coin des Bouftous",
+    "Tainéla",
+    "Cour du Bouftou Royal"
    ]
   },
   "147": {
@@ -1316,6 +1684,47 @@
     "Cour du Bouftou Royal"
    ]
   },
+  "155": {
+   "n": "Bandit du clan des Roublards",
+   "l": [
+    37,
+    49
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 81,
+   "zones": [
+    "Territoire des Bandits",
+    "Donjon des Forgerons"
+   ]
+  },
+  "159": {
+   "n": "Milimulou",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 30,
+    "terre": 0,
+    "feu": 20,
+    "eau": -5,
+    "air": -15
+   },
+   "gfx": 84,
+   "zones": [
+    "Bois des Arak-haï",
+    "Forêt d'Astrub",
+    "Milifutaie"
+   ]
+  },
   "173": {
    "n": "Abraknyde Ancestral",
    "l": [
@@ -1333,6 +1742,25 @@
    "gfx": 97,
    "zones": [
     "Domaine Ancestral"
+   ]
+  },
+  "179": {
+   "n": "Wabbit Squelette",
+   "l": [
+    48,
+    56
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 58,
+    "terre": 44,
+    "feu": 14,
+    "eau": -10,
+    "air": 19
+   },
+   "gfx": 100,
+   "zones": [
+    "Îlot des Tombeaux"
    ]
   },
   "180": {
@@ -1353,6 +1781,27 @@
    "zones": [
     "Château du Wa Wabbit",
     "Invasion de l'Éveil - Île des Wabbits"
+   ]
+  },
+  "194": {
+   "n": "Scarafeuille Rouge",
+   "l": [
+    34,
+    42
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 25,
+    "terre": 0,
+    "feu": 100,
+    "eau": -50,
+    "air": 0
+   },
+   "gfx": 104,
+   "zones": [
+    "Plaine des Scarafeuilles",
+    "Donjon des Scarafeuilles",
+    "Expédition - Donjon des Scarafeuilles"
    ]
   },
   "198": {
@@ -1376,6 +1825,25 @@
     "Expédition - Donjon des Scarafeuilles"
    ]
   },
+  "207": {
+   "n": "Citwouille",
+   "l": [
+    25,
+    45
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": -5,
+    "feu": 5,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 107,
+   "zones": [
+    "Champ de citwouilles"
+   ]
+  },
   "211": {
    "n": "Kanniboul Ark",
    "l": [
@@ -1395,6 +1863,210 @@
     "Forêt des Masques",
     "Village Kanniboul",
     "Invasion de l'Éveil - Forêt des Masques"
+   ]
+  },
+  "212": {
+   "n": "Kanniboul Eth",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 0,
+    "feu": -10,
+    "eau": 10,
+    "air": 30
+   },
+   "gfx": 111,
+   "zones": [
+    "Forêt des Masques",
+    "Village Kanniboul",
+    "Invasion de l'Éveil - Forêt des Masques"
+   ]
+  },
+  "213": {
+   "n": "Kanniboul Jav",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": -10,
+    "feu": 10,
+    "eau": 30,
+    "air": 10
+   },
+   "gfx": 112,
+   "zones": [
+    "Forêt des Masques",
+    "Village Kanniboul",
+    "Invasion de l'Éveil - Forêt des Masques"
+   ]
+  },
+  "214": {
+   "n": "Kanniboul Sarbak",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 30,
+    "feu": 10,
+    "eau": 0,
+    "air": -10
+   },
+   "gfx": 113,
+   "zones": [
+    "Forêt des Masques",
+    "Village Kanniboul",
+    "Invasion de l'Éveil - Forêt des Masques"
+   ]
+  },
+  "220": {
+   "n": "Tortue Rouge",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -10,
+    "terre": 10,
+    "feu": 40,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 118,
+   "zones": [
+    "Plage de la Tortue"
+   ]
+  },
+  "221": {
+   "n": "Tortue Bleue",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -10,
+    "terre": 0,
+    "feu": 10,
+    "eau": 40,
+    "air": 0
+   },
+   "gfx": 119,
+   "zones": [
+    "Plage de la Tortue"
+   ]
+  },
+  "232": {
+   "n": "Meulou",
+   "l": [
+    100,
+    100
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 20,
+    "terre": 30,
+    "feu": -5,
+    "eau": 40,
+    "air": 40
+   },
+   "gfx": 128,
+   "zones": [
+    "Tanière du Meulou",
+    "Montagne basse des Craqueleurs"
+   ]
+  },
+  "235": {
+   "n": "Kwak de Terre",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 75,
+    "terre": 75,
+    "feu": 10,
+    "eau": 10,
+    "air": -50
+   },
+   "gfx": 130,
+   "zones": [
+    "Montagne des Craqueleurs",
+    "Nid du Kwakwa"
+   ]
+  },
+  "236": {
+   "n": "Piou Violet",
+   "l": [
+    11,
+    15
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 17,
+    "eau": 17,
+    "air": 0
+   },
+   "gfx": 131,
+   "zones": [
+    "Village d'Amakna",
+    "Sufokia",
+    "Cité d'Astrub"
+   ]
+  },
+  "240": {
+   "n": "Scarafeuille Vert",
+   "l": [
+    34,
+    42
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 25,
+    "terre": 100,
+    "feu": 0,
+    "eau": 0,
+    "air": -50
+   },
+   "gfx": 135,
+   "zones": [
+    "Plaine des Scarafeuilles",
+    "Donjon des Scarafeuilles",
+    "Expédition - Donjon des Scarafeuilles"
+   ]
+  },
+  "241": {
+   "n": "Scarafeuille Blanc",
+   "l": [
+    34,
+    42
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 25,
+    "terre": -50,
+    "feu": 0,
+    "eau": 0,
+    "air": 100
+   },
+   "gfx": 136,
+   "zones": [
+    "Plaine des Scarafeuilles",
+    "Donjon des Scarafeuilles",
+    "Expédition - Donjon des Scarafeuilles"
    ]
   },
   "253": {
@@ -1417,6 +2089,25 @@
     "Domaine Ancestral"
    ]
   },
+  "255": {
+   "n": "Arakne des Égouts",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": 20,
+    "feu": -5,
+    "eau": -15,
+    "air": 10
+   },
+   "gfx": 145,
+   "zones": [
+    "Égouts d'Astrub"
+   ]
+  },
   "256": {
    "n": "Tronknyde",
    "l": [
@@ -1434,6 +2125,44 @@
    "gfx": 146,
    "zones": [
     "Orée de la forêt des Abraknydes"
+   ]
+  },
+  "257": {
+   "n": "Chêne Mou",
+   "l": [
+    140,
+    140
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 82,
+    "terre": 52,
+    "feu": 52,
+    "eau": -5,
+    "air": -5
+   },
+   "gfx": 147,
+   "zones": [
+    "Clairière du Chêne Mou"
+   ]
+  },
+  "258": {
+   "n": "Branche Invocatrice",
+   "l": [
+    136,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 50,
+    "terre": -16,
+    "feu": 50,
+    "eau": 50,
+    "air": -16
+   },
+   "gfx": 148,
+   "zones": [
+    "Clairière du Chêne Mou"
    ]
   },
   "259": {
@@ -1457,6 +2186,25 @@
     "Routes Rocailleuses"
    ]
   },
+  "260": {
+   "n": "Branche Soignante",
+   "l": [
+    136,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 50,
+    "terre": 50,
+    "feu": -16,
+    "eau": -16,
+    "air": 50
+   },
+   "gfx": 150,
+   "zones": [
+    "Clairière du Chêne Mou"
+   ]
+  },
   "261": {
    "n": "Crocodaille",
    "l": [
@@ -1476,6 +2224,203 @@
     "Marécages d'Amakna",
     "Marécages nauséabonds",
     "Marécages sans fond"
+   ]
+  },
+  "263": {
+   "n": "Chef Crocodaille",
+   "l": [
+    61,
+    77
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 48,
+    "feu": 43,
+    "eau": 58,
+    "air": 23
+   },
+   "gfx": 152,
+   "zones": [
+    "Marécages d'Amakna",
+    "Marécages nauséabonds",
+    "Marécages sans fond"
+   ]
+  },
+  "269": {
+   "n": "Kwakere de Flamme",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 100,
+    "terre": 25,
+    "feu": 100,
+    "eau": -25,
+    "air": 25
+   },
+   "gfx": 158,
+   "zones": [
+    "Montagne des Craqueleurs",
+    "Nid du Kwakwa"
+   ]
+  },
+  "273": {
+   "n": "Blop Coco",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": -50,
+    "feu": 23,
+    "eau": 23,
+    "air": 62
+   },
+   "gfx": 162,
+   "zones": [
+    "Lac de Cania",
+    "Clos des Blops"
+   ]
+  },
+  "274": {
+   "n": "Blop Indigo",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 23,
+    "feu": -50,
+    "eau": 62,
+    "air": 23
+   },
+   "gfx": 163,
+   "zones": [
+    "Lac de Cania",
+    "Clos des Blops"
+   ]
+  },
+  "275": {
+   "n": "Blop Griotte",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 23,
+    "feu": 62,
+    "eau": -50,
+    "air": 23
+   },
+   "gfx": 164,
+   "zones": [
+    "Lac de Cania",
+    "Clos des Blops"
+   ]
+  },
+  "276": {
+   "n": "Blop Reinette",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 62,
+    "feu": 23,
+    "eau": 23,
+    "air": -50
+   },
+   "gfx": 165,
+   "zones": [
+    "Lac de Cania",
+    "Clos des Blops"
+   ]
+  },
+  "277": {
+   "n": "Biblop Indigo",
+   "l": [
+    24,
+    28
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 23,
+    "feu": -50,
+    "eau": 62,
+    "air": 23
+   },
+   "gfx": 166,
+   "zones": [
+    "Lac de Cania"
+   ]
+  },
+  "278": {
+   "n": "Biblop Coco",
+   "l": [
+    24,
+    28
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": -50,
+    "feu": 23,
+    "eau": 23,
+    "air": 62
+   },
+   "gfx": 167,
+   "zones": [
+    "Lac de Cania"
+   ]
+  },
+  "279": {
+   "n": "Biblop Griotte",
+   "l": [
+    24,
+    28
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 23,
+    "feu": 62,
+    "eau": -50,
+    "air": 23
+   },
+   "gfx": 168,
+   "zones": [
+    "Lac de Cania"
+   ]
+  },
+  "280": {
+   "n": "Biblop Reinette",
+   "l": [
+    24,
+    28
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 23,
+    "terre": 62,
+    "feu": 23,
+    "eau": 23,
+    "air": -50
+   },
+   "gfx": 169,
+   "zones": [
+    "Lac de Cania"
    ]
   },
   "281": {
@@ -1557,6 +2502,27 @@
     "Cimetière des Héros"
    ]
   },
+  "292": {
+   "n": "Chafer d'Élite",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 20,
+    "feu": 25,
+    "eau": 10,
+    "air": 15
+   },
+   "gfx": 180,
+   "zones": [
+    "Cryptes du cimetière",
+    "Bois des Arak-haï",
+    "Cimetière des Héros"
+   ]
+  },
   "299": {
    "n": "Croc Gland",
    "l": [
@@ -1598,6 +2564,120 @@
     "Laboratoire de Brumen Tinctorias"
    ]
   },
+  "379": {
+   "n": "Fantôme Égérie",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -15,
+    "terre": -5,
+    "feu": 10,
+    "eau": -15,
+    "air": 20
+   },
+   "gfx": 202,
+   "zones": [
+    "Bordure de Brâkmar"
+   ]
+  },
+  "380": {
+   "n": "Fantôme Hicide",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 20,
+    "feu": -5,
+    "eau": 10,
+    "air": -5
+   },
+   "gfx": 203,
+   "zones": [
+    "Bordure de Brâkmar"
+   ]
+  },
+  "382": {
+   "n": "Tofu Royal",
+   "l": [
+    120,
+    120
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 38,
+    "terre": 23,
+    "feu": 18,
+    "eau": 23,
+    "air": 58
+   },
+   "gfx": 204,
+   "zones": [
+    "Tofulailler Royal"
+   ]
+  },
+  "412": {
+   "n": "Larve Saphir",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 14,
+    "terre": 14,
+    "feu": 0,
+    "eau": 14,
+    "air": 14
+   },
+   "gfx": 217,
+   "zones": [
+    "Donjon des Larves"
+   ]
+  },
+  "413": {
+   "n": "Larve Rubis",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 24,
+    "terre": 24,
+    "feu": -6,
+    "eau": 24,
+    "air": 24
+   },
+   "gfx": 218,
+   "zones": [
+    "Donjon des Larves"
+   ]
+  },
+  "414": {
+   "n": "Larve Émeraude",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 19,
+    "terre": 19,
+    "feu": -6,
+    "eau": 19,
+    "air": 0
+   },
+   "gfx": 219,
+   "zones": [
+    "Donjon des Larves"
+   ]
+  },
   "442": {
    "n": "Rat d'Égoutant",
    "l": [
@@ -1615,6 +2695,140 @@
    "gfx": 239,
    "zones": [
     "Cloaque d'Amakna"
+   ]
+  },
+  "447": {
+   "n": "Ramane d'Égoutant",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": 45,
+    "feu": 9,
+    "eau": 27,
+    "air": -6
+   },
+   "gfx": 241,
+   "zones": [
+    "Cloaque d'Amakna"
+   ]
+  },
+  "449": {
+   "n": "Rat d'Hyoactif",
+   "l": [
+    52,
+    60
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 21,
+    "terre": -27,
+    "feu": 29,
+    "eau": -12,
+    "air": 44
+   },
+   "gfx": 243,
+   "zones": [
+    "Cloaque d'Amakna"
+   ]
+  },
+  "450": {
+   "n": "Gardienne des Égouts",
+   "l": [
+    145,
+    165
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 98,
+    "terre": 45,
+    "feu": 43,
+    "eau": 28,
+    "air": 18
+   },
+   "gfx": 244,
+   "zones": [
+    "Entrailles de Brâkmar",
+    "Canaux méphitiques"
+   ]
+  },
+  "457": {
+   "n": "Shin Larve",
+   "l": [
+    50,
+    50
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 54,
+    "terre": 34,
+    "feu": 34,
+    "eau": -26,
+    "air": -26
+   },
+   "gfx": 248,
+   "zones": [
+    "Donjon des Larves"
+   ]
+  },
+  "465": {
+   "n": "Scélérat Strubien",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -15,
+    "terre": -5,
+    "feu": -15,
+    "eau": 10,
+    "air": 20
+   },
+   "gfx": 254,
+   "zones": [
+    "Égouts d'Astrub"
+   ]
+  },
+  "467": {
+   "n": "Rose Obscure",
+   "l": [
+    19,
+    27
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": 25,
+    "feu": 0,
+    "eau": 30,
+    "air": 0
+   },
+   "gfx": 256,
+   "zones": [
+    "Rives iridescentes"
+   ]
+  },
+  "475": {
+   "n": "Milirat Strubien",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 10,
+    "terre": -15,
+    "feu": 10,
+    "eau": 20,
+    "air": -5
+   },
+   "gfx": 239,
+   "zones": [
+    "Égouts d'Astrub"
    ]
   },
   "483": {
@@ -1635,6 +2849,166 @@
    "zones": [
     "Pitons Rocheux des Craqueleurs",
     "Montagne basse des Craqueleurs"
+   ]
+  },
+  "489": {
+   "n": "Piou Rouge",
+   "l": [
+    11,
+    15
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 33,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 273,
+   "zones": [
+    "Cité d'Astrub",
+    "Faubourgs des artisans",
+    "Havres d'ivoire"
+   ]
+  },
+  "490": {
+   "n": "Piou Vert",
+   "l": [
+    11,
+    15
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 33,
+    "feu": 0,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 274,
+   "zones": [
+    "Village d'Amakna",
+    "Sufokia",
+    "Cité d'Astrub"
+   ]
+  },
+  "491": {
+   "n": "Piou Bleu",
+   "l": [
+    11,
+    15
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 33,
+    "air": 0
+   },
+   "gfx": 275,
+   "zones": [
+    "Village d'Amakna",
+    "Sufokia",
+    "Cité d'Astrub"
+   ]
+  },
+  "493": {
+   "n": "Piou Jaune",
+   "l": [
+    11,
+    15
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 33
+   },
+   "gfx": 277,
+   "zones": [
+    "Village d'Amakna",
+    "Sufokia",
+    "Cité d'Astrub"
+   ]
+  },
+  "650": {
+   "n": "Abrakne",
+   "l": [
+    42,
+    50
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": -12,
+    "feu": 28,
+    "eau": -5,
+    "air": 14
+   },
+   "gfx": 345,
+   "zones": [
+    "Orée de la forêt des Abraknydes"
+   ]
+  },
+  "652": {
+   "n": "Champa Vert",
+   "l": [
+    35,
+    43
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 58,
+    "terre": -5,
+    "feu": -5,
+    "eau": -5,
+    "air": 68
+   },
+   "gfx": 347,
+   "zones": [
+    "Bord de la forêt maléfique"
+   ]
+  },
+  "654": {
+   "n": "Champa Bleu",
+   "l": [
+    35,
+    43
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 58,
+    "terre": -5,
+    "feu": -5,
+    "eau": 68,
+    "air": -5
+   },
+   "gfx": 349,
+   "zones": [
+    "Bord de la forêt maléfique"
+   ]
+  },
+  "655": {
+   "n": "Champa Marron",
+   "l": [
+    35,
+    43
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 58,
+    "terre": 68,
+    "feu": -5,
+    "eau": -5,
+    "air": -5
+   },
+   "gfx": 350,
+   "zones": [
+    "Bord de la forêt maléfique"
    ]
   },
   "669": {
@@ -1675,6 +3049,128 @@
     "Caverne du Koulosse"
    ]
   },
+  "672": {
+   "n": "Boufcoul",
+   "l": [
+    92,
+    100
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 38,
+    "terre": 62,
+    "feu": -12,
+    "eau": -13,
+    "air": 28
+   },
+   "gfx": 360,
+   "zones": [
+    "Antre du Koulosse"
+   ]
+  },
+  "746": {
+   "n": "Warko Marron",
+   "l": [
+    74,
+    82
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 28,
+    "terre": 29,
+    "feu": -10,
+    "eau": -6,
+    "air": 68
+   },
+   "gfx": 413,
+   "zones": [
+    "Caverne du Koulosse",
+    "Forêt de Kaliptus",
+    "Canyon sauvage"
+   ]
+  },
+  "747": {
+   "n": "Dok Alako",
+   "l": [
+    70,
+    78
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 38,
+    "terre": -3,
+    "feu": 38,
+    "eau": -20,
+    "air": 68
+   },
+   "gfx": 414,
+   "zones": [
+    "Caverne du Koulosse",
+    "Lacs enchantés",
+    "Forêt de Kaliptus"
+   ]
+  },
+  "752": {
+   "n": "Koalak Coco",
+   "l": [
+    80,
+    88
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": -12,
+    "feu": -12,
+    "eau": -12,
+    "air": 78
+   },
+   "gfx": 418,
+   "zones": [
+    "Caverne du Koulosse",
+    "Canyon sauvage"
+   ]
+  },
+  "753": {
+   "n": "Koalak Griotte",
+   "l": [
+    80,
+    88
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": -12,
+    "feu": 78,
+    "eau": -12,
+    "air": -12
+   },
+   "gfx": 419,
+   "zones": [
+    "Caverne du Koulosse",
+    "Canyon sauvage"
+   ]
+  },
+  "755": {
+   "n": "Mama Koalak",
+   "l": [
+    90,
+    98
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 38,
+    "terre": 58,
+    "feu": 38,
+    "eau": -2,
+    "air": -10
+   },
+   "gfx": 421,
+   "zones": [
+    "Caverne du Koulosse",
+    "Canyon sauvage",
+    "Expédition - Caverne du Koulosse"
+   ]
+  },
   "784": {
    "n": "Piralak",
    "l": [
@@ -1693,6 +3189,25 @@
    "zones": [
     "Caverne du Koulosse",
     "Lacs enchantés"
+   ]
+  },
+  "785": {
+   "n": "Koalak Forestier",
+   "l": [
+    80,
+    88
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": 14,
+    "feu": 24,
+    "eau": -21,
+    "air": -11
+   },
+   "gfx": 435,
+   "zones": [
+    "Forêt de Kaliptus"
    ]
   },
   "792": {
@@ -1714,6 +3229,26 @@
     "Donjon des Bworks"
    ]
   },
+  "796": {
+   "n": "Tofu Noir",
+   "l": [
+    32,
+    40
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 16,
+    "terre": 13,
+    "feu": -6,
+    "eau": 20,
+    "air": 21
+   },
+   "gfx": 442,
+   "zones": [
+    "Champ des Ingalsse",
+    "Donjon des Tofus"
+   ]
+  },
   "799": {
    "n": "Tournesol Affamé",
    "l": [
@@ -1731,6 +3266,27 @@
    "gfx": 445,
    "zones": [
     "Grange du Tournesol Affamé"
+   ]
+  },
+  "858": {
+   "n": "Dragoss Charbon",
+   "l": [
+    92,
+    100
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 22,
+    "terre": 16,
+    "feu": 32,
+    "eau": -15,
+    "air": 11
+   },
+   "gfx": 481,
+   "zones": [
+    "Village des Dragoeufs",
+    "Souterrains des Dragoeufs",
+    "Repaire du Kharnozor"
    ]
   },
   "876": {
@@ -1752,6 +3308,68 @@
     "Campement des Bworks",
     "Village des Bworks",
     "Donjon des Bworks"
+   ]
+  },
+  "905": {
+   "n": "Dragoss Ardoise",
+   "l": [
+    92,
+    100
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 22,
+    "terre": 11,
+    "feu": -15,
+    "eau": 32,
+    "air": 16
+   },
+   "gfx": 490,
+   "zones": [
+    "Village des Dragoeufs",
+    "Souterrains des Dragoeufs",
+    "Repaire du Kharnozor"
+   ]
+  },
+  "1020": {
+   "n": "Bitouf Aérien",
+   "l": [
+    144,
+    160
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": -27,
+    "feu": -3,
+    "eau": -2,
+    "air": 35
+   },
+   "gfx": 559,
+   "zones": [
+    "Canopée du Kimbo",
+    "Tronc de l'arbre Hakam",
+    "Feuillage de l'arbre Hakam"
+   ]
+  },
+  "1041": {
+   "n": "Bitouf Sombre",
+   "l": [
+    130,
+    142
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 25,
+    "terre": 25,
+    "feu": 25,
+    "eau": -25,
+    "air": 33
+   },
+   "gfx": 566,
+   "zones": [
+    "Jungle obscure",
+    "Laboratoire du Tynril"
    ]
   },
   "1043": {
@@ -1814,6 +3432,397 @@
    "zones": [
     "Jungle obscure",
     "Laboratoire du Tynril"
+   ]
+  },
+  "1078": {
+   "n": "Coffre Maudit du Flib",
+   "l": [
+    20,
+    28
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 19,
+    "terre": -11,
+    "feu": -11,
+    "eau": -11,
+    "air": -11
+   },
+   "gfx": 98,
+   "zones": [
+    "Île des naufragés"
+   ]
+  },
+  "1178": {
+   "n": "Champa Explosif",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": -5,
+    "feu": -5,
+    "eau": 68,
+    "air": -5
+   },
+   "gfx": 347,
+   "zones": [
+    "Temple du Grand Ougah"
+   ]
+  },
+  "1185": {
+   "n": "Blop Griotte Royal",
+   "l": [
+    60,
+    60
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": -12,
+    "terre": -12,
+    "feu": 94,
+    "eau": -12,
+    "air": -12
+   },
+   "gfx": 646,
+   "zones": [
+    "Clos des Blops",
+    "Antre du Blop Multicolore Royal"
+   ]
+  },
+  "2845": {
+   "n": "Sanglacier",
+   "l": [
+    132,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": 14,
+    "feu": 9,
+    "eau": 34,
+    "air": -19
+   },
+   "gfx": 766,
+   "zones": [
+    "Forêt des pins perdus"
+   ]
+  },
+  "2846": {
+   "n": "Fricochère",
+   "l": [
+    132,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 5,
+    "terre": 18,
+    "feu": 17,
+    "eau": -22,
+    "air": 26
+   },
+   "gfx": 767,
+   "zones": [
+    "Forêt des pins perdus"
+   ]
+  },
+  "2847": {
+   "n": "Kaniglou",
+   "l": [
+    132,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -17,
+    "terre": 19,
+    "feu": 14,
+    "eau": 18,
+    "air": 35
+   },
+   "gfx": 768,
+   "zones": [
+    "Forêt des pins perdus"
+   ]
+  },
+  "2848": {
+   "n": "Mansot Royal",
+   "l": [
+    140,
+    140
+   ],
+   "k": "boss",
+   "res": {
+    "neutre": 29,
+    "terre": 25,
+    "feu": 24,
+    "eau": 34,
+    "air": 22
+   },
+   "gfx": 769,
+   "zones": [
+    "Excavation du Mansot Royal"
+   ]
+  },
+  "2849": {
+   "n": "Timansot",
+   "l": [
+    132,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 18,
+    "terre": -22,
+    "feu": 14,
+    "eau": 36,
+    "air": 12
+   },
+   "gfx": 770,
+   "zones": [
+    "Lac gelé",
+    "Excavation du Mansot Royal"
+   ]
+  },
+  "2856": {
+   "n": "Mansobèse",
+   "l": [
+    132,
+    140
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 9,
+    "terre": 35,
+    "feu": 14,
+    "eau": -25,
+    "air": 11
+   },
+   "gfx": 777,
+   "zones": [
+    "Lac gelé",
+    "Excavation du Mansot Royal"
+   ]
+  },
+  "2888": {
+   "n": "Yokaï Givrefoux",
+   "l": [
+    162,
+    170
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 16,
+    "terre": 14,
+    "feu": -36,
+    "eau": 65,
+    "air": 17
+   },
+   "gfx": 803,
+   "zones": [
+    "Village enseveli",
+    "Crevasse Perge",
+    "Tanière Givrefoux"
+   ]
+  },
+  "4000": {
+   "n": "Abraknyde Chétif",
+   "l": [
+    27,
+    39
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 20,
+    "terre": 25,
+    "feu": -4,
+    "eau": 25,
+    "air": -4
+   },
+   "gfx": 1271,
+   "zones": [
+    "Forêt d'Amakna",
+    "Clairière de Brouce Boulgoure"
+   ]
+  },
+  "4046": {
+   "n": "Chafer Débutant",
+   "l": [
+    5,
+    9
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 14,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 16,
+   "zones": [
+    "Crypte de Kardorim",
+    "Cimetière"
+   ]
+  },
+  "4047": {
+   "n": "Chafer Furtif",
+   "l": [
+    6,
+    10
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 0,
+    "eau": 0,
+    "air": 14
+   },
+   "gfx": 57,
+   "zones": [
+    "Crypte de Kardorim",
+    "Cimetière"
+   ]
+  },
+  "4050": {
+   "n": "Sergent Chafer",
+   "l": [
+    7,
+    11
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 0,
+    "terre": 0,
+    "feu": 14,
+    "eau": 0,
+    "air": 0
+   },
+   "gfx": 180,
+   "zones": [
+    "Crypte de Kardorim"
+   ]
+  },
+  "4579": {
+   "n": "Corbac Chef",
+   "l": [
+    102,
+    110
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 30,
+    "terre": 30,
+    "feu": 30,
+    "eau": -15,
+    "air": -15
+   },
+   "gfx": 170,
+   "zones": [
+    "Salle de lecture du Maître Corbac"
+   ]
+  },
+  "4580": {
+   "n": "Corbac Dressé",
+   "l": [
+    102,
+    110
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 25,
+    "terre": -10,
+    "feu": 30,
+    "eau": 30,
+    "air": -25
+   },
+   "gfx": 456,
+   "zones": [
+    "Salle de lecture du Maître Corbac"
+   ]
+  },
+  "4819": {
+   "n": "Campagnoll",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 15,
+    "terre": -5,
+    "feu": 10,
+    "eau": -5,
+    "air": 5
+   },
+   "gfx": 188,
+   "zones": [
+    "Rivière Kawaii",
+    "Clairière de Brouce Boulgoure",
+    "Campagne d'Amakna"
+   ]
+  },
+  "4821": {
+   "n": "Gardienne Champêtre",
+   "l": [
+    16,
+    20
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -5,
+    "terre": -5,
+    "feu": -10,
+    "eau": 20,
+    "air": 25
+   },
+   "gfx": 1580,
+   "zones": [
+    "Grange du Tournesol Affamé"
+   ]
+  },
+  "4823": {
+   "n": "Écurouille",
+   "l": [
+    22,
+    30
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": -10,
+    "terre": -5,
+    "feu": 10,
+    "eau": 15,
+    "air": 20
+   },
+   "gfx": 206,
+   "zones": [
+    "Forêt d'Astrub",
+    "Milifutaie"
+   ]
+  },
+  "4866": {
+   "n": "Muloubard",
+   "l": [
+    92,
+    100
+   ],
+   "k": "normal",
+   "res": {
+    "neutre": 15,
+    "terre": 20,
+    "feu": 30,
+    "eau": -10,
+    "air": -5
+   },
+   "gfx": 1591,
+   "zones": [
+    "Tanière du Meulou"
    ]
   }
  },

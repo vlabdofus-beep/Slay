@@ -1,6 +1,7 @@
 import type { MonsterScale } from '../core/combat.ts';
 import type { Effect, Element, MonsterDef, MonsterMove, MovePattern } from '../core/types.ts';
 import { monster, monsterImage, weakResist } from './dofus.ts';
+import { ACT1_EXTRA, ACT2_EXTRA, ACT3_EXTRA, EXTRA_ENCOUNTERS } from './bestiary.ts';
 
 // Monstres reliés aux vrais monstres Dofus (src/data/dofus.json) : NOM, NIVEAU, IMAGE et
 // FAIBLESSES / RÉSISTANCES (dérivées des résistances Dofus, voir weakResist) viennent de Dofus.
@@ -264,6 +265,66 @@ export const MONSTERS: MonsterDef[] = [
 const BOSSES = ['bouftou_royal', 'abraknyde_ancestral', 'minotoror'];
 for (const m of MONSTERS) if (BOSSES.includes(m.id)) m.boss = true;
 
+// ── Mécaniques des monstres d'origine (voir types.ts, MonsterPower) ──
+const PATCH: Record<string, (m: MonsterDef) => void> = {
+  tofu: (m) => { m.powers = [{ kind: 'esquive', n: 1 }]; },
+  champ_champ: (m) => { m.powers = [{ kind: 'spores', n: 1 }]; },
+  arakne: (m) => { m.moves.toile.effects.push({ type: 'addCard', card: 'statut_toile', count: 1, pile: 'draw' }); },
+  prespic: (m) => { m.powers = [{ kind: 'epines', n: 1 }]; },
+  sanglier: (m) => { m.powers = [{ kind: 'colere', n: 1 }]; },
+  chef_guerre_bouftou: (m) => {
+    m.powers = [{ kind: 'rage', n: 2 }];
+    m.moves.renforts = { name: 'Renforts', effects: [{ type: 'summon', monster: 'boufton_noir' }, block(6)] };
+    m.pattern = cycle('renforts', 'balayage', 'cri', 'masse');
+  },
+  tournesol_affame: (m) => { m.powers = [{ kind: 'regeneration', n: 2 }]; },
+  bouftou_royal: (m) => {
+    m.moves.troupeau = { name: 'Le troupeau accourt', effects: [{ type: 'summon', monster: 'bouftou' }, block(10)] };
+    m.pattern = cycle('pietinement', 'appel_troupeau', 'coup_de_tete', 'troupeau');
+    m.phase2 = { at: 0.5, puissance: 2, name: 'Colère royale', pattern: cycle('troupeau', 'pietinement', 'coup_de_tete') };
+  },
+  abraknyde: (m) => { m.powers = [{ kind: 'carapace', n: 2 }]; },
+  craqueleur: (m) => { m.powers = [{ kind: 'carapace', n: 3 }]; },
+  bwork: (m) => { m.powers = [{ kind: 'colere', n: 1 }]; },
+  kwak_flamme: (m) => { m.moves.flamme.effects.push({ type: 'addCard', card: 'statut_braise', count: 1, pile: 'discard' }); },
+  kwak_glace: (m) => { m.powers = [{ kind: 'esquive', n: 1 }]; },
+  abraknyde_sombre: (m) => { m.powers = [{ kind: 'sommeil', turns: 3, block: 10 }]; },
+  craqueleur_legendaire: (m) => { m.powers = [{ kind: 'cameleon' }, { kind: 'carapace', n: 5 }]; },
+  wa_wabbit: (m) => {
+    m.powers = [{ kind: 'gardien' }];
+    m.moves.garde = { name: 'Garde royale', effects: [{ type: 'summon', monster: 'wabbit', count: 1 }, block(8)] };
+    m.pattern = cycle('garde', 'carottes', 'ordre', 'coup');
+  },
+  bworkette: (m) => {
+    m.powers = [{ kind: 'colere', n: 1 }];
+    m.moves.fouet.effects.push({ type: 'addCard', card: 'statut_braise', count: 1, pile: 'discard' });
+  },
+  abraknyde_ancestral: (m) => {
+    m.moves.branches = { name: 'Branches vivantes', effects: [{ type: 'summon', monster: 'branche_soignante' }, block(10)] };
+    m.pattern = cycle('branches', 'racines', 'foret', 'colere', 'seve');
+    m.phase2 = { at: 0.5, puissance: 3, name: 'Fureur de la forêt', pattern: cycle('colere', 'racines', 'seve') };
+  },
+  kaskargo: (m) => { m.powers = [{ kind: 'carapace', n: 4 }]; },
+  corbac: (m) => { m.powers = [{ kind: 'esquive', n: 1 }]; },
+  mulou: (m) => { m.powers = [{ kind: 'colere', n: 1 }]; },
+  poolay: (m) => { m.powers = [{ kind: 'regeneration', n: 4 }]; },
+  maitre_corbac: (m) => {
+    m.powers = [{ kind: 'rituel', n: 2 }];
+    m.moves.nuee = { name: 'Nuée', effects: [{ type: 'summon', monster: 'corbac' }, hit(8, 'air', 2)] };
+  },
+  dragon_cochon: (m) => {
+    m.powers = [{ kind: 'colere', n: 2 }];
+    m.moves.souffle.effects.push({ type: 'addCard', card: 'statut_braise', count: 2, pile: 'discard' });
+  },
+  koulosse: (m) => { m.powers = [{ kind: 'plafond', n: 45 }, { kind: 'carapace', n: 6 }]; },
+  minotoror: (m) => {
+    m.powers = [{ kind: 'plafond', n: 70 }];
+    m.phase2 = { at: 0.5, puissance: 4, name: 'Fureur du labyrinthe', pattern: cycle('corne', 'charge', 'labyrinthe') };
+  },
+};
+for (const m of MONSTERS) PATCH[m.id]?.(m);
+MONSTERS.push(...ACT1_EXTRA, ...ACT2_EXTRA, ...ACT3_EXTRA);
+
 export type Act = 1 | 2 | 3;
 export const ACTS: { act: Act; name: string; boss: string }[] = [
   { act: 1, name: 'Amakna', boss: 'Bouftou Royal' },
@@ -271,7 +332,7 @@ export const ACTS: { act: Act; name: string; boss: string }[] = [
   { act: 3, name: 'Landes de Brâkmar', boss: 'Minotoror' },
 ];
 
-type Enc = { tier: EncounterTier; act: Act; monsters: string[] };
+type Enc = { tier: EncounterTier; act: Act; monsters: string[]; pack?: number };
 const enc = (act: Act, tier: EncounterTier, ...monsters: string[]): Enc => ({ act, tier, monsters });
 
 /** Rencontres des trois actes. */
@@ -285,7 +346,7 @@ export const ENCOUNTERS: Record<string, Enc> = {
   bouftous: enc(1, 'normal', 'bouftou', 'boufton_noir'),
   champs: enc(1, 'normal', 'pissenlit', 'rose_demoniaque'),
   foret: enc(1, 'normal', 'arakne', 'larve_bleue', 'moskito'),
-  prespic_tofus: enc(1, 'normal', 'prespic', 'tofu', 'tofu'),
+  prespic_tofus: enc(1, 'normal', 'prespic', 'tofu'),
   lisiere: enc(1, 'normal', 'sanglier', 'champ_champ'),
   chef_guerre: enc(1, 'elite', 'chef_guerre_bouftou'),
   tournesol: enc(1, 'elite', 'tournesol_affame'),
@@ -319,6 +380,7 @@ export const ENCOUNTERS: Record<string, Enc> = {
   dragon_cochon: enc(3, 'elite', 'dragon_cochon'),
   koulosse: enc(3, 'elite', 'koulosse'),
   minotoror: enc(3, 'boss', 'minotoror'),
+  ...EXTRA_ENCOUNTERS,
 };
 
 export function encountersOfTier(tier: EncounterTier, act: Act = 1): string[] {

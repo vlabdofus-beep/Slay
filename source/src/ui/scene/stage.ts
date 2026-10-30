@@ -2,6 +2,7 @@
 // Un seul canvas, fixé derrière l'interface (il survit aux re-rendus du DOM). Les monstres sont dans le DOM :
 // la scène lit leur position à l'écran pour y poser projectiles et impacts.
 import SPELLFX from '../../data/spellfx.json' with { type: 'json' };
+import { ENCOUNTERS } from '../../data/monsters.ts';
 import { ALL_CARDS } from '../../data/cards.ts';
 import type { CardDef, ClassId, Element } from '../../core/types.ts';
 import { animLength, animOf, buildCharacter, buildSpells, drawAnim, shotTime, type Character } from './rt.js';
@@ -102,6 +103,7 @@ export function spellAnimsFor(classe: string): string[] {
 
 /** Animation et effets à jouer pour une carte. Sans effet d'impact propre, emprunte celui d'une carte du même élément. */
 export function castPlan(card: CardDef): { anim: string; fx: FxEntry[] } {
+  if (card.status || card.classe === 'neutre') return { anim: 'cast', fx: [] };
   const classe = card.classe as string;
   const e = entryOf(card);
   let anim = e?.[0] ?? (card.spellId ? classDefaultAnim(classe) : classe === 'iop' ? 'strike' : classDefaultAnim(classe));
@@ -288,7 +290,7 @@ class Stage {
     this.mount();
     this.canvas!.classList.add('on');
     this.visible = true;
-    const pack = ENCOUNTER_PACK[encounter] ?? 18;
+    const pack = ENCOUNTER_PACK[encounter] ?? ENCOUNTERS[encounter]?.pack ?? 18;
     if (pack !== this.packId || !this.backdrop) { this.backdrop = null; void this.setPack(pack); }
     const key = `${classe}${gender}`;
     if (key !== this.charKey) {

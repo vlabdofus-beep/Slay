@@ -217,3 +217,67 @@ test('limite par objet : 3 déclenchements par tour (1 pour la pioche), sans pla
   c.fxStatus(c.enemies[0], 'brulure', 10);
   assert.equal(c.enemies[0].status.brulure, 50); // aucune limite de pile
 });
+
+// ───────────── mécaniques des monstres ─────────────
+
+test('division : une Gelée à moitié de ses PV se change en deux Petites Gelées qui gardent ses PV', () => {
+  const c = combatWith(['gelee_bleuet'], ['iop_colere']);
+  const g = c.enemies[0];
+  g.hp = g.maxHp = 40;
+  c.player.status.puissance = 0;
+  c.playCard(0, 0); // 24 Terre
+  assert.equal(g.dead, true);
+  const kids = c.living();
+  assert.equal(kids.length, 2);
+  assert.ok(kids.every((k) => k.def.id === 'gelee_bleuet_petite' && k.hp === 40 - 24));
+});
+
+test('voleur : vole des kamas et s\'enfuit avec ; enroulement ; épines ; rage sur les compétences', () => {
+  const c = combatWith(['ecurouille'], []);
+  const e = c.enemies[0];
+  e.status = {};
+  for (let i = 0; i < 3 && c.outcome === 'ongoing'; i++) { c.hand = []; c.endTurn(); }
+  assert.equal(e.dead, true);
+  assert.equal(e.m.gone, 'fui');
+  assert.equal(c.result().kamasStolen, e.m.stolen);
+  assert.ok(e.m.stolen > 0);
+  const d = combatWith(['larve_verte'], ['iop_coup_epee']);
+  d.playCard(0, 0);
+  assert.equal(d.enemies[0].block, 5);
+  const t = combatWith(['prespic'], ['iop_coup_epee']);
+  const hp = t.player.hp;
+  t.playCard(0, 0);
+  assert.equal(t.player.hp, hp - 1);
+  const n = combatWith(['chef_guerre_bouftou'], ['iop_vitalite']);
+  n.playCard(0);
+  assert.equal(n.enemies[0].status.puissance, 2);
+});
+
+test('sommeil, explosion, plafond, artefact, invocation et cartes de statut', () => {
+  const s = combatWith(['abraknyde_sombre'], []);
+  assert.equal(s.intent(s.enemies[0]).note, 'Endormi');
+  const x = combatWith(['champa_explosif'], []);
+  x.hand = []; x.endTurn(); x.hand = []; x.endTurn();
+  assert.equal(x.intent(x.enemies[0]).note, 'Explose !');
+  const hp = x.player.hp;
+  x.hand = []; x.endTurn();
+  assert.ok(x.player.hp < hp);
+  assert.equal(x.enemies[0].m.gone, 'explose');
+  const k = combatWith(['koulosse'], ['iop_colere', 'iop_colere']);
+  k.player.energy = 9; k.player.status.puissance = 40;
+  k.playCard(0, 0); k.playCard(0, 0);
+  assert.equal(k.enemies[0].maxHp - k.enemies[0].hp, 45);
+  const a = combatWith(['rose_obscure'], []);
+  a.fxStatus(a.enemies[0], 'vulnerabilite', 2);
+  assert.equal(a.enemies[0].status.vulnerabilite ?? 0, 0);
+  const g = combatWith(['gardienne_champetre'], []);
+  g.enemies[0].moveId = 'appel';
+  g.hand = []; g.endTurn();
+  assert.equal(g.living().length, 2); // la Gardienne et le Campagnoll qu'elle appelle
+  const r = combatWith(['arakne_egouts'], []);
+  r.enemies[0].moveId = 'toile';
+  r.hand = []; r.endTurn();
+  const all = [...r.hand, ...r.drawPile, ...r.discardPile];
+  assert.ok(all.some((i) => i.id === 'statut_toile'));
+  assert.ok(r.legalActions().every((a2) => a2.type === 'end' || r.cardDef(r.hand[a2.handIndex]).id !== 'statut_toile'));
+});

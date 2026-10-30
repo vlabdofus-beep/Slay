@@ -884,3 +884,13 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 .slot.hastip { position: relative; cursor: help; }
 .slot.hastip .fxtip { width: 240px; }
 .slot.hastip:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; }
+
+/* ───────── mécaniques des monstres et cartes de statut ───────── */
+.fxb.st.power { border-color: #b77ce0; background: rgba(40, 24, 52, .85); }
+.chips.powers { margin-top: -1px; }
+.card.is-status {
+  --m-dark: #2b2f33; --m-mid: #5b636a; --m-light: #9aa3aa; --m-ink: #e8edf0;
+  filter: saturate(.5);
+}
+.card.is-status .card-name { color: #f1f4f6; text-shadow: 0 1px 2px #000; }
+.card.is-status .card-art { background: radial-gradient(60% 70% at 50% 42%, #4b4f55, #1a1d20 70%); }

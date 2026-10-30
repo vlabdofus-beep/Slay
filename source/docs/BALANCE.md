@@ -159,3 +159,18 @@ sa fréquence en conséquence (au plus limite × 4,5 tours par combat). Valeurs 
 Bot glouton (cartes au hasard), 800 runs, avec objets, après calage : boss 1 battu 10 % (Iop) / 18 % (Crâ),
 boss 2 1 % / 8 %, boss 3 0 % / 2 %. Le bot joue nettement moins bien qu'un humain : ces chiffres servent à comparer
 des réglages entre eux, pas à fixer la difficulté.
+
+## Bestiaire ×3 et mécaniques (30/10/2026)
+
+150 monstres, 30 à 40 rencontres par acte, 5 à 6 élites et 3 boss par acte. Les PV médians restent alignés sur StS2
+(acte 1 : faible 39, normale 67, élite 77, boss 218 ; acte 2 : 83 / 133 / 155 / 380 ; acte 3 : 98 / 141 / 254 / 557).
+
+Les mécaniques ajoutent de la difficulté à PV égaux (invocations, divisions, régénération). Réglage rencontre par
+rencontre avec le taux de mort du bot sur 1 500 runs complètes (`/tmp/encstats.ts`, à reprendre en outil) :
+acte 1 normales 5-33 % (outliers corrigés : Prespic + Tofus, Bouftons, Champa Explosif, Tofus Maléfiques),
+élites 19-44 %, boss 34-66 % ; acte 2 élites 14-50 %, boss 14-28 %. Corrections faites : Gardienne Champêtre
+(appelait 2 Campagnolls par cycle, 0 % de victoire), Tournesol (régénération 5 → 2), épines du Prespic 2 → 1,
+Chef Crocodaille (PV et rage), Wa Wabbit (1 Wabbit appelé), Abraknyde Ancestral (une seule branche), Bouftou Royal et
+Shin Larve (seconde phase moins forte).
+
+Bot glouton, 800 runs avec objets : boss 1 battu 8 % (Iop) / 15 % (Crâ), boss 2 1 % / 5 %, boss 3 0 % / 1 %.

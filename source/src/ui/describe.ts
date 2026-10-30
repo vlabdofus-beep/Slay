@@ -60,11 +60,16 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
       if (fx.on === 'all_enemies') return `Applique <b>${fx.amount}</b> ${s} à tous les ennemis.`;
       return `Applique <b>${fx.amount}</b> ${s}${zone}.`;
     }
+    default:
+      return '';
   }
 }
 
 export function cardText(def: CardDef, c: Combat | null = null): string {
   const lines = def.effects.map((fx) => effectText(fx, def.target, c, def.element));
+  if (def.unplayable) lines.push('Injouable.');
+  if (def.endTurnDamage) lines.push(`Si elle est encore en main en fin de tour, tu subis <b>${def.endTurnDamage}</b> dégâts.`);
+  if (def.ethereal) lines.push('Éphémère : épuisée si elle reste en main en fin de tour.');
   if (def.exhaust) lines.push('Épuisée après usage.');
   return lines.join(' ');
 }
@@ -83,11 +88,13 @@ export function intentSummary(c: Combat, e: Enemy): { kind: 'attack' | 'defend' 
   const it = c.intent(e);
   const move = e.def.moves[e.moveId];
   if (it.stunned) return { kind: 'other', label: 'Étourdi' };
+  if (it.note) return { kind: it.damage > 0 ? 'attack' : 'other', label: it.damage > 0 ? `${it.note} ${it.damage}` : it.note };
   if (it.damage > 0) {
     const perHit = Math.round(it.damage / Math.max(1, it.hits));
     return { kind: 'attack', label: it.hits > 1 ? `${perHit}×${it.hits}` : String(it.damage) };
   }
-  if (move.effects.some((fx) => fx.type === 'status' && fx.on === 'target')) return { kind: 'debuff', label: move.name };
+  if (move.effects.some((fx) => fx.type === 'summon')) return { kind: 'buff', label: move.name };
+  if (move.effects.some((fx) => (fx.type === 'status' && fx.on === 'target') || fx.type === 'addCard')) return { kind: 'debuff', label: move.name };
   if (move.effects.some((fx) => fx.type === 'block' || fx.type === 'heal')) return { kind: 'defend', label: move.name };
   if (move.effects.some((fx) => fx.type === 'status' && fx.on === 'self')) return { kind: 'buff', label: move.name };
   return { kind: 'other', label: move.name };
@@ -95,6 +102,10 @@ export function intentSummary(c: Combat, e: Enemy): { kind: 'attack' | 'defend' 
 
 export function moveDetail(e: Enemy, c?: Combat): string {
   if (c?.intent(e).stunned) return 'saute son action';
+  const note = c?.intent(e).note;
+  if (note === 'Endormi') return 'dort et se protège';
+  if (note === 'Explose !') return 'explose et meurt';
+  if (note === 'S\'enfuit') return 's\'enfuit avec les kamas volés';
   const move = e.def.moves[e.moveId];
   return move.effects
     .map((fx) => {
@@ -103,6 +114,8 @@ export function moveDetail(e: Enemy, c?: Combat): string {
       if (fx.type === 'block') return `+${fx.amount} armure`;
       if (fx.type === 'heal') return `se soigne de ${fx.amount}`;
       if (fx.type === 'status') return `${fx.on === 'self' ? 'gagne' : 'applique'} ${fx.amount} ${STATUS_INFO[fx.status].name}`;
+      if (fx.type === 'summon') return `invoque ${fx.count && fx.count > 1 ? `${fx.count} alliés` : 'un allié'}`;
+      if (fx.type === 'addCard') return `glisse ${fx.count} carte${fx.count > 1 ? 's' : ''} de statut dans ton deck`;
       return '';
     })
     .filter(Boolean)
@@ -111,3 +124,27 @@ export function moveDetail(e: Enemy, c?: Combat): string {
 
 export const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** Mécaniques de monstres : nom et explication (une seule source pour l'interface). */
+export function powerInfo(p: import('../core/types.ts').MonsterPower): { name: string; help: string; n?: number } {
+  switch (p.kind) {
+    case 'carapace': return { name: 'Carapace', n: p.n, help: `Gagne ${p.n} armure à la fin de chacun de ses tours.` };
+    case 'epines': return { name: 'Épines', n: p.n, help: `Chaque coup qu'il reçoit te renvoie ${p.n} dégâts.` };
+    case 'colere': return { name: 'Colère', n: p.n, help: `Gagne ${p.n} puissance chaque fois qu'il perd des PV.` };
+    case 'enroulement': return { name: 'Enroulement', n: p.n, help: `La première fois qu'il perd des PV, il gagne ${p.n} armure.` };
+    case 'rituel': return { name: 'Rituel', n: p.n, help: `Gagne ${p.n} puissance à la fin de chacun de ses tours, à partir du deuxième.` };
+    case 'spores': return { name: 'Spores', n: p.n, help: `En mourant, t'applique ${p.n} vulnérabilité.` };
+    case 'explosion': return { name: 'Explosion', n: p.dmg, help: `Explose au bout de ${p.turns} tours : ${p.dmg} dégâts, puis meurt. Tue-le avant.` };
+    case 'division': return { name: 'Division', help: 'À la moitié de ses PV, il se divise en deux monstres plus petits qui gardent ses PV restants.' };
+    case 'voleur': return { name: 'Voleur', n: p.n, help: p.turns >= 99 ? `Vole ${p.n} kamas à chaque coup qui te blesse. Tu les récupères en le battant.`
+      : `Vole ${p.n} kamas à chaque coup qui te blesse et s'enfuit au bout de ${p.turns} tours avec son butin. Tu les récupères en le battant avant.` };
+    case 'gardien': return { name: 'Garde', help: 'Subit moitié moins de dégâts tant qu\'un autre monstre est en vie.' };
+    case 'regeneration': return { name: 'Régénération', n: p.n, help: `Se soigne de ${p.n} PV à la fin de chacun de ses tours.` };
+    case 'esquive': return { name: 'Agilité', n: p.n, help: `Commence le combat avec ${p.n} esquive : ses premiers coups reçus sont annulés.` };
+    case 'cameleon': return { name: 'Peau de roche', help: 'Résiste à l\'élément du dernier coup qu\'il a reçu : varie les éléments.' };
+    case 'rage': return { name: 'Rage', n: p.n, help: `Gagne ${p.n} puissance chaque fois que tu joues une compétence.` };
+    case 'sommeil': return { name: 'Sommeil', n: p.turns, help: `Dort ${p.turns} tours en gagnant ${p.block} armure par tour. Se réveille plus tôt s'il perd des PV.` };
+    case 'plafond': return { name: 'Invulnérable', n: p.n, help: `Ne perd jamais plus de ${p.n} PV par tour.` };
+    case 'artefact': return { name: 'Artefact', n: p.n, help: `Annule les ${p.n} prochains malus qu'on lui applique.` };
+  }
+}

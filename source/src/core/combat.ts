@@ -8,6 +8,7 @@ import type {
   Element,
   Library,
   MonsterDef,
+  MonsterPower,
   StatusId,
   StatusMap,
 } from './types.ts';
@@ -40,7 +41,19 @@ export interface Enemy extends Entity {
   cycleIndex: number;
   lastMoves: string[];
   dead: boolean;
+  /** État des mécaniques du monstre. */
+  m: {
+    turns: number; hurtOnce: boolean; asleep: number; lostThisTurn: number; artefact: number;
+    stolen: number; lastEl: Element | null; phased: boolean; split: boolean;
+    /** S'est enfui (voleur) ou s'est divisé : ne compte pas comme une victoire sur lui. */
+    gone?: 'fui' | 'divise' | 'explose';
+  };
 }
+
+const MAX_FOES = 5;
+const DEBUFFS: StatusId[] = ['faiblesse', 'vulnerabilite', 'brulure', 'poison', 'erosion', 'etourdi'];
+const power = <K extends MonsterPower['kind']>(e: Enemy, k: K) =>
+  e.def.powers?.find((p) => p.kind === k) as Extract<MonsterPower, { kind: K }> | undefined;
 
 export interface PlayerInit {
   hp: number;
@@ -71,6 +84,8 @@ export interface CombatResult {
   prospection: { next: number; run: number };
   /** La résurrection a servi pendant ce combat. */
   revived: boolean;
+  /** Kamas emportés par des voleurs en fuite. */
+  kamasStolen: number;
 }
 
 export interface Intent {
@@ -79,6 +94,8 @@ export interface Intent {
   hits: number;
   element: Element | null;
   stunned: boolean;
+  /** Ce que fait le monstre à la place d'une attaque : « Endormi », « Explose ! », « S'enfuit »… */
+  note?: string;
 }
 
 export type Action =
@@ -165,6 +182,7 @@ export class Combat {
   /** Prospection gagnée pendant le combat (prochain combat / reste de la run). */
   prospection = { next: 0, run: 0 };
   private tripleDone = false;
+  private statusUid = 0;
   /** Déclenchements de chaque objet depuis le début du combat (l'interface les fait briller). */
   fired: Record<string, number> = {};
 
@@ -204,12 +222,7 @@ export class Combat {
       }
     }
     this.reviveAvailable = !!init.revive;
-    enemyIds.forEach((id, i) => {
-      const def = lib.monsters[id];
-      if (!def) throw new Error(`Monstre inconnu : ${id}`);
-      const hp = Math.max(1, Math.round(this.rng.range(def.hp[0], def.hp[1]) * scale.hp));
-      this.enemies.push({ uid: i, def, hp, maxHp: hp, block: 0, status: {}, moveId: '', cycleIndex: 0, lastMoves: [], dead: false });
-    });
+    for (const id of enemyIds) this.spawn(id);
     for (const e of this.enemies) {
       if (this.rules.has('ocre')) this.addStatus(e, 'puissance', 1);
       if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
@@ -254,7 +267,8 @@ export class Combat {
 
   result(): CombatResult {
     if (this.outcome === 'ongoing') throw new Error('Combat en cours');
-    return { outcome: this.outcome, hp: this.player.hp, turns: this.turn, prospection: { ...this.prospection }, revived: this.revived };
+    const kamasStolen = this.enemies.filter((e) => e.m.gone === 'fui').reduce((s, e) => s + e.m.stolen, 0);
+    return { outcome: this.outcome, hp: this.player.hp, turns: this.turn, prospection: { ...this.prospection }, revived: this.revived, kamasStolen };
   }
 
   /** Dégâts qu'infligerait cet effet à cet ennemi, maintenant. */
@@ -274,6 +288,12 @@ export class Combat {
     let damage = 0;
     let hits = 0;
     let element: Element | null = null;
+    const note = this.specialNote(e);
+    if (note) {
+      const ex = power(e, 'explosion');
+      if (ex && note === 'Explose !') damage = this.enemyHit(e, ex.dmg, 'feu'), hits = 1;
+      return { name: note, damage, hits, element: null, stunned: false, note };
+    }
     if (!stunned) for (const fx of move.effects) {
       if (fx.type === 'damage' || fx.type === 'drain') {
         const n = fx.type === 'damage' ? (fx.hits ?? 1) : 1;
@@ -283,6 +303,25 @@ export class Combat {
       }
     }
     return { name: stunned ? 'Étourdi' : move.name, damage, hits, element, stunned };
+  }
+
+  /** Action spéciale du prochain tour du monstre (sommeil, explosion, fuite), ou null. */
+  specialNote(e: Enemy): string | null {
+    if (e.m.asleep > 0) return 'Endormi';
+    const ex = power(e, 'explosion');
+    if (ex) return e.m.turns + 1 >= ex.turns ? 'Explose !' : null;
+    const v = power(e, 'voleur');
+    if (v && e.m.turns + 1 >= v.turns) return 'S\'enfuit';
+    return null;
+  }
+
+  /** Tours restants avant l'explosion ou la fuite (pour l'interface). */
+  countdown(e: Enemy): number | null {
+    const ex = power(e, 'explosion');
+    if (ex) return Math.max(0, ex.turns - e.m.turns);
+    const v = power(e, 'voleur');
+    if (v) return Math.max(0, v.turns - e.m.turns);
+    return null;
   }
 
   /** Dégâts totaux annoncés par les ennemis vivants (avant armure). */
@@ -295,7 +334,7 @@ export class Combat {
     if (this.outcome !== 'ongoing') return actions;
     this.hand.forEach((inst, handIndex) => {
       const def = this.cardDef(inst);
-      if (this.costOf(inst) > this.player.energy) return;
+      if (def.unplayable || this.costOf(inst) > this.player.energy) return;
       if (def.target === 'enemy') for (const e of this.living()) actions.push({ type: 'play', handIndex, target: e.uid });
       else actions.push({ type: 'play', handIndex });
     });
@@ -311,6 +350,7 @@ export class Combat {
     if (!inst) throw new Error(`Pas de carte à l'index ${handIndex}`);
     const def = this.cardDef(inst);
     const cost = this.costOf(inst);
+    if (def.unplayable) throw new Error(`${def.name} ne peut pas être jouée`);
     if (cost > this.player.energy) throw new Error(`Pas assez de PA pour ${def.name}`);
     const target = this.resolveTarget(def.target, targetUid);
 
@@ -330,6 +370,10 @@ export class Combat {
     if (def.exhaust) this.exhaustPile.push(inst);
     else this.discardPile.push(inst);
 
+    if (def.type === 'competence') for (const e of this.living()) {
+      const r = power(e, 'rage');
+      if (r) this.addStatus(e, 'puissance', r.n);
+    }
     this.turnCards++;
     this.combatCards++;
     this.turnEl[def.element]++;
@@ -351,12 +395,24 @@ export class Combat {
       if (e) this.fxDamage(e, Math.floor(this.player.block / 2), 'neutre');
     }
     if (this.checkEnd()) return;
+    // Cartes de statut encore en main : brûlures qui piquent, cartes éphémères qui s'épuisent.
+    for (const inst of [...this.hand]) {
+      const def = this.cardDef(inst);
+      if (def.endTurnDamage) this.applyHit(this.player, def.endTurnDamage, { dot: true });
+      if (def.ethereal) {
+        this.hand.splice(this.hand.indexOf(inst), 1);
+        this.exhaustPile.push(inst);
+      }
+    }
+    if (this.checkEnd()) return;
     if (!this.rules.has('main_gardee')) {
       this.discardPile.push(...this.hand);
       this.hand = [];
     }
+    for (const e of this.enemies) e.m.lostThisTurn = 0;
 
-    for (const e of this.living()) {
+    for (const e of [...this.living()]) {
+      if (e.dead) continue;
       e.block = 0;
       this.enemyAct(e);
       if (this.checkEnd()) return;
@@ -442,6 +498,11 @@ export class Combat {
   /** Statut posé par le joueur sur un ennemi (règles « brûlure empoisonnée »). */
   private statusOnEnemy(e: Enemy, id: StatusId, n: number): void {
     if (e.dead) return;
+    if (DEBUFFS.includes(id) && e.m.artefact > 0) {
+      e.m.artefact--;
+      this.log.push(`${e.def.name} annule l'effet (artefact)`);
+      return;
+    }
     this.addStatus(e, id, n);
     if (id === 'brulure' && this.rules.has('brule_empoisonne')) this.addStatus(e, 'poison', n);
   }
@@ -507,9 +568,31 @@ export class Combat {
     e.lastMoves.push(next);
   }
 
+  /** Fait entrer un monstre dans le combat (début du combat, invocation, division). */
+  private spawn(id: string, hp?: number): Enemy | null {
+    const def = this.lib.monsters[id];
+    if (!def) throw new Error(`Monstre inconnu : ${id}`);
+    if (this.living().length >= MAX_FOES) return null;
+    const h = hp ?? Math.max(1, Math.round(this.rng.range(def.hp[0], def.hp[1]) * this.scale.hp));
+    const e: Enemy = {
+      uid: this.enemies.length, def, hp: h, maxHp: h, block: 0, status: {}, moveId: '', cycleIndex: 0, lastMoves: [], dead: false,
+      m: { turns: 0, hurtOnce: false, asleep: 0, lostThisTurn: 0, artefact: 0, stolen: 0, lastEl: null, phased: false, split: false },
+    };
+    const sl = power(e, 'sommeil');
+    if (sl) e.m.asleep = sl.turns;
+    const es = power(e, 'esquive');
+    if (es) e.status.esquive = es.n;
+    const ar = power(e, 'artefact');
+    if (ar) e.m.artefact = ar.n;
+    this.enemies.push(e);
+    if (this.turn > 0) this.chooseMove(e);
+    return e;
+  }
+
   private defCtx(e: Enemy): DefenderCtx {
+    const cam: Element[] = power(e, 'cameleon') && e.m.lastEl && e.m.lastEl !== 'neutre' ? [e.m.lastEl] : [];
     return {
-      status: e.status, weak: e.def.weak, resist: e.def.resist,
+      status: e.status, weak: e.def.weak.filter((w) => !cam.includes(w)), resist: [...e.def.resist, ...cam],
       vulnMul: this.rules.has('vulne_forte') ? 1.75 : 1.5,
       stunMul: this.rules.has('etourdi_fragile') ? 2 : 1,
     };
@@ -539,6 +622,8 @@ export class Combat {
       this.log.push(t === this.player ? 'Esquive !' : 'Le coup est esquivé');
       return 0;
     }
+    const foe = t !== this.player ? (t as Enemy) : null;
+    if (foe && power(foe, 'gardien') && this.living().some((x) => x !== foe)) dmg = Math.ceil(dmg / 2);
     let rest = dmg;
     if (!o.pierce) {
       const a = Math.min(t.block, rest);
@@ -547,8 +632,14 @@ export class Combat {
       const sh = Math.min(t.status.bouclier ?? 0, rest);
       if (sh) { t.status.bouclier = (t.status.bouclier ?? 0) - sh; rest -= sh; }
     }
-    const lost = Math.min(t.hp, rest);
+    let lost = Math.min(t.hp, rest);
+    if (foe) {
+      const cap = power(foe, 'plafond');
+      if (cap) lost = Math.max(0, Math.min(lost, cap.n - foe.m.lostThisTurn));
+      foe.m.lostThisTurn += lost;
+    }
     t.hp -= lost;
+    if (foe) this.onEnemyHurt(foe, lost, !!o.dot);
     if (t === this.player && lost > 0) {
       this.hpLostThisCombat += lost;
       this.emit('hpLost', { amount: lost });
@@ -563,6 +654,40 @@ export class Combat {
       }
     }
     return lost;
+  }
+
+  /** Réactions d'un monstre qui vient d'être touché. */
+  private onEnemyHurt(e: Enemy, lost: number, dot: boolean): void {
+    if (this.srcElement) e.m.lastEl = this.srcElement;
+    if (!dot) {
+      const th = power(e, 'epines');
+      if (th) this.applyHit(this.player, th.n, { dot: true });
+    }
+    if (lost <= 0 || e.hp <= 0) return;
+    if (e.m.asleep > 0) { e.m.asleep = 0; this.log.push(`${e.def.name} se réveille`); this.chooseMove(e); }
+    const an = power(e, 'colere');
+    if (an) this.addStatus(e, 'puissance', an.n);
+    const cu = power(e, 'enroulement');
+    if (cu && !e.m.hurtOnce) e.block += cu.n;
+    e.m.hurtOnce = true;
+    // Seconde phase des boss
+    const ph = e.def.phase2;
+    if (ph && !e.m.phased && e.hp <= e.maxHp * ph.at) {
+      e.m.phased = true;
+      this.addStatus(e, 'puissance', ph.puissance);
+      e.def = { ...e.def, pattern: ph.pattern };
+      e.cycleIndex = 0;
+      this.chooseMove(e);
+      this.log.push(`${e.def.name} : ${ph.name}`);
+    }
+    // Division
+    if (power(e, 'division') && e.def.splitInto && !e.m.split && e.hp <= e.maxHp / 2) {
+      e.m.split = true;
+      e.dead = true;
+      e.m.gone = 'divise';
+      this.log.push(`${e.def.name} se divise`);
+      for (let i = 0; i < 2; i++) this.spawn(e.def.splitInto, e.hp);
+    }
   }
 
   private gainBlock(amount: number): void {
@@ -586,6 +711,10 @@ export class Combat {
     if (e.dead || e.hp > 0) return;
     e.dead = true;
     this.log.push(`${e.def.name} est vaincu`);
+    const sp = power(e, 'spores');
+    if (sp) this.addStatus(this.player, 'vulnerabilite', sp.n);
+    if (e.m.stolen) this.log.push(`${e.m.stolen} kamas récupérés`);
+    e.m.stolen = 0;
     const others = this.living();
     if (others.length) {
       if (this.rules.has('braises') && (e.status.brulure ?? 0) > 0) {
@@ -658,6 +787,42 @@ export class Combat {
   }
 
   private enemyAct(e: Enemy): void {
+    e.m.turns++;
+    if (e.m.asleep > 0) {
+      e.m.asleep--;
+      const sl = power(e, 'sommeil');
+      if (sl) e.block += sl.block;
+      this.log.push(`${e.def.name} dort`);
+      if (e.m.asleep === 0) this.log.push(`${e.def.name} se réveille`);
+      return;
+    }
+    const ex = power(e, 'explosion');
+    if (ex && e.m.turns >= ex.turns) {
+      this.log.push(`${e.def.name} explose !`);
+      this.applyHit(this.player, this.enemyHit(e, ex.dmg, 'feu'), { attacker: e });
+      e.hp = 0;
+      e.dead = true;
+      e.m.gone = 'explose';
+      return;
+    }
+    const th = power(e, 'voleur');
+    if (th && e.m.turns >= th.turns) {
+      e.dead = true;
+      e.m.gone = 'fui';
+      this.log.push(`${e.def.name} s'enfuit avec ${e.m.stolen} kamas`);
+      return;
+    }
+    this.enemyMove(e);
+    if (e.dead) return;
+    const pl = power(e, 'carapace');
+    if (pl) e.block += pl.n;
+    const rg = power(e, 'regeneration');
+    if (rg) e.hp = Math.min(e.maxHp, e.hp + rg.n);
+    const ri = power(e, 'rituel');
+    if (ri && e.m.turns > 1) this.addStatus(e, 'puissance', ri.n);
+  }
+
+  private enemyMove(e: Enemy): void {
     const need = this.stunNeed(e);
     if ((e.status.etourdi ?? 0) >= need) {
       e.status.etourdi! -= need;
@@ -675,6 +840,8 @@ export class Combat {
           for (let h = 0; h < hits; h++) {
             const lost = this.applyHit(this.player, this.enemyHit(e, fx.amount, fx.element), { attacker: e });
             if (fx.type === 'drain') e.hp = Math.min(e.maxHp, e.hp + erode(lost));
+            const th = power(e, 'voleur');
+            if (th && lost > 0) e.m.stolen += th.n;
             if (this.player.hp <= 0 || e.dead) return;
           }
           break;
@@ -688,6 +855,17 @@ export class Combat {
         case 'status':
           if (fx.on === 'self') this.addStatus(e, fx.status, fx.amount);
           else if (fx.on === 'target') this.addStatus(this.player, fx.status, fx.amount);
+          break;
+        case 'summon':
+          for (let i = 0; i < (fx.count ?? 1); i++) this.spawn(fx.monster);
+          break;
+        case 'addCard':
+          for (let i = 0; i < fx.count; i++) {
+            const inst: CardInstance = { uid: 900000 + this.statusUid++, id: fx.card, upgraded: false };
+            if (fx.pile === 'hand' && this.hand.length < MAX_HAND) this.hand.push(inst);
+            else if (fx.pile === 'draw') this.drawPile.splice(this.rng.int(this.drawPile.length + 1), 0, inst);
+            else this.discardPile.push(inst);
+          }
           break;
         default:
           break;

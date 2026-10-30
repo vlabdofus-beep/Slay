@@ -60,8 +60,17 @@ Terre (armure, coups lourds) · Feu (brûlure, zone) · Eau (drain, économie) �
 - Valeurs d'équilibrage : toujours les nôtres (docs/BALANCE.md).
 
 ## Jeu jouable (v2)
-- Trois actes : Amakna (Bouftou Royal), forêt des Abraknydes (Abraknyde Ancestral), landes de Brâkmar (Minotoror).
-  Chaque acte a ses monstres réels (coups simples pour l'instant : la diversité des monstres viendra ensuite),
+- Trois actes : Amakna, forêt des Abraknydes, landes de Brâkmar. **Trois boss possibles par acte**, tirés à chaque run :
+  Bouftou Royal / Shin Larve / Coffre Maudit du Flib ; Abraknyde Ancestral / Blop Griotte Royal / Chêne Mou ;
+  Minotoror / Meulou / Tofu Royal. 5 à 6 élites par acte, 150 monstres réels au total (`src/data/bestiary.ts`).
+- **Mécaniques de monstres** (`MonsterPower`, repères StS adaptés) : carapace, épines, colère, enroulement, rituel,
+  spores, explosion, division (Gelées → Petites Gelées, Blops → Biblops, Blop Griotte Royal → Blops), garde, régénération,
+  agilité (esquive), rage sur les compétences, sommeil, invulnérabilité (plafond de PV perdus par tour), artefact.
+  Innovations : **voleurs** qui volent des kamas et s'enfuient avec (on les récupère en les battant), **peau de roche**
+  (résiste à l'élément du dernier coup reçu), **garde royale**, invocations, seconde phase des boss sous 50 % de PV,
+  **cartes de statut** glissées dans le deck (toile d'Arakne éphémère, bave de Gelée à payer, braise qui brûle en main,
+  blessure).
+  Chaque acte a ses monstres réels,
   son décor par rencontre, et les PV sont remis au maximum au début des actes 2 et 3.
 - Carte de chaque acte façon Slay : 12 étages + boss ; étages 1-3 combats faibles ; marchands à partir du 4e ; élites
   et Zaaps à partir du 5e ; 12e étage = Zaap. Pas deux élites, deux Zaaps ou deux marchands d'affilée.

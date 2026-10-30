@@ -23,8 +23,9 @@ export interface Reward {
   itemTaken: string | null;
   /** Prospection au moment du butin. */
   prospection: number;
-  /** Kamas gagnés. */
+  /** Kamas gagnés, et volés par des monstres en fuite. */
   kamas: number;
+  stolen: number;
 }
 
 export interface ShopEntry { id: string; price: number; sold: boolean }
@@ -197,6 +198,8 @@ export class Run {
     }
     this.hp = c.player.hp; // seul ce qui survit au combat
     if (c.result().revived) this.reviveUsed = true;
+    const stolen = c.result().kamasStolen;
+    this.kamas = Math.max(0, this.kamas - stolen);
     this.stats.combats++;
     const type = this.node?.type;
     const tier = this.node ? Run.tierOf(this.node) : 'normal';
@@ -228,6 +231,7 @@ export class Run {
       itemTaken: null,
       prospection: prosp,
       kamas,
+      stolen,
     };
     this.phase = 'reward';
   }

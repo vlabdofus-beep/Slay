@@ -36,7 +36,11 @@ export type Effect =
   | { type: 'heal'; amount: number }
   | { type: 'draw'; amount: number }
   | { type: 'energy'; amount: number }
-  | { type: 'status'; status: StatusId; amount: number; on: StatusTarget };
+  | { type: 'status'; status: StatusId; amount: number; on: StatusTarget }
+  /** Monstre : invoque un allié (5 monstres vivants au plus). */
+  | { type: 'summon'; monster: string; count?: number }
+  /** Monstre : glisse des cartes de statut dans le deck du joueur. */
+  | { type: 'addCard'; card: string; count: number; pile: 'discard' | 'draw' | 'hand' };
 
 export type CardType = 'attaque' | 'competence';
 export type CardTarget = 'enemy' | 'all_enemies' | 'self';
@@ -60,6 +64,12 @@ export interface CardDef {
   icon?: string;
   /** Description du sort dans Dofus (ambiance, pas les règles de la carte). */
   lore?: string;
+  /** Carte de statut (glissée par un monstre) : injouable, éphémère (épuisée si encore en main en fin de tour),
+   *  dégâts subis si elle est encore en main en fin de tour. */
+  unplayable?: boolean;
+  ethereal?: boolean;
+  endTurnDamage?: number;
+  status?: boolean;
 }
 
 export interface MonsterMove {
@@ -86,7 +96,41 @@ export interface MonsterDef {
   level?: [number, number];
   /** Boss : il faut 2 étourdis pour lui faire sauter une action. */
   boss?: boolean;
+  /** Mécaniques propres au monstre (voir MonsterPower). */
+  powers?: MonsterPower[];
+  /** Monstre qui apparaît (×2) quand il se divise. */
+  splitInto?: string;
+  /** Seconde phase (boss) : sous ce seuil de PV, gagne de la puissance et change de cycle. */
+  phase2?: { at: number; puissance: number; pattern: MovePattern; name: string };
 }
+
+/**
+ * Mécaniques de monstres (repères : Slay the Spire, adaptées et complétées) :
+ * - carapace n : gagne n armure à la fin de chacun de ses tours
+ * - epines n : renvoie n dégâts à chaque coup qu'il reçoit
+ * - colere n : gagne n puissance chaque fois qu'il perd des PV
+ * - enroulement n : la première fois qu'il perd des PV, gagne n armure
+ * - rituel n : gagne n puissance à la fin de chacun de ses tours (sauf le premier)
+ * - spores n : en mourant, applique n vulnérabilité au joueur
+ * - explosion t d : explose au bout de t tours, inflige d dégâts et meurt
+ * - division : à la moitié de ses PV, se divise en deux (splitInto) qui gardent ses PV restants
+ * - voleur n t : vole n kamas par coup porté, s'enfuit avec au bout de t tours (les rend s'il meurt avant)
+ * - gardien : subit moitié moins de dégâts tant qu'un autre monstre est en vie
+ * - regeneration n : se soigne de n à la fin de ses tours
+ * - esquive n : commence le combat avec n esquive
+ * - cameleon : résiste à l'élément du dernier coup reçu
+ * - rage n : gagne n puissance chaque fois que le joueur joue une compétence
+ * - sommeil t a : dort t tours (gagne a armure par tour), se réveille plus tôt s'il perd des PV
+ * - plafond n : ne perd jamais plus de n PV par tour
+ * - artefact n : annule les n prochains malus qu'on lui applique
+ */
+export type MonsterPower =
+  | { kind: 'carapace'; n: number } | { kind: 'epines'; n: number } | { kind: 'colere'; n: number }
+  | { kind: 'enroulement'; n: number } | { kind: 'rituel'; n: number } | { kind: 'spores'; n: number }
+  | { kind: 'explosion'; turns: number; dmg: number } | { kind: 'division' } | { kind: 'voleur'; n: number; turns: number }
+  | { kind: 'gardien' } | { kind: 'regeneration'; n: number } | { kind: 'esquive'; n: number } | { kind: 'cameleon' }
+  | { kind: 'rage'; n: number } | { kind: 'sommeil'; turns: number; block: number } | { kind: 'plafond'; n: number }
+  | { kind: 'artefact'; n: number };
 
 export interface CardInstance {
   uid: number;

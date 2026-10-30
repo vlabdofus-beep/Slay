@@ -1,9 +1,10 @@
 import type { CardInstance, ClassId, Library } from '../core/types.ts';
 import { ALL_CARDS } from './cards.ts';
 import { MONSTERS } from './monsters.ts';
+import { STATUS_CARDS } from './statusCards.ts';
 
 export const LIBRARY: Library = {
-  cards: Object.fromEntries(ALL_CARDS.map((c) => [c.id, c])),
+  cards: Object.fromEntries([...ALL_CARDS, ...STATUS_CARDS].map((c) => [c.id, c])),
   monsters: Object.fromEntries(MONSTERS.map((m) => [m.id, m])),
 };
 
