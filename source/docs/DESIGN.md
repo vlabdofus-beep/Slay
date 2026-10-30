@@ -90,3 +90,17 @@ Voir `docs/BALANCE.md` (repères StS2, coefficient de difficulté, résultats de
 1. Cadre de carte définitif : bordure bronze, argent ou or selon la rareté, grande icône du sort, reflet pour les cartes améliorées, dos de carte pour la pioche.
 2. Iconographie officielle : icônes de l'interface Dofus à la place des icônes dessinées (épées, crâne, Zaap).
 3. Réactions visuelles en combat : chiffres de dégâts colorés selon l'élément, carte qui file vers sa cible, entrée du boss comme unique moment fort.
+
+## Classes : passifs et extension de cartes (30/10/2026)
+
+Chaque classe a un passif permanent, l'équivalent de la relique de départ de Slay the Spire (`src/core/classes.ts`), affiché sur l'écran titre, dans la fiche et en tête de la barre d'effets en combat, avec un compteur vivant.
+
+- **Iop, Courroux** : à la fin du tour, s'il a joué au moins 3 attaques, il gagne 1 puissance pour le combat. Le deck Iop pousse à enchaîner les attaques bon marché.
+- **Crâ, Visée** : toutes les 5 attaques, l'attaque inflige le double de dégâts. Des cartes « Visée +n » rapprochent le tir doublé sans le déclencher.
+
+52 cartes ajoutées : 24 Iop, 23 Crâ (tous les sorts Dofus de ces classes encore libres) et 5 armes neutres proposées aux deux classes. Nouvelles mécaniques de carte :
+
+- **Pouvoirs** (type `pouvoir`) : restent en jeu tout le combat. Ils réutilisent la grammaire des objets (déclencheur × récompense, limite par tour comprise) ou une règle légendaire. Affichés en médaillon bleu sous la barre de PV.
+- **Bonus** sur les dégâts et l'armure : +n par attaque jouée ce tour, par puissance, par ennemi en vie, par altération sur la cible, par carte en main, par lancer précédent de la carte.
+- **Sorts de sang** (perte de PV, synergie avec Violence), **Visée +n**, **multiplication d'un statut** (Vendetta double le poison).
+- Les nouveaux statuts servent enfin aux cartes : poison (Crâ), bouclier, renvoi, érosion, esquive, étourdi.

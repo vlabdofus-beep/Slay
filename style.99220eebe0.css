@@ -894,3 +894,21 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 }
 .card.is-status .card-name { color: #f1f4f6; text-shadow: 0 1px 2px #000; }
 .card.is-status .card-art { background: radial-gradient(60% 70% at 50% 42%, #4b4f55, #1a1d20 70%); }
+
+/* ── Passif de classe et pouvoirs ── */
+.fxb.passive { border-color: var(--gold-2); background: radial-gradient(circle at 50% 35%, rgba(233, 196, 106, .22), rgba(10, 15, 19, .85) 70%); }
+.fxb.passive .fxi img { width: 24px; height: 24px; }
+.fxb.passive .fxc.full { color: var(--gold-2); }
+.fxb.passive.ready { box-shadow: 0 0 0 2px rgba(233, 196, 106, .35), 0 0 14px rgba(233, 196, 106, .45); }
+.class-passive { display: flex; align-items: flex-start; gap: .55rem; text-align: left; font-size: .84rem; line-height: 1.4; color: var(--muted); max-width: 30ch; }
+.class-passive b { color: var(--text); }
+.class-passive .fxb { flex: none; }
+.passive-line { display: flex; align-items: flex-start; gap: .5rem; margin: .2rem 0 .4rem; }
+.passive-line .fxb { flex: none; }
+.fxb.st.pw { border-color: #6fb6d8; background: rgba(16, 34, 46, .88); }
+.fxb.st.pw .pw-pic, .fxb.st.pw .pw-pic img, .fxb.st.pw .pw-pic .pic-fb { width: 22px; height: 22px; border-radius: 50%; font-size: .55rem; display: grid; place-items: center; }
+.fxb.st.pw .pw-pic:has(img) .pic-fb { display: none; }
+/* Carte de pouvoir : médaillon rond et liseré bleu, comme les pouvoirs de Slay the Spire. */
+.card.t-pouvoir .card-pic, .card.t-pouvoir .card-pic img, .card.t-pouvoir .card-pic .pic-fb { border-radius: 50%; }
+.card.t-pouvoir .card-pic { box-shadow: 0 0 0 2px #6fb6d8, 0 0 12px rgba(111, 182, 216, .45); }
+.card-text i { color: #8ec9e4; font-style: normal; font-weight: 600; }

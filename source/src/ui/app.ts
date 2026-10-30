@@ -1,6 +1,7 @@
 // Interface du jeu : rendu DOM simple (re-rendu complet à chaque action) + délégation d'événements.
 // Toute la logique est dans src/game/run.ts et src/core ; ce fichier ne fait qu'afficher et relayer.
-import { BASE_ENERGY, resolveCard, type Enemy } from '../core/combat.ts';
+import { BASE_ENERGY, resolveCard, type Combat, type Enemy } from '../core/combat.ts';
+import { COURROUX, PASSIVES, VISEE } from '../core/classes.ts';
 import { EL_NAME, effectText as itemEffectText, partText, perTurn, REWARD_BY_ID, ruleText, TRIGGER_BY_ID, type EffectPart, type ItemEffect } from '../core/effects.ts';
 import { lootChance, prospFactor } from '../core/offers.ts';
 import type { MapNode } from '../core/map.ts';
@@ -137,7 +138,7 @@ function hpBar(hp: number, max: number, block: number, key = ''): string {
   return `<span class="hpwrap${block > 0 ? ' armored' : ''}">${armor}${bar(hp, max, 'hp', '', key)}</span>`;
 }
 
-const TYPE_NAMES = { attaque: 'Attaque', competence: 'Compétence' };
+const TYPE_NAMES = { attaque: 'Attaque', competence: 'Compétence', pouvoir: 'Pouvoir' };
 
 function cardHtml(def: CardDef, opts: { inst?: CardInstance; act?: string; data?: string; disabled?: boolean; selected?: boolean; live?: boolean; hint?: string; cost?: number } = {}): string {
   const c = opts.live ? ui.run?.combat ?? null : null;
@@ -146,7 +147,7 @@ function cardHtml(def: CardDef, opts: { inst?: CardInstance; act?: string; data?
   const attrs = opts.act ? `data-act="${opts.act}" ${opts.data ?? ''}` : '';
   const tag = opts.act ? 'button' : 'div';
   const lore = def.lore ? ` title="${esc(def.lore)}"` : '';
-  return `<${tag} class="card el-${def.element} rar-${def.rarity}${def.status ? ' is-status' : ''}${upgraded ? ' upg' : ''}${opts.selected ? ' sel' : ''}${opts.disabled ? ' off' : ''}" ${attrs}${opts.disabled && tag === 'button' ? ' disabled' : ''}${lore}>
+  return `<${tag} class="card t-${def.type} el-${def.element} rar-${def.rarity}${def.status ? ' is-status' : ''}${upgraded ? ' upg' : ''}${opts.selected ? ' sel' : ''}${opts.disabled ? ' off' : ''}" ${attrs}${opts.disabled && tag === 'button' ? ' disabled' : ''}${lore}>
     <span class="card-cost${cost < def.cost ? ' cheaper' : ''}" aria-label="${cost} PA">${cost}</span>
     <span class="card-art">${def.icon ? pic(def.icon, def.name, 'card-pic') : `<span class="pic card-pic">${uiIcon(def.type === 'attaque' ? 'combat' : def.type === 'competence' ? 'defense' : 'buff', 'card-ico')}</span>`}</span>
     <span class="card-name">${esc(def.name)}${upgraded ? '<i class="upg-mark">+</i>' : ''}</span>
@@ -209,6 +210,39 @@ function fxBadge(fx: ItemEffect, o: { title: string; icon?: string; live?: { use
     <span class="fxtip${o.down ? ' down' : ''}" role="tooltip">${o.title ? `<b class="fxt">${esc(o.title)}</b>` : ''}<span class="fx-what">${what}</span><span class="fx-when"><i>Activation</i> ${when}</span></span></span>`;
 }
 
+/** Passif de classe : symbole de la classe, compteur vivant en combat, détail au survol. */
+function passiveBadge(classe: ClassId, o: { c?: Combat | null; flash?: boolean; down?: boolean } = {}): string {
+  const p = PASSIVES[classe];
+  if (!p) return '';
+  const c = o.c;
+  let live = '', state = '', ready = false;
+  if (c && classe === 'iop') {
+    const n = Math.min(COURROUX, c.turnAttacks);
+    ready = n >= COURROUX;
+    live = `<span class="fxc${ready ? ' full' : ''}">${n}/${COURROUX}</span>`;
+    state = ready ? 'Gagne 1 puissance à la fin du tour.' : `Attaques ce tour : ${n} sur ${COURROUX}.`;
+  } else if (c && classe === 'cra') {
+    ready = c.aimReady();
+    live = `<span class="fxc${ready ? ' full' : ''}">${ready ? '×2' : `${c.aim}/${VISEE - 1}`}</span>`;
+    state = ready ? 'Ta prochaine attaque inflige le double de dégâts.' : `Encore ${VISEE - 1 - c.aim} attaque${VISEE - 1 - c.aim > 1 ? 's' : ''} avant le tir doublé.`;
+  }
+  return `<span class="fxb passive${o.flash ? ' flash' : ''}${ready ? ' ready' : ''}" tabindex="0" aria-label="${esc(`${p.name} : ${p.text}`)}">
+    <span class="fxi"><img src="${asset(`classes/${DOFUS.breeds[classe].id}.png`)}" alt="" draggable="false"></span>${live}
+    <span class="fxtip${o.down ? ' down' : ''}" role="tooltip"><b class="fxt">${esc(p.name)}</b><span class="tip-meta">Passif de classe</span>
+      <span class="fx-what"><span>${esc(p.text)}</span></span>${state ? `<span class="fx-when"><i>Maintenant</i> ${esc(state)}</span>` : ''}</span></span>`;
+}
+
+/** Pouvoirs joués ce combat : icône du sort, nombre d'exemplaires, texte de la carte au survol. */
+function powerChips(c: Combat): string {
+  return c.powers.map((pw) => {
+    const def = LIBRARY.cards[pw.id];
+    return `<span class="fxb st pw" tabindex="0" aria-label="${esc(`${pw.name} : ${stripTags(cardText(def))}`)}">
+      <span class="fxi">${pic(pw.icon, pw.name, 'pw-pic')}${pw.n > 1 ? `<b>${pw.n}</b>` : ''}</span>
+      <span class="fxtip" role="tooltip"><b class="fxt">${esc(pw.name)}</b><span class="tip-meta">Pouvoir</span><span class="fx-what"><span>${cardText(def)}</span></span></span></span>`;
+  }).join('');
+}
+const stripTags = (h: string) => h.replace(/<[^>]+>/g, '');
+
 /** Effet d'un objet pour la run en cours (tiré à la création de la run). */
 function itemEffect(id: string): ItemEffect | null {
   return ui.run?.itemEffects[id] ?? null;
@@ -256,6 +290,7 @@ function sheet(run: Run): string {
     <div class="who"><img class="who-pic" src="${asset(`classes/${breed.id}.png`)}" alt=""><span><b>${esc(breed.n)}</b><span class="muted">${run.stats.floor ? `Étage ${run.stats.floor} sur ${run.map.floors}` : 'Au départ'}</span></span></div>
     ${bar(run.hp, run.maxHp, 'hp')}
     <button class="link" data-act="modal-deck">Voir le deck (${run.deck.length} cartes)</button>
+    <h3>Passif de classe</h3><p class="passive-line">${passiveBadge(run.classe)}<span><b>${esc(PASSIVES[run.classe]?.name ?? '')}</b> <span class="muted small">${esc(PASSIVES[run.classe]?.text ?? '')}</span></span></p>
     <h3>Équipement</h3><div class="slots">${slots}</div>
     ${effects ? `<ul class="fx-list">${effects}</ul><p class="muted small">Un même objet se déclenche au plus 3 fois par tour (une fois pour la pioche, les PA et les réductions de coût). Les objets se cumulent entre eux.</p>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
     ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b>${eggBadges(id)}</span></li>`).join('')}</ul>` : ''}
@@ -279,6 +314,7 @@ function viewTitle(): string {
       <span class="class-name">${esc(b.n)}</span>
       <span class="class-hp">${CLASS_START_HP[id]} PV</span>
       <span class="class-pitch">${CLASS_INFO[id].pitch}</span>
+      <span class="class-passive">${passiveBadge(id)}<span><b>${esc(PASSIVES[id]!.name)}</b> ${esc(PASSIVES[id]!.text)}</span></span>
       <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
       <button class="primary" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? "l'Iop" : 'le Crâ'}</button>
     </div>`;
@@ -513,7 +549,8 @@ function relicBar(run: Run): string {
     const f = flash(src);
     return `<span class="relic egg">${eggIcon(id)}${eggBadges(id, { live: () => c.usage(src), flash: f, down: true })}</span>`;
   });
-  const all = [...eggs, ...items].filter(Boolean).join('');
+  const passive = passiveBadge(run.classe, { c, flash: flash('classe'), down: true });
+  const all = [passive, ...eggs, ...items].filter(Boolean).join('');
   return all ? `<div class="relics" aria-label="Effets d'objets et de Dofus">${all}</div>` : '';
 }
 
@@ -527,7 +564,7 @@ function arenaHtml(run: Run): string {
       <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
         ${hpBar(hp, p.maxHp, block, 'p')}
         ${floatsHtml(-1)}
-        <span class="chips">${statusChips(p.status)}</span>
+        <span class="chips">${powerChips(c)}${statusChips(p.status)}</span>
       </div>
       <div class="foes" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
       ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}

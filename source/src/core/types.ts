@@ -28,11 +28,19 @@ export type StatusMap = Partial<Record<StatusId, number>>;
  *  'self' = le lanceur, 'all_enemies' = tous les ennemis vivants. */
 export type StatusTarget = 'target' | 'self' | 'all_enemies';
 
+/** Ce qui fait grossir une valeur de carte : « +3 dégâts par attaque déjà jouée ce tour »… */
+export type ScaleId = 'attaques' | 'puissance' | 'armure' | 'ennemis' | 'statuts' | 'main' | 'lancers';
+export interface Bonus { per: ScaleId; n: number }
+/** Un effet de pouvoir : même grammaire que les objets (déclencheur × récompense), ou une règle. */
+export type GrantFx =
+  | { kind: 'roll'; parts: { trigger: string; reward: string; amount: number }[] }
+  | { kind: 'rule'; rule: string };
+
 export type Effect =
-  | { type: 'damage'; amount: number; element: Element; hits?: number }
+  | { type: 'damage'; amount: number; element: Element; hits?: number; bonus?: Bonus }
   /** Dégâts dont les PV réellement perdus par la cible sont rendus au lanceur (Eau). */
   | { type: 'drain'; amount: number; element: Element }
-  | { type: 'block'; amount: number }
+  | { type: 'block'; amount: number; bonus?: Bonus }
   | { type: 'heal'; amount: number }
   | { type: 'draw'; amount: number }
   | { type: 'energy'; amount: number }
@@ -40,9 +48,17 @@ export type Effect =
   /** Monstre : invoque un allié (5 monstres vivants au plus). */
   | { type: 'summon'; monster: string; count?: number }
   /** Monstre : glisse des cartes de statut dans le deck du joueur. */
-  | { type: 'addCard'; card: string; count: number; pile: 'discard' | 'draw' | 'hand' };
+  | { type: 'addCard'; card: string; count: number; pile: 'discard' | 'draw' | 'hand' }
+  /** Le lanceur perd des PV (Iop : sorts qui coûtent de la vie). */
+  | { type: 'loseHp'; amount: number }
+  /** Crâ : rapproche la Visée de n crans (la prochaine attaque peut être doublée). */
+  | { type: 'charge'; amount: number }
+  /** Multiplie un statut déjà posé sur la cible. */
+  | { type: 'multiply'; status: StatusId; factor: number }
+  /** Pouvoir : effet permanent jusqu'à la fin du combat. */
+  | { type: 'grant'; fx: GrantFx[] };
 
-export type CardType = 'attaque' | 'competence';
+export type CardType = 'attaque' | 'competence' | 'pouvoir';
 export type CardTarget = 'enemy' | 'all_enemies' | 'self';
 export type Rarity = 'base' | 'commune' | 'rare';
 

@@ -40,4 +40,4 @@ Dofus (15 images/s) sont doublées à la cuisson par interpolation du squelette.
 - `src/sim` : bot et simulations.
 - `docs/DESIGN.md` : règles du jeu. `docs/BALANCE.md` : repères et résultats d'équilibrage.
 
-Les animations, lieux et effets (`public/game`) ne sont pas recopiés ici : ils sont publiés à la racine du dépôt, dans `game/`. Pour les régénérer : `node tools/import-survivors-assets.mjs <dépôt Survivors>`.
+Les animations, lieux et effets (`public/game`) ne sont pas recopiés ici : ils viennent de Dofus Survivors via `tools/import-survivors-assets.mjs`.

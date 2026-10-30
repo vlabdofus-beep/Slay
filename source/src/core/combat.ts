@@ -1,7 +1,11 @@
 import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EventId, type EvCtx, type ItemEffect, type RewardDef, type RuleId, type TriggerDef } from './effects.ts';
 import { Rng } from './rng.ts';
+import { COURROUX, VISEE } from './classes.ts';
 import type {
   CardDef,
+  ClassId,
+  GrantFx,
+  ScaleId,
   CardInstance,
   CardTarget,
   Effect,
@@ -64,6 +68,8 @@ export interface PlayerInit {
   effects?: (ItemEffect & { src?: string })[];
   /** Résurrection disponible (Dofus, une fois par run). */
   revive?: boolean;
+  /** Classe du joueur : donne son passif (Courroux, Visée). */
+  classe?: ClassId;
 }
 
 export type Outcome = 'ongoing' | 'won' | 'lost';
@@ -169,8 +175,19 @@ export class Combat {
   log: string[] = [];
 
   // ── suivi pour les effets d'objets ──
-  readonly rules: Set<RuleId>;
+  readonly rules: Set<RuleId> = new Set();
   private readonly handlers: Partial<Record<EventId, Handler[]>> = {};
+  /** Passif de classe. */
+  readonly classe: ClassId | null;
+  /** Visée du Crâ : attaques comptées depuis le dernier tir doublé (0 à VISEE-1). */
+  aim = 0;
+  /** Attaques jouées ce tour (Courroux) et nombre de lancers de chaque carte ce combat. */
+  turnAttacks = 0;
+  playedById: Record<string, number> = {};
+  /** Pouvoirs actifs (cartes de pouvoir jouées), pour l'affichage. */
+  powers: { id: string; name: string; icon?: string; n: number }[] = [];
+  /** Multiplicateur de la carte en cours (Visée). */
+  private dmgMul = 1;
   /** Cartes jouées ce tour / ce combat, et par élément. */
   turnCards = 0;
   combatCards = 0;
@@ -212,15 +229,8 @@ export class Combat {
       dom: { ...ZERO_EL(), ...init.dom },
       blockBonus: init.blockBonus ?? 0,
     };
-    this.rules = new Set();
-    for (const e of init.effects ?? []) {
-      if (e.kind === 'rule') { this.rules.add(e.rule); continue; }
-      for (const p of e.parts) {
-        const trigger = TRIGGER_BY_ID[p.trigger], reward = REWARD_BY_ID[p.reward];
-        if (!trigger || !reward) continue;
-        (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src: e.src ?? '' });
-      }
-    }
+    this.classe = init.classe ?? null;
+    for (const e of init.effects ?? []) this.addEffect(e, e.src ?? '');
     this.reviveAvailable = !!init.revive;
     for (const id of enemyIds) this.spawn(id);
     for (const e of this.enemies) {
@@ -234,7 +244,41 @@ export class Combat {
     this.checkEnd();
   }
 
+  /** Branche un effet (objet, Dofus ou pouvoir) sur les événements du combat. */
+  private addEffect(e: ItemEffect | GrantFx, src: string): void {
+    if (e.kind === 'rule') { this.rules.add(e.rule as RuleId); return; }
+    for (const p of e.parts) {
+      const trigger = TRIGGER_BY_ID[p.trigger], reward = REWARD_BY_ID[p.reward];
+      if (!trigger || !reward) continue;
+      (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src });
+    }
+  }
+
   // ───────────── lecture ─────────────
+
+  /** Valeur d'un bonus de carte (« par attaque jouée ce tour »…) à cet instant. */
+  scaleCount(per: ScaleId, target?: Enemy, cardId?: string): number {
+    switch (per) {
+      case 'attaques': return this.turnAttacks;
+      case 'puissance': return Math.max(0, this.player.status.puissance ?? 0);
+      case 'armure': return this.player.block;
+      case 'ennemis': return this.living().length;
+      case 'statuts': return target ? DEBUFFS.filter((s) => (target.status[s] ?? 0) > 0).length : 0;
+      case 'main': return this.hand.length;
+      case 'lancers': return cardId ? this.playedById[cardId] ?? 0 : 0;
+    }
+  }
+
+  /** Montant de base d'un effet de dégâts ou d'armure, bonus compris. */
+  baseAmount(fx: Effect, target?: Enemy, cardId?: string): number {
+    if ((fx.type === 'damage' || fx.type === 'block') && fx.bonus) return fx.amount + fx.bonus.n * this.scaleCount(fx.bonus.per, target, cardId);
+    return 'amount' in fx ? (fx.amount as number) : 0;
+  }
+
+  /** Visée : la prochaine attaque sera-t-elle doublée ? */
+  aimReady(): boolean {
+    return this.classe === 'cra' && this.aim >= VISEE - 1;
+  }
 
   living(): Enemy[] {
     return this.enemies.filter((e) => !e.dead);
@@ -272,9 +316,10 @@ export class Combat {
   }
 
   /** Dégâts qu'infligerait cet effet à cet ennemi, maintenant. */
-  estimateDamage(fx: Effect, enemy: Enemy): number {
+  estimateDamage(fx: Effect, enemy: Enemy, card?: CardDef): number {
     if (fx.type !== 'damage' && fx.type !== 'drain') return 0;
-    const per = this.playerHit(enemy, fx.amount, fx.element);
+    const mul = card?.type === 'attaque' && this.aimReady() ? 2 : 1;
+    const per = this.playerHit(enemy, this.baseAmount(fx, enemy, card?.id), fx.element) * mul;
     return per * (fx.type === 'damage' ? (fx.hits ?? 1) : 1);
   }
 
@@ -359,6 +404,12 @@ export class Combat {
     this.discount = 0;
     this.log.push(`Joue ${def.name}${target ? ` sur ${target.def.name}` : ''}`);
     const twice = this.rules.has('double_premier') && this.combatCards === 0;
+    // Visée (Crâ) : la 4e attaque est doublée.
+    this.dmgMul = 1;
+    if (this.classe === 'cra' && def.type === 'attaque') {
+      if (this.aimReady()) { this.dmgMul = 2; this.aim = 0; this.fired['classe'] = (this.fired['classe'] ?? 0) + 1; this.log.push('Visée : dégâts doublés'); }
+      else this.aim++;
+    }
     const hits = this.resolveEffects(def, target);
     if (twice && this.outcome === 'ongoing') {
       const again = target && target.dead ? undefined : target;
@@ -367,10 +418,14 @@ export class Combat {
         for (const e of this.resolveEffects(def, again ?? (def.target === 'enemy' ? this.living()[0] : undefined))) hits.add(e);
       }
     }
-    if (def.exhaust) this.exhaustPile.push(inst);
+    this.dmgMul = 1;
+    if (def.type === 'pouvoir') { /* un pouvoir reste en jeu : il ne retourne pas dans le deck de ce combat */ }
+    else if (def.exhaust) this.exhaustPile.push(inst);
     else this.discardPile.push(inst);
+    if (def.type === 'attaque') this.turnAttacks++;
+    this.playedById[def.id] = (this.playedById[def.id] ?? 0) + 1;
 
-    if (def.type === 'competence') for (const e of this.living()) {
+    if (def.type !== 'attaque') for (const e of this.living()) {
       const r = power(e, 'rage');
       if (r) this.addStatus(e, 'puissance', r.n);
     }
@@ -389,6 +444,11 @@ export class Combat {
 
   endTurn(): void {
     if (this.outcome !== 'ongoing') throw new Error('Combat terminé');
+    if (this.classe === 'iop' && this.turnAttacks >= COURROUX) {
+      this.addStatus(this.player, 'puissance', 1);
+      this.fired['classe'] = (this.fired['classe'] ?? 0) + 1;
+      this.log.push('Courroux : +1 puissance');
+    }
     this.emit('turnEnd');
     if (this.rules.has('armure_offensive') && this.player.block >= 2) {
       const e = this.pickFoe();
@@ -452,6 +512,11 @@ export class Combat {
 
   fxEnergy(n: number): void {
     this.player.energy += n;
+  }
+
+  /** Visée : rapproche le prochain tir doublé (s'arrête juste avant). */
+  fxCharge(n: number): void {
+    if (this.classe === 'cra') this.aim = Math.min(VISEE - 1, this.aim + n);
   }
 
   fxDiscount(n: number): void {
@@ -522,6 +587,7 @@ export class Combat {
     this.player.block = this.rules.has('armure_persistante') && !first ? Math.floor(this.player.block / 2) : 0;
     this.player.energy = BASE_ENERGY + (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('ocre') ? 1 : 0);
     this.turnCards = 0;
+    this.turnAttacks = 0;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
     for (const list of Object.values(this.handlers)) for (const h of list ?? []) h.used = 0;
@@ -599,7 +665,7 @@ export class Combat {
   }
 
   private playerHit(e: Enemy, base: number, element: Element): number {
-    return calcDamage(base, element, { status: this.player.status, dom: this.player.dom[element] }, this.defCtx(e));
+    return calcDamage(base, element, { status: this.player.status, dom: this.player.dom[element] }, this.defCtx(e)) * this.dmgMul;
   }
 
   private enemyHit(e: Enemy, base: number, element: Element): number {
@@ -743,7 +809,7 @@ export class Combat {
           for (let h = 0; h < hits; h++) {
             for (const e of targets) {
               if (e.dead) continue;
-              const dmg = this.playerHit(e, fx.amount, fx.element);
+              const dmg = this.playerHit(e, this.baseAmount(fx, e, def.id), fx.element);
               const lost = this.applyHit(e, dmg, { pierce });
               hit.add(e);
               if (fx.type === 'drain') this.heal(lost);
@@ -763,10 +829,37 @@ export class Combat {
           break;
         }
         case 'block':
-          this.gainBlock(fx.amount);
+          this.gainBlock(this.baseAmount(fx, targets[0], def.id));
           break;
         case 'heal':
           this.heal(fx.amount);
+          break;
+        case 'loseHp':
+          this.applyHit(this.player, fx.amount, { pierce: true, dot: true });
+          break;
+        case 'charge':
+          this.fxCharge(fx.amount);
+          break;
+        case 'multiply':
+          for (const e of targets) {
+            const cur = e.status[fx.status] ?? 0;
+            if (cur > 0 && !e.dead) e.status[fx.status] = cur * fx.factor;
+          }
+          break;
+        case 'grant': {
+          for (const g of fx.fx) this.addEffect(g, `pouvoir:${def.id}`);
+          const have = this.powers.find((p) => p.id === def.id);
+          if (have) have.n++;
+          else this.powers.push({ id: def.id, name: def.name, icon: def.icon, n: 1 });
+          break;
+        }
+        case 'addCard':
+          for (let i = 0; i < fx.count; i++) {
+            const inst = { uid: 900000 + this.statusUid++, id: fx.card, upgraded: false };
+            if (fx.pile === 'hand' && this.hand.length < MAX_HAND) this.hand.push(inst);
+            else if (fx.pile === 'draw') this.drawPile.splice(this.rng.int(this.drawPile.length + 1), 0, inst);
+            else this.discardPile.push(inst);
+          }
           break;
         case 'draw':
           this.drawCards(fx.amount);

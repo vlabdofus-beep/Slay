@@ -173,6 +173,8 @@ export const REWARDS: RewardDef[] = [
     apply: (c, n, x, t) => { const e = foe(c, x); if (e) c.fxDamage(e, n, t.el ?? 'neutre'); } },
   { id: 'degats_zone', value: 1.8, max: 10, ok: notWon, text: (n, t) => `inflige ${n} dégâts ${t.el ? EL_NAME[t.el] : 'neutres'} à tous les ennemis`,
     apply: (c, n, _x, t) => { for (const e of c.living()) c.fxDamage(e, n, t.el ?? 'neutre'); } },
+  // Réservée aux pouvoirs du Crâ : jamais tirée sur un objet.
+  { id: 'visee', value: 4, ok: () => false, text: (n) => `Visée +${n}`, apply: (c, n) => c.fxCharge(n) },
   { id: 'prospection', value: 1, max: 60, loot: true, ok: (t) => !!t.loot, text: (n) => `+${n} prospection au prochain combat`,
     apply: (c, n) => { c.prospection.next += n; } },
   { id: 'prospection_run', value: 4, max: 30, loot: true, ok: (t) => !!t.loot, text: (n) => `+${n} prospection pour le reste de la run`,

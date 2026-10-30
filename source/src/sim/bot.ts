@@ -9,6 +9,8 @@ import { chooseItem } from './itemPolicy.ts';
 import { playGreedy } from './policy.ts';
 
 export interface BotOptions {
+  /** Sans passif de classe (pour le chiffrer). */
+  noPassive?: boolean;
   /** Effets ajoutés hors équipement (chiffrage). */
   extra?: ItemEffect[];
   extraProspection?: number;
@@ -35,6 +37,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
   const run = new Run(classe, seed);
   run.extraEffects = o.extra ?? [];
   run.extraProspection = o.extraProspection ?? 0;
+  run.noPassive = !!o.noPassive;
   const rng = new Rng(seed * 2654435761);
   const rarities: Record<string, number> = {};
   let hpBeforeBoss: number | null = null;

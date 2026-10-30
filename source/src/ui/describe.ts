@@ -1,6 +1,18 @@
 // Texte lisible des cartes, effets, intentions et stats. Une seule source pour toute l'interface.
 import type { Combat, Enemy } from '../core/combat.ts';
-import type { CardDef, CardTarget, Effect, Element, StatusId, Stats } from '../core/types.ts';
+import type { CardDef, CardTarget, Effect, Element, ScaleId, StatusId, Stats } from '../core/types.ts';
+import { effectText as itemEffectText, ruleText, type ItemEffect, type RuleId } from '../core/effects.ts';
+
+/** Ce qui fait grossir une carte (« +3 par attaque déjà jouée ce tour »). */
+export const SCALE_TEXT: Record<ScaleId, string> = {
+  attaques: 'par attaque déjà jouée ce tour',
+  puissance: 'par point de puissance',
+  armure: "par point d'armure",
+  ennemis: 'par ennemi en vie',
+  statuts: 'par altération sur la cible',
+  main: 'par carte en main',
+  lancers: 'par lancer précédent de cette carte ce combat',
+};
 
 export const ELEMENT_NAMES: Record<Element, string> = {
   terre: 'Terre', feu: 'Feu', eau: 'Eau', air: 'Air', neutre: 'Neutre',
@@ -22,11 +34,12 @@ export const STATUS_INFO: Record<StatusId, { name: string; help: string }> = {
 const plural = (n: number, one: string, many: string) => (n > 1 ? many : one);
 
 /** Valeur d'un effet de dégâts avec les bonus actuels du joueur (sans les résistances de la cible). */
-export function liveAmount(c: Combat | null, fx: Effect, _cardElement: Element | null): number | null {
+export function liveAmount(c: Combat | null, fx: Effect, _cardElement: Element | null, def?: CardDef): number | null {
   if (!c || (fx.type !== 'damage' && fx.type !== 'drain')) return null;
-  let d = fx.amount + (c.player.status.puissance ?? 0) + c.player.dom[fx.element];
+  let d = c.baseAmount(fx, undefined, def?.id) + (c.player.status.puissance ?? 0) + c.player.dom[fx.element];
   if (c.player.status.faiblesse) d *= 0.75;
-  return Math.max(0, Math.floor(d));
+  d = Math.max(0, Math.floor(d));
+  return def?.type === 'attaque' && c.aimReady() ? d * 2 : d;
 }
 
 function amountHtml(base: number, live: number | null): string {
@@ -34,20 +47,31 @@ function amountHtml(base: number, live: number | null): string {
   return `<b class="${live > base ? 'up' : 'down'}">${live}</b>`;
 }
 
-export function effectText(fx: Effect, target: CardTarget, c: Combat | null = null, cardElement: Element | null = null): string {
+export function effectText(fx: Effect, target: CardTarget, c: Combat | null = null, cardElement: Element | null = null, def?: CardDef): string {
   const zone = target === 'all_enemies' ? ' à tous les ennemis' : '';
   switch (fx.type) {
     case 'damage': {
-      const n = amountHtml(fx.amount, liveAmount(c, fx, cardElement));
+      const n = amountHtml(fx.amount, liveAmount(c, fx, cardElement, def));
       const hits = fx.hits && fx.hits > 1 ? ` ×${fx.hits}` : '';
-      return `Inflige ${n}${hits} ${fx.element === 'neutre' ? 'dégâts neutres' : `dégâts ${ELEMENT_NAMES[fx.element]}`}${zone}.`;
+      const more = fx.bonus ? `, <b>+${fx.bonus.n}</b> ${SCALE_TEXT[fx.bonus.per]}` : '';
+      return `Inflige ${n}${hits} ${fx.element === 'neutre' ? 'dégâts neutres' : `dégâts ${ELEMENT_NAMES[fx.element]}`}${zone}${more}.`;
     }
     case 'drain':
-      return `Vole ${amountHtml(fx.amount, liveAmount(c, fx, cardElement))} PV ${fx.element === 'neutre' ? '' : `(${ELEMENT_NAMES[fx.element]})`}${zone}.`.replace(' .', '.');
+      return `Vole ${amountHtml(fx.amount, liveAmount(c, fx, cardElement, def))} PV ${fx.element === 'neutre' ? '' : `(${ELEMENT_NAMES[fx.element]})`}${zone}.`.replace(' .', '.');
     case 'block': {
-      const live = c ? fx.amount + c.player.blockBonus : null;
-      return `Gagne ${amountHtml(fx.amount, live)} armure.`;
+      const base = c ? c.baseAmount(fx, undefined, def?.id) : fx.amount;
+      const live = c ? base + c.player.blockBonus : null;
+      const more = fx.bonus ? `, <b>+${fx.bonus.n}</b> ${SCALE_TEXT[fx.bonus.per]}` : '';
+      return `Gagne ${amountHtml(fx.amount, live)} armure${more}.`;
     }
+    case 'loseHp':
+      return `Perds <b>${fx.amount}</b> PV.`;
+    case 'charge':
+      return `Visée <b>+${fx.amount}</b>.`;
+    case 'multiply':
+      return `${fx.factor === 2 ? 'Double' : fx.factor === 3 ? 'Triple' : `Multiplie par ${fx.factor}`} le ${STATUS_INFO[fx.status].name.toLowerCase()} de la cible.`;
+    case 'grant':
+      return fx.fx.map((g) => (g.kind === 'rule' ? ruleText(g.rule as RuleId) : itemEffectText(g as ItemEffect))).join(' ');
     case 'heal':
       return `Soigne <b>${fx.amount}</b> PV.`;
     case 'draw':
@@ -66,7 +90,8 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
 }
 
 export function cardText(def: CardDef, c: Combat | null = null): string {
-  const lines = def.effects.map((fx) => effectText(fx, def.target, c, def.element));
+  const lines = def.effects.map((fx) => effectText(fx, def.target, c, def.element, def));
+  if (def.type === 'pouvoir') lines.unshift('<i>Pouvoir, actif tout le combat :</i>');
   if (def.unplayable) lines.push('Injouable.');
   if (def.endTurnDamage) lines.push(`Si elle est encore en main en fin de tour, tu subis <b>${def.endTurnDamage}</b> dégâts.`);
   if (def.ethereal) lines.push('Éphémère : épuisée si elle reste en main en fin de tour.');

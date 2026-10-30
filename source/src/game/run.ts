@@ -83,6 +83,8 @@ export class Run {
   /** Effets hors équipement (outils de simulation : chiffrage d'un effet isolé). */
   extraEffects: import('../core/effects.ts').ItemEffect[] = [];
   extraProspection = 0;
+  /** Simulation : désactive le passif de classe (pour le chiffrer). */
+  noPassive = false;
   stats = { combats: 0, elites: 0, floor: 0, kamas: 0 };
   /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
   encounters: Record<string, string> = {};
@@ -179,7 +181,7 @@ export class Run {
     this.encounter = encounter;
     this.combat = new Combat(
       LIBRARY, this.deck,
-      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects], revive: this.dofus.includes('dokoko') && !this.reviveUsed },
+      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects], revive: this.dofus.includes('dokoko') && !this.reviveUsed, classe: this.noPassive ? undefined : this.classe },
       ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), TIER_SCALE[this.act][ENCOUNTERS[encounter].tier],
     );
     this.phase = 'combat';

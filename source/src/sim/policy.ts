@@ -1,5 +1,5 @@
 import type { Action, Combat, Enemy } from '../core/combat.ts';
-import type { CardTarget, CardType, Effect, Element } from '../core/types.ts';
+import type { CardDef, CardTarget, CardType, Effect, Element } from '../core/types.ts';
 
 type Move = Exclude<Action, { type: 'end' }>;
 
@@ -9,12 +9,13 @@ interface Playable {
   cost: number;
   element: Element;
   type: CardType;
+  def: CardDef;
 }
 
 function describe(c: Combat, a: Move): Playable {
   const inst = c.hand[a.handIndex];
   const def = c.cardDef(inst);
-  return { effects: def.effects, mode: def.target, cost: c.costOf(inst), element: def.element, type: def.type };
+  return { effects: def.effects, mode: def.target, cost: c.costOf(inst), element: def.element, type: def.type, def };
 }
 
 /** Valeur approximative d'un coup : sert de base d'équilibrage, pas de vrai « bon joueur ». */
@@ -33,7 +34,7 @@ function value(c: Combat, a: Move): number {
       case 'drain':
         dealsDamage = true;
         for (const e of targets) {
-          const d = c.estimateDamage(fx, e);
+          const d = c.estimateDamage(fx, e, p.def);
           const eff = Math.min(d, e.hp + e.block);
           v += eff;
           if (d >= e.hp + e.block) v += 6;
@@ -41,7 +42,20 @@ function value(c: Combat, a: Move): number {
         }
         break;
       case 'block':
-        v += blockValue(fx.amount + c.player.blockBonus);
+        v += blockValue(c.baseAmount(fx, targets[0], p.def.id) + c.player.blockBonus);
+        break;
+      case 'loseHp':
+        v -= fx.amount * (c.player.hp * 2 < c.player.maxHp ? 2 : 0.8);
+        break;
+      case 'charge':
+        v += c.classe === 'cra' ? 3 * fx.amount : 0;
+        break;
+      case 'multiply':
+        for (const e of targets) v += 0.9 * (e.status[fx.status] ?? 0) * (fx.factor - 1);
+        break;
+      case 'grant':
+        // Un pouvoir rapporte d'autant plus qu'il reste de combat : on le joue tôt.
+        v += c.turn <= 2 ? 16 : 8;
         break;
       case 'heal':
         v += 0.8 * Math.min(fx.amount, missingHp);

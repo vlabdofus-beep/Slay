@@ -174,3 +174,16 @@ Chef Crocodaille (PV et rage), Wa Wabbit (1 Wabbit appelé), Abraknyde Ancestral
 Shin Larve (seconde phase moins forte).
 
 Bot glouton, 800 runs avec objets : boss 1 battu 8 % (Iop) / 15 % (Crâ), boss 2 1 % / 5 %, boss 3 0 % / 1 %.
+
+## Passifs de classe et 52 cartes (30/10/2026)
+
+Bot glouton, 300 runs par ligne, objets compris, nouvelles cartes dans le pool. Taux d'atteinte des boss 1 / 2 / 3.
+
+| Classe | Sans passif | Courroux 3 / Visée 4 | Courroux 2 / Visée 5 | Retenu : Courroux 3 / Visée 5 |
+|---|---|---|---|---|
+| Iop | 9 % / 0 % / 0 % | 18 % / 2 % / 0 % | 22 % / 3 % / 0 % | 18 % / 2 % / 0 % |
+| Crâ | 10 % / 1 % / 0 % | 30 % / 8 % / 1 % | 19 % / 3 % / 0 % | 19 % / 3 % / 0 % |
+
+Visée toutes les 4 attaques valait près d'un tiers de dégâts d'attaque en plus : trop fort face au Courroux. Courroux à 2 attaques revenait à une Forme démoniaque gratuite (+1 puissance quasiment chaque tour) : trop fort pour un joueur humain dans les longs combats de boss. On garde 3 attaques et 5 tirs, ce qui remet les deux classes à égalité.
+
+Repères des nouvelles cartes : mêmes que le reste (0 PA ≈ 3-4 dégâts, 1 PA ≈ 6-8, 2 PA ≈ 10-15). Les cartes à bonus partent plus bas (Massacre : 2 dégâts +3 par attaque déjà jouée). Les pouvoirs coûtent ce que coûtent leurs effets d'objet de rareté équivalente.

@@ -107,7 +107,7 @@ export function castPlan(card: CardDef): { anim: string; fx: FxEntry[] } {
   const classe = card.classe as string;
   const e = entryOf(card);
   let anim = e?.[0] ?? (card.spellId ? classDefaultAnim(classe) : classe === 'iop' ? 'strike' : classDefaultAnim(classe));
-  if (card.type === 'competence' && !e?.[0]) anim = 'cast';
+  if (card.type !== 'attaque' && !e?.[0]) anim = 'cast';
   let fx = e?.[1] ?? [];
   if (!fx.some((f) => f[0] === 'target') && card.type === 'attaque') {
     const donor = cardsOf(classe).find((c) => c.element === card.element && entryOf(c)?.[1].some((f) => f[0] === 'target'))
