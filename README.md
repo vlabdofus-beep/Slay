@@ -12,8 +12,9 @@ données issues de DofusDB, univers © Ankama.
 cd source
 npm install
 npm test
-npx esbuild src/ui/app.ts --bundle --minify --format=esm --target=es2022 --outfile=../app.js
-sed "s#url('/assets/#url('assets/#g" src/ui/style.css > ../style.css
-cp -r public/assets ..
+npm run site      # recompile à la racine du dépôt : app.<empreinte>.js, style.<empreinte>.css, assets/, _headers
 ```
-Puis commit et push sur `main` : Cloudflare redéploie automatiquement.
+Puis commit et push sur `main` : Cloudflare redéploie automatiquement. Les noms de fichiers changent à chaque
+version, et `index.html` n'est jamais mis en cache : pas de mélange entre ancienne et nouvelle version.
+
+Guide de style : ajouter `#styleguide` à l'adresse du jeu.

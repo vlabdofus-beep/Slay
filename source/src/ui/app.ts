@@ -163,7 +163,7 @@ function viewTitle(): string {
     <p class="brand-sub">Un deckbuilder dans le Monde des Douze</p>
     <p class="lead">Traverse Amakna jusqu'au Bouftou Royal. Chaque combat t'offre une carte, et parfois un objet : construis ta voie élémentaire.</p>
     <div class="class-row">${choice('iop')}${choice('cra')}</div>
-    <p class="fine">Fan game non officiel. Données issues de DofusDB, univers © Ankama.</p>
+    <p class="fine">Fan game non officiel. Données issues de DofusDB, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
   </main>`;
 }
 
@@ -408,6 +408,114 @@ function viewModal(run: Run): string {
     <div class="modal-grid">${body}</div></div></div>`;
 }
 
+// ───────────── guide de style (#styleguide) ─────────────
+
+const SWATCHES: { title: string; items: [string, string, string][] }[] = [
+  { title: 'Base', items: [
+    ['--bg', '#172129', 'Encre de Brâkmar, fond'], ['--panel', '#1f2c35', "Pierre d'Astrub, cadres"], ['--panel-2', '#283a45', 'Pierre claire'],
+    ['--panel-deep', '#131c23', 'Creux, champs'], ['--line', '#3a4d58', 'Bordures'], ['--text', '#efe3c8', 'Vélin, texte'], ['--muted', '#9fae9f', 'Texte secondaire'],
+  ] },
+  { title: 'Or, pour ce qui se joue', items: [['--gold', '#d9ad57', "Feuille d'or"], ['--gold-2', '#f0d28e', 'Or clair, titres']] },
+  { title: 'Dofus primordiaux, un par écran', items: [
+    ['--emeraude', '#93c02c', 'Carte'], ['--pourpre', '#d9613a', 'Combat'], ['--ocre', '#e2b23a', 'Récompense'],
+    ['--turquoise', '#34aaa6', 'Zaap'], ['--ivoire', '#dccaa0', 'Réserve'], ['--ebene', '#a9835e', 'Défaite'],
+  ] },
+  { title: 'Éléments, cadre des cartes', items: [
+    ['--terre', '#b07a3c', 'Terre'], ['--feu', '#e2592f', 'Feu'], ['--eau', '#3d8fd8', 'Eau'], ['--air', '#74b84a', 'Air'], ['--neutre', '#9b958a', 'Neutre'],
+  ] },
+  { title: 'États', items: [['--pv', '#b8473b', 'Points de vie'], ['--armure', '#8fb6c9', 'Armure'], ['--ok', '#7fc28f', 'Amélioration, réussite']] },
+];
+
+function sgSection(title: string, note: string, body: string): string {
+  return `<section class="sg-section"><header><h2>${title}</h2><p>${note}</p></header>${body}</section>`;
+}
+
+function viewStyleguide(): string {
+  // Une partie de démonstration, rendue sans toucher à la partie en cours.
+  const saved = ui.run;
+  const demo = new Run('iop', 7);
+  ui.run = demo;
+  demo.equip('item_8217');
+  demo.equip('item_2445');
+  const combatNode = demo.availableNodes()[0];
+  const tipCombat = nodeTip(demo, demo.map.nodes[combatNode]);
+  const zaapNode = Object.values(demo.map.nodes).find((n) => n.type === 'zaap');
+  const tipZaap = zaapNode ? nodeTip(demo, zaapNode) : '';
+  demo.enterNode(combatNode);
+  const c = demo.combat!;
+  c.player.status.puissance = 2;
+  c.enemies[0].status.vulnerabilite = 2;
+  c.enemies[0].status.brulure = 3;
+  c.enemies[0].block = 6;
+  const enemies = c.enemies.map((e) => enemyHtml(e, false)).join('');
+
+  const swatches = SWATCHES.map((g) => `<div class="sg-swatch-group"><h3>${g.title}</h3><div class="sg-swatches">${g.items.map(([v, hex, name]) =>
+    `<figure class="sg-swatch"><span style="background:var(${v})"></span><figcaption><b>${name}</b><code>${v} ${hex}</code></figcaption></figure>`).join('')}</div></div>`).join('');
+
+  const type = `<div class="sg-type">
+    <p class="brand-name">Dofus Slay</p><p class="brand-sub">Philosopher italique, sous-titres et lieux</p>
+    <h2>Titre d'écran, Philosopher 28</h2>
+    <h3>Titre de section, Philosopher or clair</h3>
+    <p>Texte courant en Inter 15, interligne 1,55. Les cartes, les objets et les infobulles l'utilisent aussi, en plus petit.</p>
+    <p class="muted">Texte secondaire : précisions, unités, états.</p>
+  </div>`;
+
+  const accents = ['--emeraude', '--pourpre', '--ocre', '--turquoise'];
+  const buttons = `<div class="sg-row">
+    ${accents.map((a) => `<button class="primary sg-btn" style="--accent:var(${a}); --accent-deep: color-mix(in srgb, var(${a}) 62%, #000)">Reprendre la route</button>`).join('')}
+    <button class="end-turn">Finir le tour</button>
+    <button class="link">Voir le deck</button>
+    <button class="active">Carapace</button>
+    <button class="forge-el el-feu">${elIcon('feu')}Feu</button>
+  </div>
+  <div class="sg-row"><div class="sg-panel">Cadre gravé : pierre, double filet doré, coins biseautés. Utilisé pour la fiche, les récompenses, le Zaap, les fenêtres et les infobulles.</div></div>`;
+
+  const pickCard = (id: string, extra: Partial<CardInstance> = {}) => {
+    const inst: CardInstance = { uid: 0, id, upgraded: false, ...extra };
+    return resolveCard(LIBRARY, inst);
+  };
+  const cardsRow = ['iop_coup_epee', 'iop_accumulation', 'iop_tempete', 'iop_endurance', 'iop_zenith']
+    .map((id) => cardHtml(pickCard(id), { live: false })).join('');
+  const cardStates = [
+    cardHtml(pickCard('iop_colere'), {}) ,
+    cardHtml(pickCard('iop_epee_destin', { upgraded: true }), { inst: { uid: 0, id: 'iop_epee_destin', upgraded: true } }),
+    cardHtml(pickCard('iop_coup_epee', { element: 'eau' }), { inst: { uid: 0, id: 'iop_coup_epee', upgraded: false, element: 'eau' } }),
+    cardHtml(pickCard('iop_sentence'), { selected: true }),
+    cardHtml(pickCard('iop_epee_jugement'), { disabled: true }),
+  ].join('');
+  const cardLabels = ['Rare', 'Améliorée', 'Forgemagée', 'Sélectionnée', 'Pas assez de PA'];
+
+  const items = [itemTile(ITEMS.items.item_8223), itemTile(ITEMS.items.item_2438), itemTile(ITEMS.items.item_15993, { taken: true })].join('');
+
+  const states = ['avail', 'here', 'done', 'locked'] as const;
+  const stateNames = { avail: 'Accessible', here: 'Position actuelle', done: 'Visitée', locked: 'Pas encore accessible' };
+  const medals = (['combat', 'elite', 'zaap'] as const).map((t) => `<div class="sg-medal-row"><b>${NODE_LABEL[t]}</b>${states.map((st) =>
+    `<figure class="sg-node"><span class="sg-node-box"><span class="node t-${t} s-${st}">${NODE_ICON[t]}</span></span><figcaption>${stateNames[st]}</figcaption></figure>`).join('')}</div>`).join('')
+    + `<div class="sg-medal-row"><b>Boss</b><figure class="sg-node big"><span class="sg-node-box"><span class="node t-boss s-locked"><span class="boss-art"><img src="${asset('ui/boss.png')}" alt=""></span></span></span><figcaption>Grand médaillon doré et plaque</figcaption></figure></div>`;
+
+  const chips = statusChips({ puissance: 2, faiblesse: 1, vulnerabilite: 2, brulure: 3 });
+  const intents = `<span class="intent sg-intent i-attack"><svg viewBox="0 0 24 24"><path d="M5 19L19 5m-4 0h4v4"/></svg>7</span>
+    <span class="intent sg-intent i-attack"><svg viewBox="0 0 24 24"><path d="M5 19L19 5m-4 0h4v4"/></svg>3×2</span>
+    <span class="intent sg-intent i-defend">Envol</span><span class="intent sg-intent i-buff">Cri de guerre</span><span class="intent sg-intent i-debuff">Toile</span>`;
+
+  ui.run = saved;
+  return `<main class="styleguide">
+    <header class="sg-head"><p class="brand-name">Dofus Slay</p><p class="brand-sub">Guide de style : la base visuelle du jeu</p>
+      <a class="link" href="#">Revenir au jeu</a></header>
+    ${sgSection('Couleurs', "L'ardoise et l'or de Dofusle. Chaque écran prend la couleur d'un Dofus primordial ; les éléments colorent les cartes.", swatches)}
+    ${sgSection('Typographie', 'Deux familles : Philosopher pour ce qui se lit comme un titre ou un nom, Inter pour le reste.', type)}
+    ${sgSection('Boutons et cadres', "Le bouton principal prend l'accent de l'écran. Coins biseautés pour les cadres, arrondis pour ce qui se joue.", buttons)}
+    ${sgSection('Cartes', "Le cadre et le dégradé suivent l'élément. Les valeurs vertes tiennent compte des bonus en combat.",
+      `<div class="sg-row cards">${cardsRow}</div><div class="sg-row cards">${cardStates}</div><div class="sg-row sg-labels">${cardLabels.map((l) => `<span>${l}</span>`).join('')}</div>`)}
+    ${sgSection('Objets', 'Pièce de panoplie, objet rare avec actif, objet équipé.', `<div class="row items">${items}</div>`)}
+    ${sgSection("Carte de l'acte", "La taille et le liseré des médaillons disent l'enjeu. L'infobulle s'ouvre au survol ou au focus.",
+      `${medals}<div class="sg-row sg-tips"><div class="sg-static">${tipCombat}</div><div class="sg-static">${tipZaap}</div></div>`)}
+    ${sgSection('Combat', 'Intentions des monstres, statuts, barres de vie et armure, PA.',
+      `<div class="field sg-field">${enemies}</div><div class="sg-row">${intents}</div><div class="sg-row chips">${chips}</div>
+      <div class="sg-row"><span class="sg-bar">${bar(54, 80, 'hp', ' <span class="shield">12</span>')}</span><span class="energy">${'<span class="pa"></span>'.repeat(2)}<span class="pa spent"></span><b>2 PA</b></span></div>`)}
+  </main>`;
+}
+
 // ───────────── rendu ─────────────
 
 /** En-tête gravé, comme sur Dofusle : nom au centre, lieu et étage en dessous. */
@@ -417,6 +525,11 @@ function brandBar(run: Run): string {
 }
 
 function render(): void {
+  if (location.hash === '#styleguide') {
+    document.body.dataset.screen = 'styleguide';
+    root.innerHTML = viewStyleguide();
+    return;
+  }
   const run = ui.run;
   let html = '';
   if (!run) html = viewTitle();
@@ -606,4 +719,5 @@ document.addEventListener('keydown', (ev) => {
   render,
 };
 
+window.addEventListener('hashchange', render);
 render();

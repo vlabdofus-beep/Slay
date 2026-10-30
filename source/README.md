@@ -7,7 +7,8 @@ données issues de DofusDB (via Dofdle), univers © Ankama.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm run build      # version de production dans dist/
+npm run build      # version de production dans dist/ (Vite)
+npm run site       # version jouable à la racine du dépôt Slay (fichiers à empreinte, sans cache périmé)
 ```
 
 ## Développement
@@ -15,6 +16,7 @@ npm run build      # version de production dans dist/
 npm test           # tests du moteur, des items et de la run
 npm run sim        # simulations d'équilibrage (npm run sim 1000 pour plus de runs)
 npm run typecheck
+# Guide de style : ouvrir le jeu avec #styleguide à la fin de l'adresse
 node tools/build-dofus-data.mjs ../dofdle/data   # régénère src/data/dofus.json
 python3 tools/spire_benchmarks.py reference/     # repères StS2 (exports Spire Codex dans reference/)
 ```

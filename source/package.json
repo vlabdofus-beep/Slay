@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "typecheck": "tsc",
     "test": "node --test src/core/*.test.ts src/game/*.test.ts",
-    "sim": "node src/sim/run.ts"
+    "sim": "node src/sim/run.ts",
+    "site": "node tools/build-site.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

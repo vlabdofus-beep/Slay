@@ -449,3 +449,46 @@ button.item:not(.off):hover { transform: translateY(-3px); border-color: var(--a
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 .node-wrap:focus-visible .node { outline: 2px solid var(--gold-2); outline-offset: 4px; }
+
+/* ───────── guide de style (#styleguide) ───────── */
+body[data-screen="styleguide"] { --accent: var(--gold); }
+.styleguide { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; display: grid; gap: 1.6rem; }
+.sg-head { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding-bottom: .5rem; }
+.sg-section {
+  padding: 1.4rem 1.6rem 1.6rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 45%), var(--panel);
+  border: 1px solid var(--line); box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 5px var(--line-soft), 0 12px 30px rgba(5, 10, 14, 0.45);
+  border-radius: 3px;
+}
+@supports (corner-shape: bevel) { .sg-section, .sg-panel { border-radius: 12px; corner-shape: bevel; } }
+.sg-section > header { margin-bottom: 1.1rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line-soft); }
+.sg-section > header h2 { color: var(--gold-2); font-size: 1.5rem; }
+.sg-section > header p { color: var(--muted); font-size: .9rem; margin-top: .25rem; }
+.sg-swatch-group h3 { margin: 1rem 0 .6rem; font-size: 1rem; }
+.sg-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .8rem; }
+.sg-swatch { margin: 0; display: grid; gap: .4rem; }
+.sg-swatch > span { display: block; height: 56px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.sg-swatch b { display: block; font-size: .82rem; }
+.sg-swatch code { font-size: .74rem; color: var(--muted); }
+.sg-type { display: grid; gap: .6rem; justify-items: start; }
+.sg-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1rem; }
+.sg-row.cards { padding: 12px 0 0 10px; align-items: flex-start; }
+.sg-labels span { width: 168px; text-align: center; font-size: .8rem; color: var(--muted); }
+.sg-btn.primary { margin-top: 0; }
+.sg-panel { padding: 1rem 1.2rem; max-width: 60ch; font-size: .9rem; background: var(--panel-2); border: 1px solid var(--line); box-shadow: inset 0 0 0 4px var(--panel-2), inset 0 0 0 5px var(--line-soft); border-radius: 3px; }
+.sg-medal-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin: .4rem 0; }
+.sg-medal-row > b { width: 70px; font-family: var(--title); }
+.sg-node { margin: 0; display: grid; justify-items: center; gap: .3rem; width: 120px; }
+.sg-node figcaption { font-size: .74rem; color: var(--muted); text-align: center; }
+.sg-node-box { position: relative; width: 70px; height: 70px; }
+.sg-node.big .sg-node-box { width: 104px; height: 104px; }
+.sg-node .node { left: 50%; top: 50%; animation: none; }
+.sg-tips { align-items: flex-start; }
+.sg-static .tip { position: static; opacity: 1; visibility: visible; transform: none; }
+.sg-field { justify-content: flex-start; padding-top: 3rem; }
+.sg-intent { position: static; transform: none; }
+.sg-bar { width: 260px; }
+.sg-swatch code { font-family: var(--font); }
+.sg-medal-row { align-items: flex-start; }
+.sg-medal-row > b { padding-top: 24px; }
+.sg-row.chips { justify-content: flex-start; }
