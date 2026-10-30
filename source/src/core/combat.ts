@@ -16,6 +16,10 @@ export const HAND_SIZE = 5;
 export const MAX_HAND = 10;
 export const BASE_ENERGY = 3;
 export const MAX_TURNS = 60;
+/** Plafonds des effets d'objets et de Dofus, par tour : rien ne doit pouvoir s'emballer en boucle. */
+export const FX_CAP = { pioche: 2, pa: 2, reduction: 2, brulure: 6, poison: 6 } as const;
+/** Plafond absolu d'une pile de brûlure ou de poison sur une même cible. */
+export const STACK_CAP = { brulure: 15, poison: 20 } as const;
 
 export interface Entity {
   hp: number;
@@ -163,6 +167,8 @@ export class Combat {
   /** Prospection gagnée pendant le combat (prochain combat / reste de la run). */
   prospection = { next: 0, run: 0 };
   private tripleDone = false;
+  /** Ce que les effets d'objets ont déjà donné ce tour (voir FX_CAP). */
+  private fxTurn = { pioche: 0, pa: 0, reduction: 0, brulure: 0, poison: 0 };
   private reviveAvailable = false;
   revived = false;
   private depth = 0;
@@ -362,8 +368,17 @@ export class Combat {
   // ───────────── effets d'objets (appelés par les récompenses) ─────────────
 
   fxStatus(t: Entity, id: StatusId, n: number): void {
+    if (id === 'brulure' || id === 'poison') n = this.fxBudget(id, n);
+    if (n <= 0) return;
     if (t === this.player) this.addStatus(t, id, n);
     else this.statusOnEnemy(t as Enemy, id, n);
+  }
+
+  /** Part encore autorisée ce tour pour un effet plafonné. */
+  private fxBudget(k: keyof typeof FX_CAP, n: number): number {
+    const ok = Math.max(0, Math.min(n, FX_CAP[k] - this.fxTurn[k]));
+    this.fxTurn[k] += ok;
+    return ok;
   }
 
   fxBlock(n: number): void {
@@ -375,15 +390,15 @@ export class Combat {
   }
 
   fxDraw(n: number): void {
-    this.drawCards(n);
+    this.drawCards(this.fxBudget('pioche', n));
   }
 
   fxEnergy(n: number): void {
-    this.player.energy += n;
+    this.player.energy += this.fxBudget('pa', n);
   }
 
   fxDiscount(n: number): void {
-    this.discount += n;
+    this.discount += this.fxBudget('reduction', n);
   }
 
   /** Dégâts directs d'un effet d'objet : faiblesses élémentaires et vulnérabilité comptent, pas la puissance. */
@@ -417,7 +432,8 @@ export class Combat {
   }
 
   private addStatus(e: Entity, id: StatusId, amount: number): void {
-    e.status[id] = (e.status[id] ?? 0) + amount;
+    const v = (e.status[id] ?? 0) + amount;
+    e.status[id] = id === 'brulure' || id === 'poison' ? Math.min(STACK_CAP[id], v) : v;
   }
 
   /** Statut posé par le joueur sur un ennemi (règles « brûlure empoisonnée »). */
@@ -444,6 +460,7 @@ export class Combat {
     this.turnCards = 0;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
+    this.fxTurn = { pioche: 0, pa: 0, reduction: 0, brulure: 0, poison: 0 };
     const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('pioche_plus') ? 1 : 0);
     this.drawCards(target);
     this.emit('turnStart');

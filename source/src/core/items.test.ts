@@ -202,3 +202,23 @@ test('faiblesses / résistances dérivées des résistances Dofus', async () => 
   assert.deepEqual(weakResist({ neutre: 5, terre: 15, feu: -10, eau: -5, air: 20 }), { weak: ['feu'], resist: ['air'] });
   assert.deepEqual(weakResist({ neutre: 14, terre: 14, feu: 14, eau: 14, air: 14 }), { weak: [], resist: [] });
 });
+
+test('plafonds : les effets d\'objets donnent au plus 2 cartes et 6 brûlure par tour ; une pile ne dépasse pas 15 brûlure', () => {
+  const c = combatWith(['bouftou'], ['iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee'],
+    { effects: [roll('attaque', 'pioche', 2), roll('attaque', 'brulure', 3)] });
+  c.player.energy = 9;
+  c.enemies[0].hp = 999;
+  c.drawPile = Array.from({ length: 10 }, () => newCard('iop_vitalite'));
+  const hand0 = c.hand.length;
+  for (let i = 0; i < 4; i++) c.playCard(c.hand.findIndex((x) => x.id === 'iop_coup_epee'), 0);
+  assert.equal(c.hand.length, hand0 - 4 + 2);
+  assert.equal(c.enemies[0].status.brulure, 6);
+  c.enemies[0].status.brulure = 14;
+  c.fxStatus(c.enemies[0], 'brulure', 5); // budget du tour épuisé : rien
+  assert.equal(c.enemies[0].status.brulure, 14);
+  const d = combatWith(['bouftou'], []);
+  d.fxStatus(d.enemies[0], 'brulure', 3);
+  d.enemies[0].status.brulure = 14;
+  d.fxStatus(d.enemies[0], 'brulure', 3);
+  assert.equal(d.enemies[0].status.brulure, 15);
+});

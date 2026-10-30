@@ -126,15 +126,34 @@ Principaux enseignements (4 000 runs pour les déclencheurs, 1 000 pour les réc
 Runs complètes (1 500 runs, bot glouton, chemin au hasard) : sans objets 0-1 % de victoires sur le boss ; avec objets
 Iop 34 %, Crâ 43 % ; ≈ 3,6 objets portés (1,9 commun, 1,4 rare, 0,6 mythique, 0,2 légendaire).
 
-## Trois actes, Dofus et marchand (30/10/2026)
+## Trois actes, calés sur Slay the Spire 2 (30/10/2026, après retour de jeu : « trop simple »)
 
-Monstres des actes 2 et 3 écrits à leur échelle (PV ≈ ×1,7 et ×2,6, coups ≈ ×1,5 et ×2 par rapport à l'acte 1), puis
-réglage fin par acte (`ACT_SCALE` : acte 2 ×0,92, acte 3 ×0,76 PV et ×0,8 coups). Bot glouton, 800 runs, avec objets :
+Médianes StS2 par acte et type de salle (exports Spire Codex) comparées aux nôtres après mise à l'échelle
+(`TIER_SCALE` dans `src/data/monsters.ts`, un coefficient PV et dégâts par acte et par salle) :
 
-| classe | boss 1 | boss 2 | boss 3 |
-|--------|--------|--------|--------|
-| Iop    | 37 %   | 19 %   | 5 %    |
-| Crâ    | 46 %   | 33 %   | 18 %   |
+| Acte | Salle   | PV StS2 | PV nous (avant → après) | Coup max StS2 | Coup max nous |
+|------|---------|---------|-------------------------|---------------|---------------|
+| 1    | faible  | 42      | 35 → 39                 | 11            | 7             |
+| 1    | normale | 74      | 60 → 70                 | 12            | 9             |
+| 1    | élite   | 82      | 80 → 80                 | 15            | 15            |
+| 1    | boss    | 231     | 195 → 224               | 17            | 16            |
+| 2    | faible  | 83      | 59 → 82                 | 18            | 13            |
+| 2    | normale | 128     | 90 → 118                | 16            | 15            |
+| 2    | élite   | 145     | 125 → 142               | 15-21         | 21            |
+| 2    | boss    | 379     | 299 → 380               | 28            | 30            |
+| 3    | faible  | 96      | 80 → 92                 | 14            | 16            |
+| 3    | normale | 150     | 114 → 151               | 18            | 21            |
+| 3    | élite   | 276     | 180 → 285               | 35            | 34            |
+| 3    | boss    | 556     | 365 → 557               | 25-32         | 33            |
 
-Taux conditionnels : l'acte 2 est passé par ≈ 50 % (Iop) à 70 % (Crâ) des runs qui l'atteignent, l'acte 3 par ≈ 25 à 55 %.
-L'écart Iop / Crâ, déjà visible à l'acte 1, se creuse avec les actes : à corriger avec la diversité des monstres.
+Nos actes 2 et 3 étaient 25 à 35 % plus faibles que StS2 : c'est corrigé. Nos rencontres comptent souvent un monstre
+de plus, d'où des dégâts cumulés un peu plus hauts pour un coup max un peu plus bas.
+
+Plafonds ajoutés aux effets d'objets et de Dofus (`FX_CAP`, par tour) : 2 cartes, 2 PA, 2 PA de réduction, 6 brûlure,
+6 poison ; et une pile ne dépasse jamais 15 brûlure ou 20 poison (`STACK_CAP`), cartes comprises. Valeurs relevées :
+pioche 3,5 (max 2 par déclenchement), PA 7 (max 1), réduction 6 (max 1), brûlure et poison 1,6 (max 3 et 4),
+en zone 2,8 (max 2 et 3).
+
+Bot glouton (cartes au hasard), 800 runs, avec objets, après calage : boss 1 battu 10 % (Iop) / 18 % (Crâ),
+boss 2 1 % / 8 %, boss 3 0 % / 2 %. Le bot joue nettement moins bien qu'un humain : ces chiffres servent à comparer
+des réglages entre eux, pas à fixer la difficulté.

@@ -11,6 +11,7 @@ import { ITEMS } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
 import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
 import { EGG_BY_ID } from '../data/eggs.ts';
+import { eggArt, loadEggArt } from './eggArt.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
@@ -158,7 +159,7 @@ function sheet(run: Run): string {
     ${bar(run.hp, run.maxHp, 'hp')}
     <button class="link" data-act="modal-deck">Voir le deck (${run.deck.length} cartes)</button>
     <h3>Équipement</h3><div class="slots">${slots}</div>
-    ${effects ? `<ul class="fx-list">${effects}</ul>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
+    ${effects ? `<ul class="fx-list">${effects}</ul><p class="muted small">Par tour, les effets d'objets et de Dofus donnent au plus 2 cartes, 2 PA, 6 brûlure et 6 poison.</p>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
     ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b> ${esc(eggText(id))}</span></li>`).join('')}</ul>` : ''}
     <h3>Kamas et prospection</h3>
     <p class="prosp">${KAMAS(run.kamas)}</p>
@@ -233,7 +234,12 @@ const NODE_ICON: Record<MapNode['type'], string> = {
 } as Record<MapNode['type'], string>;
 const actName = (run: Run) => ACTS[run.act - 1].name;
 const KAMAS = (n: number) => `<span class="kamas">${uiIcon('kamas', 'k-ico')}${n}</span>`;
-const eggIcon = (id: string, cls = 'egg-ico') => `<img class="${cls}" src="${asset(`dofus/${EGG_BY_ID[id].icon}.webp`)}" alt="" draggable="false">`;
+const eggIcon = (id: string, cls = 'egg-ico') => {
+  const local = asset(`dofus/${EGG_BY_ID[id].icon}.webp`);
+  return eggArt[id]
+    ? `<img class="${cls}" src="${eggArt[id]}" alt="" draggable="false" onerror="this.onerror=null;this.src='${local}'">`
+    : `<img class="${cls}" src="${local}" alt="" draggable="false">`;
+};
 function eggText(id: string): string {
   const egg = EGG_BY_ID[id];
   return [...statsText(egg.stats ?? {}).map((t) => `${t}.`), ...egg.effects.map(itemEffectText)].join(' ');
@@ -1244,3 +1250,5 @@ document.addEventListener('keydown', (ev) => {
 
 window.addEventListener('hashchange', render);
 render();
+// Artwork officiel des Dofus : chargé en arrière-plan, l'écran se redessine s'il en affiche.
+void loadEggArt().then((found) => { if (found && root.querySelector('.egg-ico, .egg-big') && !drag) render(); });

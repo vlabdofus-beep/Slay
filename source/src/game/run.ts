@@ -10,7 +10,7 @@ import type { CardInstance, ClassId, ItemRarity } from '../core/types.ts';
 import { EGGS, EGG_BY_ID } from '../data/eggs.ts';
 import { ITEMS, ITEM_LIST } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY, newCard, rewardPool, starterDeck } from '../data/library.ts';
-import { ACT_SCALE, ENCOUNTERS, encountersOfTier, type Act, type EncounterTier } from '../data/monsters.ts';
+import { TIER_SCALE, ENCOUNTERS, encountersOfTier, type Act, type EncounterTier } from '../data/monsters.ts';
 
 export type Phase = 'map' | 'combat' | 'reward' | 'zaap' | 'marchand' | 'dofus' | 'victory' | 'defeat';
 
@@ -179,7 +179,7 @@ export class Run {
     this.combat = new Combat(
       LIBRARY, this.deck,
       { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects], revive: this.dofus.includes('dokoko') && !this.reviveUsed },
-      ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), ACT_SCALE[this.act],
+      ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), TIER_SCALE[this.act][ENCOUNTERS[encounter].tier],
     );
     this.phase = 'combat';
   }

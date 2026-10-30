@@ -9,12 +9,17 @@ import { monster, monsterImage, weakResist } from './dofus.ts';
 
 /** Coefficient de difficulté de l'acte 1 : 0,75 sans items → 0,9 avec items → 1 avec le vrai contenu Dofus.
  *  Les monstres sont donc aux valeurs StS2. Voir docs/BALANCE.md. */
+export type EncounterTier = 'faible' | 'normal' | 'elite' | 'boss';
 export const ACT1_SCALE: MonsterScale = { hp: 1, damage: 1 };
-/** Réglage fin de chaque acte (les valeurs des monstres des actes 2 et 3 sont écrites à leur échelle). */
-export const ACT_SCALE: Record<1 | 2 | 3, MonsterScale> = {
-  1: ACT1_SCALE,
-  2: { hp: 0.92, damage: 0.92 },
-  3: { hp: 0.76, damage: 0.8 },
+/**
+ * Mise à l'échelle par acte et par type de salle, calée sur les médianes de Slay the Spire 2 (docs/BALANCE.md) :
+ * PV de rencontre visés — acte 1 : faible 42, normale 74, élite 82, boss 231 ;
+ * acte 2 : 83 / 128 / 145 / 379 ; acte 3 : 96 / 150 / 276 / 556. Coups visés : voir le même tableau.
+ */
+export const TIER_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> = {
+  1: { faible: { hp: 1.15, damage: 1.1 }, normal: { hp: 1.2, damage: 1.1 }, elite: { hp: 1, damage: 1 }, boss: { hp: 1.15, damage: 1 } },
+  2: { faible: { hp: 1.3, damage: 1.3 }, normal: { hp: 1.3, damage: 1.15 }, elite: { hp: 1.07, damage: 1.05 }, boss: { hp: 1.17, damage: 1 } },
+  3: { faible: { hp: 0.88, damage: 0.95 }, normal: { hp: 1, damage: 1 }, elite: { hp: 1.15, damage: 1 }, boss: { hp: 1.16, damage: 1 } },
 };
 
 const hit = (amount: number, element: Element, hits?: number): Effect =>
@@ -251,15 +256,14 @@ export const MONSTERS: MonsterDef[] = [
   // boss
   fromDofus('minotoror', 121, [470, 490], {
     rage: { name: 'Rage du labyrinthe', effects: [buff(5), block(30)] },
-    corne: { name: 'Coups de corne', effects: [hit(14, 'terre', 3)] },
-    charge: { name: 'Charge', effects: [hit(40, 'terre')] },
+    corne: { name: 'Coups de corne', effects: [hit(11, 'terre', 3)] },
+    charge: { name: 'Charge', effects: [hit(32, 'terre')] },
     labyrinthe: { name: 'Labyrinthe', effects: [hit(12, 'terre'), debuff('faiblesse', 2), debuff('vulnerabilite', 2)] },
   }, cycle('rage', 'corne', 'charge', 'labyrinthe')),
 ];
 const BOSSES = ['bouftou_royal', 'abraknyde_ancestral', 'minotoror'];
 for (const m of MONSTERS) if (BOSSES.includes(m.id)) m.boss = true;
 
-export type EncounterTier = 'faible' | 'normal' | 'elite' | 'boss';
 export type Act = 1 | 2 | 3;
 export const ACTS: { act: Act; name: string; boss: string }[] = [
   { act: 1, name: 'Amakna', boss: 'Bouftou Royal' },
