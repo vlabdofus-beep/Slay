@@ -1,7 +1,7 @@
 // Interface du jeu : rendu DOM simple (re-rendu complet à chaque action) + délégation d'événements.
 // Toute la logique est dans src/game/run.ts et src/core ; ce fichier ne fait qu'afficher et relayer.
 import { BASE_ENERGY, resolveCard, type Enemy } from '../core/combat.ts';
-import { effectText as itemEffectText, type ItemEffect } from '../core/effects.ts';
+import { EL_NAME, effectText as itemEffectText, partText, perTurn, REWARD_BY_ID, ruleText, TRIGGER_BY_ID, type EffectPart, type ItemEffect } from '../core/effects.ts';
 import { lootChance, prospFactor } from '../core/offers.ts';
 import type { MapNode } from '../core/map.ts';
 import type { CardDef, CardInstance, ClassId, Element, ItemDef, StatusMap } from '../core/types.ts';
@@ -115,6 +115,54 @@ function cardBack(cls = ''): string {
   return `<span class="card-back ${cls}" aria-hidden="true"><span class="cb-ring">${uiIcon('dofus', 'cb-egg')}</span></span>`;
 }
 
+// ───────────── effets d'objets en icônes ─────────────
+// Une icône par récompense avec sa quantité ; le survol (ou le focus) détaille l'effet et son activation.
+
+const FX_ICON: Record<string, string> = {
+  puissance: 'fx/puissance.webp', armure: 'fx/armure.webp', bouclier: 'fx/bouclier.webp', soin: 'fx/soin.webp',
+  pioche: 'fx/pioche.webp', pa: 'fx/pa.webp', reduction: 'fx/reduction.webp', esquive: 'fx/esquive.webp',
+  renvoi: 'fx/renvoi.webp', brulure: 'elements/feu.png', poison: 'fx/poison.webp', vulnerabilite: 'fx/vulnerabilite.webp',
+  faiblesse: 'fx/faiblesse.webp', erosion: 'fx/erosion.webp', etourdi: 'fx/etourdi.webp', brulure_zone: 'elements/feu.png',
+  poison_zone: 'fx/poison.webp', degats: 'fx/degats.webp', degats_zone: 'fx/degats_zone.webp',
+  prospection: 'fx/prospection.webp', prospection_run: 'fx/prospection.webp',
+};
+const FX_NAME: Record<string, string> = {
+  puissance: 'Puissance', armure: 'Armure', bouclier: 'Bouclier', soin: 'Soin', pioche: 'Pioche', pa: 'Points d\'action',
+  reduction: 'Réduction de coût', esquive: 'Esquive', renvoi: 'Renvoi de dommages', brulure: 'Brûlure', poison: 'Poison',
+  vulnerabilite: 'Vulnérabilité', faiblesse: 'Faiblesse', erosion: 'Érosion', etourdi: 'Étourdi', brulure_zone: 'Brûlure de zone',
+  poison_zone: 'Poison de zone', degats: 'Dégâts', degats_zone: 'Dégâts de zone', prospection: 'Prospection', prospection_run: 'Prospection durable',
+};
+const ZONE = new Set(['brulure_zone', 'poison_zone', 'degats_zone']);
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+function partIcon(p: EffectPart): string {
+  const t = TRIGGER_BY_ID[p.trigger];
+  const el = (p.reward === 'degats' || p.reward === 'degats_zone') && t.el ? `elements/${t.el}.png` : FX_ICON[p.reward];
+  const zone = ZONE.has(p.reward) ? '<i class="fxz" aria-hidden="true"></i>' : '';
+  const plus = p.reward === 'prospection_run' ? '<i class="fxp" aria-hidden="true">∞</i>' : '';
+  return `<span class="fxi${ZONE.has(p.reward) ? ' zone' : ''}"><img src="${asset(el)}" alt="" draggable="false">${zone}${plus}<b>${p.amount}</b></span>`;
+}
+
+/** Badge d'effet : icônes + quantités ; infobulle avec l'effet détaillé et son activation. */
+function fxBadge(fx: ItemEffect, o: { title: string; icon?: string; live?: { used: number; limit: number } | null; flash?: boolean; down?: boolean } = { title: '' }): string {
+  let icons: string, what: string, when: string;
+  if (fx.kind === 'rule') {
+    icons = `<span class="fxi rule"><img src="${o.icon ?? asset('fx/regle.webp')}" alt="" draggable="false"></span>`;
+    what = `<span>${esc(ruleText(fx.rule))}</span>`;
+    when = 'En permanence.';
+  } else {
+    const t = TRIGGER_BY_ID[fx.parts[0].trigger];
+    icons = fx.parts.map(partIcon).join('');
+    what = fx.parts.map((p) => `<span><b>${FX_NAME[p.reward]}</b> : ${esc(cap(partText(p)))}.</span>`).join('');
+    const repeat = !t.single && ['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'].includes(t.event);
+    const lim = repeat ? ` ${[...new Set(fx.parts.map((p) => perTurn(REWARD_BY_ID[p.reward])))].map((n) => (n === 1 ? 'Une fois par tour.' : `${n} fois par tour au plus.`)).join(' ')}` : '';
+    when = `${esc(t.text)}${t.el ? ` (${EL_NAME[t.el]})` : ''}.${lim}`;
+  }
+  const live = o.live ? `<span class="fxc${o.live.used >= o.live.limit ? ' full' : ''}" title="Déclenchements ce tour">${o.live.used}/${o.live.limit}</span>` : '';
+  return `<span class="fxb${o.flash ? ' flash' : ''}${fx.kind === 'rule' ? ' is-rule' : ''}" tabindex="0" aria-label="${esc(`${o.title} : ${itemEffectText(fx)}`)}">${icons}${live}
+    <span class="fxtip${o.down ? ' down' : ''}" role="tooltip">${o.title ? `<b class="fxt">${esc(o.title)}</b>` : ''}<span class="fx-what">${what}</span><span class="fx-when"><i>Activation</i> ${when}</span></span></span>`;
+}
+
 /** Effet d'un objet pour la run en cours (tiré à la création de la run). */
 function itemEffect(id: string): ItemEffect | null {
   return ui.run?.itemEffects[id] ?? null;
@@ -131,7 +179,7 @@ function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: bool
       <span class="item-id"><span class="item-name">${esc(it.name)}</span>
       <span class="item-meta"><span class="rar-tag">${RARITY_NAMES[it.rarity]}</span> ${SLOT_NAMES[it.slot]}${it.level ? `, niveau ${it.level}` : ''}</span></span></span>
     <span class="item-stats">${statsText(it.stats).map((t) => `<span>${esc(t)}</span>`).join('')}</span>
-    ${fx ? `<span class="item-fx${fx.kind === 'rule' ? ' rule' : ''}">${esc(itemEffectText(fx))}</span>` : ''}
+    ${fx ? `<span class="item-fxrow">${fxBadge(fx, { title: it.name })}<span class="item-fxhint">${fx.kind === 'rule' ? 'Règle légendaire' : 'Survole pour le détail'}</span></span>` : ''}
     ${replaces ? `<span class="item-replace">Remplace ${esc(replaces.name)}</span>` : ''}
   </${tag}>`;
 }
@@ -152,7 +200,7 @@ function sheet(run: Run): string {
   const effects = SLOTS.map((slot) => run.equipment[slot]).filter((id): id is string => !!id).map((id) => {
     const it = ITEMS.items[id];
     const fx = itemEffect(id);
-    return fx ? `<li class="rar-${it.rarity}"><b>${esc(it.name)}</b> ${esc(itemEffectText(fx))}</li>` : '';
+    return fx ? `<li class="rar-${it.rarity}"><span class="fx-name">${esc(it.name)}</span>${fxBadge(fx, { title: it.name })}</li>` : '';
   }).join('');
   return `<aside class="sheet">
     <div class="who"><img class="who-pic" src="${asset(`classes/${breed.id}.png`)}" alt=""><span><b>${esc(breed.n)}</b><span class="muted">${run.stats.floor ? `Étage ${run.stats.floor} sur ${run.map.floors}` : 'Au départ'}</span></span></div>
@@ -160,7 +208,7 @@ function sheet(run: Run): string {
     <button class="link" data-act="modal-deck">Voir le deck (${run.deck.length} cartes)</button>
     <h3>Équipement</h3><div class="slots">${slots}</div>
     ${effects ? `<ul class="fx-list">${effects}</ul><p class="muted small">Un même objet se déclenche au plus 3 fois par tour (une fois pour la pioche, les PA et les réductions de coût). Les objets se cumulent entre eux.</p>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
-    ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b> ${esc(eggText(id))}</span></li>`).join('')}</ul>` : ''}
+    ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b>${eggBadges(id)}</span></li>`).join('')}</ul>` : ''}
     <h3>Kamas et prospection</h3>
     <p class="prosp">${KAMAS(run.kamas)}</p>
     <p class="prosp"><b>${prosp}</b> prospection <span class="muted">:${Math.round(100 * lootChance('normal', prosp))} % de chance d'objet après un combat, raretés ×${(1 + 2 * prospFactor(prosp)).toFixed(1)}</span></p>
@@ -240,6 +288,11 @@ const eggIcon = (id: string, cls = 'egg-ico') => {
     ? `<img class="${cls}" src="${eggArt[id]}" alt="" draggable="false" onerror="this.onerror=null;this.src='${local}'">`
     : `<img class="${cls}" src="${local}" alt="" draggable="false">`;
 };
+function eggBadges(id: string, o: { live?: (fxi: number) => { used: number; limit: number } | null; flash?: boolean; down?: boolean } = {}): string {
+  const egg = EGG_BY_ID[id];
+  const stats = statsText(egg.stats ?? {}).map((t) => `<span class="fxstat">${esc(t)}</span>`).join('');
+  return `<span class="fx-badges">${stats}${egg.effects.map((fx, i) => fxBadge(fx, { title: egg.name, icon: eggArt[id] ?? asset(`dofus/${egg.icon}.webp`), live: o.live?.(i), flash: o.flash, down: o.down })).join('')}</span>`;
+}
 function eggText(id: string): string {
   const egg = EGG_BY_ID[id];
   return [...statsText(egg.stats ?? {}).map((t) => `${t}.`), ...egg.effects.map(itemEffectText)].join(' ');
@@ -384,7 +437,33 @@ function topbarHtml(run: Run): string {
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
         <button class="tb-btn" data-act="toggle-log" aria-pressed="${ui.logOpen}">${uiIcon('journal')}Journal</button>
       </span>
+      ${relicBar(run)}
     </header>`;
+}
+
+/** Barre des objets et Dofus en combat : un badge par effet, qui brille quand il se déclenche. */
+const firedSeen: Record<string, number> = {};
+function relicBar(run: Run): string {
+  const c = run.combat!;
+  const flash = (src: string) => {
+    const n = c.fired[src] ?? 0;
+    const f = n > (firedSeen[src] ?? 0);
+    firedSeen[src] = n;
+    return f;
+  };
+  const items = SLOTS.map((slot) => run.equipment[slot]).filter((id): id is string => !!id).map((id) => {
+    const it = ITEMS.items[id];
+    const fx = itemEffect(id);
+    if (!fx) return '';
+    return `<span class="relic rar-${it.rarity}">${pic(it.icon, it.name, 'relic-pic')}${fxBadge(fx, { title: it.name, live: c.usage(id), flash: flash(id), down: true })}</span>`;
+  });
+  const eggs = run.dofus.map((id) => {
+    const src = `dofus:${id}`;
+    const f = flash(src);
+    return `<span class="relic egg">${eggIcon(id)}${eggBadges(id, { live: () => c.usage(src), flash: f, down: true })}</span>`;
+  });
+  const all = [...eggs, ...items].filter(Boolean).join('');
+  return all ? `<div class="relics" aria-label="Effets d'objets et de Dofus">${all}</div>` : '';
 }
 
 function arenaHtml(run: Run): string {
@@ -491,7 +570,7 @@ function viewShop(run: Run): string {
 function viewDofus(run: Run): string {
   const next = ACTS[run.act];
   const offer = run.dofusOffer.map((id) => `<button class="egg-pick" data-act="take-dofus" data-id="${id}">
-      ${eggIcon(id, 'egg-big')}<b>${esc(EGG_BY_ID[id].name)}</b><span>${esc(eggText(id))}</span></button>`).join('');
+      ${eggIcon(id, 'egg-big')}<b>${esc(EGG_BY_ID[id].name)}</b>${eggBadges(id)}<span>${esc(eggText(id))}</span></button>`).join('');
   return `<main class="dofusview">
     <section class="dofus-choice">
       <h2>Choisis un Dofus</h2>
@@ -686,7 +765,12 @@ function render(): void {
   else if (run.phase === 'dofus') html = viewDofus(run);
   else html = viewEnd(run);
   document.body.dataset.screen = run ? run.phase : 'title';
-  if (run?.phase !== 'combat' || !run.combat) { for (const ev of pending) clearTimeout(ev.timer); pending.length = 0; shown.clear(); }
+  if (run?.phase !== 'combat' || !run.combat) {
+    for (const ev of pending) clearTimeout(ev.timer);
+    pending.length = 0;
+    shown.clear();
+    for (const k of Object.keys(firedSeen)) delete firedSeen[k];
+  }
   const handBefore = captureHand();
   const barsBefore = captureBars();
   root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) : '');
@@ -1210,6 +1294,25 @@ document.addEventListener('click', (ev) => {
     console.error(err);
   }
   render();
+});
+
+// Infobulles d'effets : on les garde dans l'écran (décalage horizontal, ou vers le bas près du haut de l'écran).
+function placeFxTip(b: HTMLElement): void {
+  const tip = b.querySelector('.fxtip') as HTMLElement | null;
+  if (!tip) return;
+  tip.style.setProperty('--dx', '0px');
+  const r = tip.getBoundingClientRect();
+  const dx = r.left < 8 ? 8 - r.left : r.right > window.innerWidth - 8 ? window.innerWidth - 8 - r.right : 0;
+  tip.style.setProperty('--dx', `${Math.round(dx)}px`);
+  if (r.top < 8 && !tip.classList.contains('down')) tip.classList.add('down');
+}
+document.addEventListener('pointerover', (ev) => {
+  const b = (ev.target as HTMLElement).closest?.('.fxb') as HTMLElement | null;
+  if (b) requestAnimationFrame(() => placeFxTip(b));
+});
+document.addEventListener('focusin', (ev) => {
+  const b = (ev.target as HTMLElement).closest?.('.fxb') as HTMLElement | null;
+  if (b) requestAnimationFrame(() => placeFxTip(b));
 });
 
 let resizeT = 0;

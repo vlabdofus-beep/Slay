@@ -131,7 +131,7 @@ export class Run {
       const egg = EGG_BY_ID[id];
       l.pvBonus += egg.stats?.pv ?? 0;
       l.prospection += egg.stats?.prospection ?? 0;
-      l.effects.push(...egg.effects);
+      l.effects.push(...egg.effects.map((fx) => ({ ...fx, src: `dofus:${id}` })));
     }
     return l;
   }

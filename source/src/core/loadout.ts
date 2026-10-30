@@ -32,7 +32,7 @@ export interface Loadout {
   blockBonus: number;
   /** Prospection des objets (stats et règle « prospecteur »), hors gains de la run. */
   prospection: number;
-  effects: ItemEffect[];
+  effects: (ItemEffect & { src?: string })[];
 }
 
 /** Prospection donnée par la règle légendaire « prospecteur ». */
@@ -47,7 +47,7 @@ export function computeLoadout(equipment: Equipment, items: ItemLibrary, table: 
     for (const [el, v] of Object.entries(it.stats.dom ?? {})) l.dom[el as Element] += v ?? 0;
     const fx = table[it.id];
     if (fx) {
-      l.effects.push(fx);
+      l.effects.push({ ...fx, src: it.id });
       if (fx.kind === 'rule' && fx.rule === ('prospecteur' satisfies RuleId)) l.prospection += PROSPECTEUR_BONUS;
     }
   }

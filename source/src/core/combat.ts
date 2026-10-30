@@ -47,8 +47,8 @@ export interface PlayerInit {
   maxHp: number;
   dom?: Partial<Record<Element, number>>;
   blockBonus?: number;
-  /** Effets des objets équipés (tirés au début de la run) et des Dofus. */
-  effects?: ItemEffect[];
+  /** Effets des objets équipés (tirés au début de la run) et des Dofus ; `src` = objet d'origine. */
+  effects?: (ItemEffect & { src?: string })[];
   /** Résurrection disponible (Dofus, une fois par run). */
   revive?: boolean;
 }
@@ -133,7 +133,7 @@ export function resolveCard(lib: Library, inst: CardInstance): CardDef {
 }
 
 /** Effet d'un objet : chaque objet ne peut se déclencher qu'un nombre limité de fois par tour (RewardDef.perTurn). */
-interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number }
+interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number; src: string }
 
 const ZERO_EL = (): Record<Element, number> => ({ terre: 0, feu: 0, eau: 0, air: 0, neutre: 0 });
 
@@ -165,6 +165,8 @@ export class Combat {
   /** Prospection gagnée pendant le combat (prochain combat / reste de la run). */
   prospection = { next: 0, run: 0 };
   private tripleDone = false;
+  /** Déclenchements de chaque objet depuis le début du combat (l'interface les fait briller). */
+  fired: Record<string, number> = {};
 
   private reviveAvailable = false;
   revived = false;
@@ -198,7 +200,7 @@ export class Combat {
       for (const p of e.parts) {
         const trigger = TRIGGER_BY_ID[p.trigger], reward = REWARD_BY_ID[p.reward];
         if (!trigger || !reward) continue;
-        (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0 });
+        (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src: e.src ?? '' });
       }
     }
     this.reviveAvailable = !!init.revive;
@@ -233,6 +235,17 @@ export class Combat {
   costOf(inst: CardInstance): number {
     const first = this.rules.has('premiere_gratuite') && this.turnCards === 0 ? 1 : 0;
     return Math.max(0, this.cardDef(inst).cost - this.discount - first);
+  }
+
+  /** Déclenchements déjà utilisés ce tour par un objet, et sa limite (pour l'interface). */
+  usage(src: string): { used: number; limit: number } | null {
+    let used = 0, limit = 0;
+    for (const list of Object.values(this.handlers)) for (const h of list ?? []) {
+      if (h.src !== src || !['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'].includes(h.trigger.event) || h.trigger.single) continue;
+      used = Math.max(used, h.used);
+      limit = Math.max(limit, perTurn(h.reward));
+    }
+    return limit ? { used, limit } : null;
   }
 
   turnElementsCount(): number {
@@ -411,6 +424,7 @@ export class Combat {
       if (h.trigger.test && !h.trigger.test(this, x)) continue;
       if (h.used >= perTurn(h.reward)) continue;
       h.used++;
+      if (h.src) this.fired[h.src] = (this.fired[h.src] ?? 0) + 1;
       h.reward.apply(this, h.amount, x, h.trigger);
     }
     this.depth--;

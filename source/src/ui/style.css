@@ -807,3 +807,55 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 .egg-big { width: 92px; height: 92px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .6)) drop-shadow(0 0 16px rgba(240, 210, 142, .35)); animation: egg-float 3.2s ease-in-out infinite; }
 @keyframes egg-float { 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) { .egg-big { animation: none; } }
+
+/* ───────── effets d'objets en icônes ───────── */
+.fxb {
+  position: relative; display: inline-flex; align-items: center; gap: 2px; padding: 2px 5px 2px 3px; border-radius: 999px; cursor: help;
+  background: color-mix(in srgb, var(--rar, var(--gold)) 10%, var(--panel-deep)); border: 1px solid color-mix(in srgb, var(--rar, var(--gold)) 55%, var(--line));
+  vertical-align: middle;
+}
+.fxb:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; }
+.fxi { position: relative; display: inline-grid; place-items: center; width: 30px; height: 30px; }
+.fxi img { width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .7)); }
+.fxi b {
+  position: absolute; right: -3px; bottom: -3px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px;
+  font: 800 .66rem/15px var(--body, inherit); text-align: center; color: #1b1206; background: var(--gold-2); box-shadow: 0 0 0 1.5px var(--panel-deep);
+}
+.fxi.rule img { width: 28px; height: 28px; }
+.fxz { position: absolute; inset: 1px; border-radius: 50%; border: 1.5px dashed rgba(255, 220, 160, .75); }
+.fxp { position: absolute; left: -2px; top: -4px; font: 700 .7rem var(--title); font-style: normal; color: #b6f29a; text-shadow: 0 1px 2px #000; }
+.fxc { margin-left: 3px; font-size: .68rem; font-weight: 700; color: var(--muted); }
+.fxc.full { color: #e9a497; }
+.fxb.is-rule { border-color: #f2a43a; }
+.fxtip {
+  position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(calc(-50% + var(--dx, 0px))); z-index: 60; width: 250px;
+  display: none; gap: .3rem; padding: .6rem .7rem; text-align: left; cursor: default;
+  font: 400 .8rem/1.4 var(--body, inherit); color: var(--text); background: var(--panel); border: 1px solid var(--gold);
+  border-radius: 6px; box-shadow: 0 10px 24px rgba(5, 10, 14, .65);
+}
+.fxtip.down { bottom: auto; top: calc(100% + 8px); }
+.fxb:hover .fxtip, .fxb:focus .fxtip, .fxb:focus-within .fxtip { display: grid; }
+.fxt { font: 700 .92rem var(--title); color: var(--gold-2); }
+.fx-what { display: grid; gap: 2px; }
+.fx-what b { color: var(--gold-2); font-weight: 700; }
+.fx-when { color: var(--muted); }
+.fx-when i { font-style: normal; font-weight: 700; color: var(--text); margin-right: .25rem; }
+.fxb.flash { animation: fx-flash .9s ease-out; }
+@keyframes fx-flash { 0% { box-shadow: 0 0 0 0 rgba(240, 210, 142, .9); background: color-mix(in srgb, var(--gold) 45%, var(--panel-deep)); } 100% { box-shadow: 0 0 0 10px rgba(240, 210, 142, 0); } }
+@media (prefers-reduced-motion: reduce) { .fxb.flash { animation: none; border-color: var(--gold-2); } }
+.item-fxrow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.item-fxhint { font-size: .72rem; color: var(--muted); }
+.fx-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 3px; }
+.fxstat { font-size: .74rem; padding: 1px 7px; border-radius: 3px; background: var(--panel-deep); border: 1px solid var(--line); }
+.fx-list li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.fx-name { font: 700 .84rem var(--title); color: var(--rar); }
+.egg-pick .fx-badges { justify-content: center; }
+.egg-pick > span:last-child { font-size: .78rem; color: var(--muted); }
+/* Barre des objets en combat */
+.topbar { flex-wrap: wrap; row-gap: .35rem; }
+.relics { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .4rem; }
+.relic { display: inline-flex; align-items: center; gap: 3px; }
+.relic-pic { width: 26px; height: 26px; }
+.relic-pic .pic-fb { width: 26px; height: 26px; font-size: .6rem; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); }
+.relic.egg .egg-ico { width: 26px; height: 26px; }
+.relic .fx-badges { margin: 0; }
