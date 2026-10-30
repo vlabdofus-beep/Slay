@@ -25,6 +25,8 @@ const FIRST_NORMAL_FLOOR = 4;
 
 export class Run {
   readonly classe: ClassId;
+  /** Apparence du personnage (animations homme / femme). */
+  readonly gender: 'm' | 'f';
   readonly seed: number;
   readonly rng: Rng;
   readonly map: ActMap;
@@ -46,8 +48,9 @@ export class Run {
   /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
   readonly encounters: Record<string, string> = {};
 
-  constructor(classe: ClassId, seed: number) {
+  constructor(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') {
     this.classe = classe;
+    this.gender = gender;
     this.seed = seed;
     this.rng = new Rng(seed);
     this.map = generateMap(seed ^ 0x5bd1e995);

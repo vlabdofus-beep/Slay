@@ -40,6 +40,9 @@ writeFileSync(join(out, cssName), css);
 // Assets, HTML, en-têtes de cache
 rmSync(join(out, 'assets'), { recursive: true, force: true });
 cpSync(join(root, 'public/assets'), join(out, 'assets'), { recursive: true });
+// Animations, décors et effets importés de Dofus Survivors (voir tools/import-survivors-assets.mjs)
+rmSync(join(out, 'game'), { recursive: true, force: true });
+if (existsSync(join(root, 'public/game'))) cpSync(join(root, 'public/game'), join(out, 'game'), { recursive: true });
 const html = readFileSync(join(root, 'index.html'), 'utf8')
   .replace('/src/ui/style.css', cssName)
   .replace('/src/ui/app.ts', jsName);

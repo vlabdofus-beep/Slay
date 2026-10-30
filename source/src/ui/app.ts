@@ -1,6 +1,6 @@
 // Interface du jeu : rendu DOM simple (re-rendu complet à chaque action) + délégation d'événements.
 // Toute la logique est dans src/game/run.ts et src/core ; ce fichier ne fait qu'afficher et relayer.
-import { resolveCard, type Enemy } from '../core/combat.ts';
+import { BASE_ENERGY, resolveCard, type Enemy } from '../core/combat.ts';
 import { PALIERS, PASSIVE_BY_PALIER, type ElementalElement } from '../core/loadout.ts';
 import type { MapNode } from '../core/map.ts';
 import type { CardDef, CardInstance, ClassId, Element, ItemDef, StatusMap } from '../core/types.ts';
@@ -13,6 +13,8 @@ import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   activeText, cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
+import { buildCharacter, drawAnim, type Character } from './scene/rt.js';
+import { BREED, STAGE, stage } from './scene/stage.ts';
 
 // ───────────── état de l'interface ─────────────
 
@@ -26,7 +28,21 @@ const ui = {
   logOpen: false,
   hit: new Set<number>(),
   playerHit: 0,
+  /** Animation en cours : les actions de combat attendent l'impact. */
+  busy: false,
+  /** Carte en train d'être lancée (masquée de la main jusqu'à l'impact). */
+  casting: -1,
+  /** Monstres qui viennent d'attaquer (petit élan vers le joueur). */
+  lunge: new Set<number>(),
+  gender: loadGender(),
 };
+
+function loadGender(): Record<'iop' | 'cra', 'm' | 'f'> {
+  try {
+    const g = JSON.parse(localStorage.getItem('slay.gender') ?? '{}');
+    return { iop: g.iop === 'f' ? 'f' : 'm', cra: g.cra === 'f' ? 'f' : 'm' };
+  } catch { return { iop: 'm', cra: 'm' }; }
+}
 
 const root = document.getElementById('app') as HTMLElement;
 const asset = (p: string) => `assets/${p}`;
@@ -151,20 +167,55 @@ function sheet(run: Run): string {
 function viewTitle(): string {
   const choice = (id: 'iop' | 'cra') => {
     const b = DOFUS.breeds[id];
-    return `<button class="class-pick" data-act="new-run" data-classe="${id}" style="--accent: var(${id === 'iop' ? '--pourpre' : '--emeraude'})">
-      <img src="${asset(`classes/${b.id}.png`)}" alt="">
+    const g = ui.gender[id];
+    const radio = (v: 'm' | 'f', label: string) =>
+      `<button role="radio" aria-checked="${g === v}" class="${g === v ? 'on' : ''}" data-act="gender" data-classe="${id}" data-g="${v}">${label}</button>`;
+    return `<div class="class-pick" style="--accent: var(${id === 'iop' ? '--pourpre' : '--emeraude'})">
+      <div class="class-stage"><canvas class="class-preview" data-preview="${id}" width="440" height="440" aria-hidden="true"></canvas>
+        <img class="class-symbol" src="${asset(`classes/${b.id}.png`)}" alt=""></div>
       <span class="class-name">${esc(b.n)}</span>
       <span class="class-hp">${CLASS_START_HP[id]} PV</span>
       <span class="class-pitch">${CLASS_INFO[id].pitch}</span>
-    </button>`;
+      <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
+      <button class="primary" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? "l'Iop" : 'le Crâ'}</button>
+    </div>`;
   };
   return `<main class="title">
     <h1 class="brand-name big">Dofus Slay</h1>
     <p class="brand-sub">Un deckbuilder dans le Monde des Douze</p>
     <p class="lead">Traverse Amakna jusqu'au Bouftou Royal. Chaque combat t'offre une carte, et parfois un objet : construis ta voie élémentaire.</p>
     <div class="class-row">${choice('iop')}${choice('cra')}</div>
-    <p class="fine">Fan game non officiel. Données issues de DofusDB, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
+    <p class="fine">Fan game non officiel. Données issues de DofusDB, animations et décors de Dofus 3, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
   </main>`;
+}
+
+// Aperçus animés de l'écran titre
+const previews: Record<string, Character | null | 'loading'> = {};
+let previewRaf = 0;
+function startPreviews(): void {
+  if (previewRaf) return;
+  const t0 = performance.now();
+  const loop = () => {
+    const canvases = [...root.querySelectorAll<HTMLCanvasElement>('canvas[data-preview]')];
+    if (!canvases.length) { previewRaf = 0; return; }
+    previewRaf = requestAnimationFrame(loop);
+    for (const cv of canvases) {
+      const id = cv.dataset.preview as 'iop' | 'cra';
+      const key = `${id}${ui.gender[id]}`;
+      if (!(key in previews)) {
+        previews[key] = 'loading';
+        void buildCharacter(BREED[id], ui.gender[id]).then((ch) => { previews[key] = ch; });
+      }
+      const ch = previews[key];
+      const x = cv.getContext('2d')!;
+      x.clearRect(0, 0, cv.width, cv.height);
+      if (ch && ch !== 'loading') {
+        cv.parentElement!.classList.add('ready');
+        drawAnim(x, ch, 'idle', (performance.now() - t0) / 1000, cv.width / 2, cv.height * 0.93, cv.height * 0.7);
+      } else cv.parentElement!.classList.remove('ready');
+    }
+  };
+  previewRaf = requestAnimationFrame(loop);
 }
 
 const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', boss: 'Boss' };
@@ -266,15 +317,20 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
   const it = intentSummary(c, e);
   const weak = e.def.weak.map((el) => elIcon(el, 'el-mini')).join('');
   const resist = e.def.resist.map((el) => elIcon(el, 'el-mini')).join('');
-  return `<button class="enemy${e.dead ? ' dead' : ''}${targeting && !e.dead ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}" ${targeting && !e.dead ? `data-act="target" data-uid="${e.uid}"` : 'disabled'} aria-label="${esc(e.def.name)}">
+  const can = targeting && !e.dead;
+  return `<button class="enemy${e.dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
     ${e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e)}`)}">${it.kind === 'attack' ? `<svg viewBox="0 0 24 24"><path d="M5 19L19 5m-4 0h4v4"/></svg>` : ''}${esc(it.label)}</span>`}
     ${pic(e.def.image, e.def.name, 'enemy-pic')}
-    <span class="enemy-name">${esc(e.def.name)}</span>
-    ${bar(e.hp, e.maxHp, 'hp', e.block ? ` <span class="shield">${e.block}</span>` : '')}
-    <span class="chips">${statusChips(e.status)}</span>
-    <span class="affinity">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}</span>
+    <span class="enemy-under">
+      <span class="enemy-name">${esc(e.def.name)}</span>
+      ${bar(e.hp, e.maxHp, 'hp', e.block ? ` <span class="shield">${e.block}</span>` : '')}
+      <span class="chips">${statusChips(e.status)}</span>
+      <span class="affinity">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}</span>
+    </span>
   </button>`;
 }
+
+const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.5 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 4 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
 
 function viewCombat(run: Run): string {
   const c = run.combat!;
@@ -282,13 +338,15 @@ function viewCombat(run: Run): string {
   const enc = run.encounter ? ENCOUNTERS[run.encounter] : null;
   const targeting = ui.selecting !== null;
   const title = enc ? [...new Set(enc.monsters.map((id) => LIBRARY.monsters[id].name))].join(', ') : 'Combat';
+  const breed = DOFUS.breeds[run.classe];
+  const n = c.hand.length;
   const hand = c.hand.map((inst, i) => {
     const def = c.cardDef(inst);
     const sel = ui.selecting?.kind === 'card' && ui.selecting.index === i;
-    return cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: def.cost > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '' });
+    const o = i - (n - 1) / 2;
+    return `<div class="hand-slot${ui.casting === i ? ' casting' : ''}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: def.cost > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '' })}</div>`;
   }).join('');
   const actives = p.actives.map((a, i) => `<button class="active${a.used ? ' used' : ''}${ui.selecting?.kind === 'active' && ui.selecting.index === i ? ' sel' : ''}" data-act="active" data-index="${i}" ${a.used ? 'disabled' : ''} title="${esc(activeText(a.def))}">${esc(a.def.name)}</button>`).join('');
-  const orbs = Array.from({ length: Math.max(p.energy, 3) }, (_, i) => `<span class="pa${i < p.energy ? '' : ' spent'}"></span>`).join('');
   const passives = [
     p.passives.terreArmure && PASSIVE_TEXT.terre(p.passives.terreArmure),
     p.passives.feuBrulure && PASSIVE_TEXT.feu(p.passives.feuBrulure),
@@ -296,31 +354,36 @@ function viewCombat(run: Run): string {
     p.passives.airPioche && PASSIVE_TEXT.air(p.passives.airPioche),
     p.passives.prisme && `Prisme ${p.passives.prisme}.`,
   ].filter(Boolean);
-  return `<main class="combatview">
-    <header class="cbar">
-      <h2>${esc(title)}</h2>
-      <span class="muted">${run.node ? NODE_LABEL[run.node.type] : ''}, tour ${c.turn}</span>
-      <span class="piles">
-        <button class="link" data-act="pile" data-pile="draw">Pioche ${c.drawPile.length}</button>
-        <button class="link" data-act="pile" data-pile="discard">Défausse ${c.discardPile.length}</button>
+  return `<main class="combatview${ui.busy ? ' busy' : ''}">
+    <header class="topbar">
+      <span class="tb-who"><img src="${asset(`classes/${breed.id}.png`)}" alt=""><b>${esc(breed.n)}</b></span>
+      <span class="tb-hp" title="Points de vie">${HEART}${p.hp}/${p.maxHp}</span>
+      <span class="tb-floor">Étage ${run.stats.floor}</span>
+      <span class="tb-enc"><b>${esc(title)}</b> ${run.node ? NODE_LABEL[run.node.type] : ''}, tour ${c.turn}</span>
+      <span class="tb-actions">
+        <button class="link" data-act="modal-deck">Deck ${run.deck.length}</button>
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
-        <button class="link" data-act="toggle-log">${ui.logOpen ? 'Masquer' : 'Journal'}</button>
+        <button class="link" data-act="toggle-log">${ui.logOpen ? 'Masquer le journal' : 'Journal'}</button>
       </span>
     </header>
-    <section class="field${targeting ? ' targeting' : ''}">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</section>
-    ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}
-    <section class="player${ui.playerHit ? ' hurt' : ''}">
-      <div class="pstats">
+    <section class="arena${targeting ? ' targeting' : ''}">
+      <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
         ${bar(p.hp, p.maxHp, 'hp', p.block ? ` <span class="shield">${p.block}</span>` : '')}
         ${ui.playerHit ? `<span class="dmg-float">−${ui.playerHit}</span>` : ''}
         <span class="chips">${statusChips(p.status)}</span>
-        <span class="energy" aria-label="${p.energy} PA">${orbs}<b>${p.energy} PA</b></span>
-        ${actives ? `<span class="actives">${actives}</span>` : ''}
         ${passives.length ? `<span class="passives">${passives.join(' ')}</span>` : ''}
       </div>
-      <div class="hand${c.hand.length > 6 ? ' crowded' : ''}">${hand || '<p class="muted">Main vide.</p>'}</div>
-      <button class="end-turn" data-act="end-turn">Finir le tour</button>
+      <div class="foes" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
+      ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}
     </section>
+    <footer class="tray">
+      <button class="pile pile-draw" data-act="pile" data-pile="draw" title="Pioche : ${c.drawPile.length} cartes"><span>${c.drawPile.length}</span></button>
+      <div class="gem${p.energy ? '' : ' empty'}" role="img" aria-label="${p.energy} PA sur ${BASE_ENERGY}"><b>${p.energy}/${BASE_ENERGY}</b><span>PA</span></div>
+      ${actives ? `<div class="actives">${actives}</div>` : ''}
+      <div class="hand fan${n > 7 ? ' crowded' : ''}">${hand || '<p class="muted">Main vide.</p>'}</div>
+      <button class="end-turn" data-act="end-turn">Finir le tour</button>
+      <button class="pile pile-discard" data-act="pile" data-pile="discard" title="Défausse : ${c.discardPile.length} cartes"><span>${c.discardPile.length}</span></button>
+    </footer>
     ${ui.logOpen ? `<aside class="log"><ol>${c.log.slice(-40).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></aside>` : ''}
   </main>`;
 }
@@ -512,7 +575,7 @@ function viewStyleguide(): string {
       `${medals}<div class="sg-row sg-tips"><div class="sg-static">${tipCombat}</div><div class="sg-static">${tipZaap}</div></div>`)}
     ${sgSection('Combat', 'Intentions des monstres, statuts, barres de vie et armure, PA.',
       `<div class="field sg-field">${enemies}</div><div class="sg-row">${intents}</div><div class="sg-row chips">${chips}</div>
-      <div class="sg-row"><span class="sg-bar">${bar(54, 80, 'hp', ' <span class="shield">12</span>')}</span><span class="energy">${'<span class="pa"></span>'.repeat(2)}<span class="pa spent"></span><b>2 PA</b></span></div>`)}
+      <div class="sg-row"><span class="sg-bar">${bar(54, 80, 'hp', ' <span class="shield">12</span>')}</span><div class="gem" role="img" aria-label="2 PA sur 3"><b>2/3</b><span>PA</span></div><div class="gem empty" role="img" aria-label="0 PA sur 3"><b>0/3</b><span>PA</span></div></div>`)}
   </main>`;
 }
 
@@ -526,6 +589,7 @@ function brandBar(run: Run): string {
 
 function render(): void {
   if (location.hash === '#styleguide') {
+    stage.hide();
     document.body.dataset.screen = 'styleguide';
     root.innerHTML = viewStyleguide();
     return;
@@ -539,24 +603,36 @@ function render(): void {
   else if (run.phase === 'zaap') html = viewZaap(run);
   else html = viewEnd(run);
   document.body.dataset.screen = run ? run.phase : 'title';
-  root.innerHTML = (run ? brandBar(run) : '') + html + (run ? viewModal(run) : '');
+  root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) : '');
+  if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender);
+  else stage.hide();
+  if (!run) startPreviews();
   if (run?.phase === 'map') {
     const here = root.querySelector('.node.s-avail') as HTMLElement | null;
     here?.scrollIntoView({ block: 'center' });
   }
   ui.hit.clear();
+  ui.lunge.clear();
   ui.playerHit = 0;
 }
 
 // ───────────── actions ─────────────
 
+/** Après une action : marques visuelles, puis fin de combat (laissée visible un instant). */
 function afterCombatAction(before: Map<number, number>, hpBefore: number): void {
   const run = ui.run!;
   const c = run.combat!;
   for (const e of c.enemies) if ((before.get(e.uid) ?? e.hp) > e.hp) ui.hit.add(e.uid);
-  if (c.player.hp < hpBefore) ui.playerHit = hpBefore - c.player.hp;
+  if (c.player.hp < hpBefore) {
+    ui.playerHit = hpBefore - c.player.hp;
+    if (c.player.hp > 0) stage.hurt();
+  }
   ui.selecting = null;
-  run.checkCombatEnd();
+  if (c.outcome !== 'ongoing' && stage.visible) {
+    if (c.outcome === 'lost') stage.die();
+    ui.busy = true;
+    setTimeout(() => { ui.busy = false; run.checkCombatEnd(); render(); }, c.outcome === 'lost' ? 1800 : 1000);
+  } else run.checkCombatEnd();
 }
 
 function snapshot(): [Map<number, number>, number] {
@@ -564,20 +640,60 @@ function snapshot(): [Map<number, number>, number] {
   return [new Map(c.enemies.map((e) => [e.uid, e.hp])), c.player.hp];
 }
 
+/** Point d'impact d'un monstre à l'écran (bas de son illustration). */
+function enemyPoint(uid: number): { x: number; y: number } | null {
+  const el = root.querySelector(`.enemy[data-uid="${uid}"] .enemy-pic`) as HTMLElement | null;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.bottom - r.height * 0.06 };
+}
+
+/** Joue une carte : l'animation part tout de suite, l'effet s'applique à l'impact. */
 function playCard(index: number, target?: number): void {
-  const [before, hp] = snapshot();
-  ui.run!.combat!.playCard(index, target);
-  afterCombatAction(before, hp);
+  const run = ui.run!;
+  const c = run.combat!;
+  if (ui.busy || !c.hand[index]) return;
+  const def = c.cardDef(c.hand[index]);
+  if (def.cost > c.player.energy) return;
+  const living = c.living();
+  const uid = def.target === 'enemy' ? (target ?? living[0]?.uid) : undefined;
+  const points = (def.target === 'enemy' ? [uid as number] : def.target === 'all_enemies' ? living.map((e) => e.uid) : [])
+    .map(enemyPoint).filter((p): p is { x: number; y: number } => !!p);
+  const delay = stage.visible ? stage.cast(def, points, def.target === 'self') : 0;
+  ui.selecting = null;
+  const apply = () => {
+    const [before, hp] = snapshot();
+    try { c.playCard(index, uid); } catch (err) { console.error(err); }
+    ui.busy = false;
+    ui.casting = -1;
+    afterCombatAction(before, hp);
+    render();
+  };
+  if (!delay) { apply(); return; }
+  ui.busy = true;
+  ui.casting = index;
+  setTimeout(apply, delay);
 }
 
 function useActive(index: number, target?: number): void {
+  if (ui.busy) return;
   const [before, hp] = snapshot();
   ui.run!.combat!.useActive(index, target);
   afterCombatAction(before, hp);
 }
 
+function endTurn(): void {
+  if (ui.busy) return;
+  const c = ui.run!.combat!;
+  for (const e of c.living()) if (c.intent(e).damage > 0) ui.lunge.add(e.uid);
+  const [before, hp] = snapshot();
+  c.endTurn();
+  afterCombatAction(before, hp);
+}
+
 function select(kind: 'card' | 'active', index: number): void {
   const c = ui.run!.combat!;
+  if (ui.busy) return;
   const target = kind === 'card' ? c.cardDef(c.hand[index]).target : c.player.actives[index].def.target;
   if (kind === 'card' && c.cardDef(c.hand[index]).cost > c.player.energy) return;
   const living = c.living();
@@ -593,9 +709,15 @@ function select(kind: 'card' | 'active', index: number): void {
 function handle(act: string, d: DOMStringMap): void {
   const run = ui.run;
   switch (act) {
-    case 'new-run':
-      ui.run = new Run(d.classe as ClassId, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0);
+    case 'new-run': {
+      const classe = d.classe as 'iop' | 'cra';
+      ui.run = new Run(classe, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, ui.gender[classe]);
       ui.modal = null;
+      break;
+    }
+    case 'gender':
+      ui.gender[d.classe as 'iop' | 'cra'] = d.g === 'f' ? 'f' : 'm';
+      try { localStorage.setItem('slay.gender', JSON.stringify(ui.gender)); } catch { /* stockage indisponible */ }
       break;
     case 'title':
       ui.run = null;
@@ -620,12 +742,9 @@ function handle(act: string, d: DOMStringMap): void {
     case 'cancel':
       ui.selecting = null;
       break;
-    case 'end-turn': {
-      const [before, hp] = snapshot();
-      run!.combat!.endTurn();
-      afterCombatAction(before, hp);
+    case 'end-turn':
+      endTurn();
       break;
-    }
     case 'toggle-log':
       ui.logOpen = !ui.logOpen;
       break;
@@ -673,7 +792,84 @@ function handle(act: string, d: DOMStringMap): void {
   }
 }
 
+// ───────────── glisser-déposer des cartes ─────────────
+// Carte à cible : elle se lève et une flèche suit le pointeur jusqu'au monstre visé.
+// Carte sans cible : elle suit le pointeur ; lâchée au-dessus de la main, elle est jouée.
+
+interface Drag { index: number; target: string; el: HTMLElement; x0: number; y0: number; moved: boolean; over: number | null }
+let drag: Drag | null = null;
+let suppressClick = false;
+const PLAY_LINE = 0.62;
+
+const aim = (() => {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'aim');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<defs><marker id="aim-head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="aim-path" marker-end="url(#aim-head)"/>';
+  document.body.appendChild(svg);
+  const path = svg.querySelector('.aim-path') as SVGPathElement;
+  return {
+    show(x1: number, y1: number, x2: number, y2: number) {
+      svg.classList.add('on');
+      const cx = (x1 + x2) / 2, cy = Math.min(y1, y2) - 120;
+      path.setAttribute('d', `M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`);
+    },
+    hide() { svg.classList.remove('on'); },
+  };
+})();
+
+document.addEventListener('pointerdown', (ev) => {
+  const el = (ev.target as HTMLElement).closest('.hand .card') as HTMLButtonElement | null;
+  const c = ui.run?.combat;
+  if (!el || !c || ui.busy || el.disabled || ev.button !== 0) return;
+  const index = Number(el.dataset.index);
+  drag = { index, target: c.cardDef(c.hand[index]).target, el, x0: ev.clientX, y0: ev.clientY, moved: false, over: null };
+});
+
+document.addEventListener('pointermove', (ev) => {
+  const d = drag;
+  if (!d) return;
+  const dx = ev.clientX - d.x0, dy = ev.clientY - d.y0;
+  if (!d.moved) {
+    if (Math.hypot(dx, dy) < 8) return;
+    d.moved = true;
+    ui.selecting = null;
+    document.body.classList.add('is-dragging');
+    d.el.classList.add(d.target === 'enemy' ? 'aiming' : 'dragging');
+  }
+  if (d.target === 'enemy') {
+    const r = d.el.getBoundingClientRect();
+    aim.show(r.left + r.width / 2, r.top + 10, ev.clientX, ev.clientY);
+    const under = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.enemy:not(.dead)') as HTMLElement | null;
+    root.querySelectorAll('.enemy.aimed').forEach((e) => e.classList.remove('aimed'));
+    if (under) under.classList.add('aimed');
+    d.over = under ? Number(under.dataset.uid) : null;
+  } else {
+    d.el.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
+    d.el.classList.toggle('will-play', ev.clientY < window.innerHeight * PLAY_LINE);
+  }
+});
+
+function endDrag(ev: PointerEvent): void {
+  const d = drag;
+  if (!d) return;
+  drag = null;
+  aim.hide();
+  document.body.classList.remove('is-dragging');
+  if (!d.moved) return;
+  suppressClick = true;
+  setTimeout(() => { suppressClick = false; }, 0);
+  if (d.target === 'enemy' ? d.over !== null : ev.clientY < window.innerHeight * PLAY_LINE) {
+    playCard(d.index, d.target === 'enemy' ? (d.over as number) : undefined);
+  }
+  render();
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', (ev) => { if (drag) { drag.moved = false; endDrag(ev); render(); } });
+
 document.addEventListener('click', (ev) => {
+  if (suppressClick) { suppressClick = false; return; }
   const el = (ev.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
   if (!el || (el as HTMLButtonElement).disabled) {
     // Clic hors d'une cible pendant le ciblage : on annule.
@@ -689,6 +885,12 @@ document.addEventListener('click', (ev) => {
     console.error(err);
   }
   render();
+});
+
+let resizeT = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = window.setTimeout(() => { if (ui.run?.phase === 'combat' && !drag) render(); }, 120);
 });
 
 document.addEventListener('keydown', (ev) => {
@@ -715,7 +917,9 @@ document.addEventListener('keydown', (ev) => {
 // Accès de débogage / tests automatisés (Playwright).
 (window as unknown as { __game: unknown }).__game = {
   get run() { return ui.run; },
-  newRun(classe: ClassId, seed: number) { ui.run = new Run(classe, seed); ui.modal = null; ui.selecting = null; render(); },
+  newRun(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') { ui.run = new Run(classe, seed, gender); ui.modal = null; ui.selecting = null; render(); },
+  playCard, endTurn, stage,
+  get busy() { return ui.busy; },
   render,
 };
 
