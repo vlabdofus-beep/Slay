@@ -16,7 +16,11 @@ if (!src || !existsSync(join(src, 'index.html'))) {
 }
 
 const BREEDS = [8, 9]; // Iop, Crâ
-const MAP_PACKS = [1, 8, 9, 18, 32, 41]; // camp des Bouftous, champs, sous-bois, prairie, œufs (×2)
+const MAP_PACKS = [
+  1, 8, 9, 18, 32, 41, // acte 1, Amakna : camp des Bouftous, champs, sous-bois, prairie, œufs
+  22, 46, 59, 89, 98, 117, 125, // acte 2 : grotte de cristal, jungle, forêt sombre, rocaille, ossuaire, bois maudit, marais
+  55, 58, 60, 66, 84, 94, 97, 111, 133, 169, 177, // acte 3 : glaces, palais gelé, brume, désert, corail, labyrinthe, forge, ravins, Brâkmar
+];
 const FX_BUCKETS = 300; // même hachage que l'outil d'empaquetage de Survivors
 const bucketOf = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % FX_BUCKETS; };
 

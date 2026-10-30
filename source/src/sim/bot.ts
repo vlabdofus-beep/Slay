@@ -20,8 +20,11 @@ export interface BotOptions {
 
 export interface BotResult {
   won: boolean;
-  /** Étage atteint (0 à 13) : mesure plus fine que la victoire. */
+  /** Étages franchis sur l'ensemble des actes (0 à 39) : mesure plus fine que la victoire. */
   floor: number;
+  /** Acte atteint et boss battus. */
+  act: number;
+  bosses: number;
   items: number;
   hpBeforeBoss: number | null;
   prospection: number;
@@ -35,7 +38,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
   const rng = new Rng(seed * 2654435761);
   const rarities: Record<string, number> = {};
   let hpBeforeBoss: number | null = null;
-  for (let guard = 0; guard < 40; guard++) {
+  for (let guard = 0; guard < 160; guard++) {
     if (run.phase === 'victory' || run.phase === 'defeat') break;
     if (run.phase === 'map') {
       const next = run.availableNodes().map((id) => run.map.nodes[id]);
@@ -43,7 +46,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
       const low = run.hp < run.maxHp * 0.5;
       const pref = next.find((n) => (low ? n.type === 'zaap' : n.type === 'elite' && run.hp > run.maxHp * 0.8));
       const node = pref ?? rng.pick(next);
-      if (node.type === 'boss') hpBeforeBoss = run.hp;
+      if (node.type === 'boss' && run.act === 1) hpBeforeBoss = run.hp;
       run.enterNode(node.id);
       continue;
     }
@@ -67,6 +70,25 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
       run.leaveReward();
       continue;
     }
+    if (run.phase === 'dofus') {
+      run.takeDofus(rng.pick(run.dofusOffer));
+      continue;
+    }
+    if (run.phase === 'marchand') {
+      const shop = run.shop!;
+      // Retirer une carte de base, puis un objet qui améliore l'équipement, puis une carte rare.
+      const basic = run.deck.find((c) => c.id.endsWith('coup_epee') || c.id.endsWith('coup_arc'));
+      if (basic && !shop.removed && run.kamas >= shop.removePrice) run.removeCard(basic.uid);
+      if (!o.noItems) {
+        const affordable = shop.items.filter((x) => !x.sold && x.price <= run.kamas).map((x) => x.id);
+        const pick = affordable.length ? chooseItem(LIBRARY, ITEMS, run.itemEffects, run.deck, run.equipment, affordable) : null;
+        if (pick) { run.buyItem(pick); rarities[ITEMS.items[pick].rarity] = (rarities[ITEMS.items[pick].rarity] ?? 0) + 1; }
+      }
+      const card = shop.cards.find((x) => !x.sold && x.price <= run.kamas && LIBRARY.cards[x.id].rarity === 'rare');
+      if (card) run.buyCard(card.id);
+      run.leaveShop();
+      continue;
+    }
     if (run.phase === 'zaap') {
       if (run.hp < run.maxHp * 0.6 && run.zaapHealAmount() > 0) run.zaapRest();
       else {
@@ -78,7 +100,9 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
   }
   return {
     won: run.phase === 'victory',
-    floor: run.phase === 'victory' ? run.map.floors : run.stats.floor - (run.phase === 'defeat' ? 1 : 0),
+    floor: (run.act - 1) * run.map.floors + (run.phase === 'victory' ? run.map.floors : run.stats.floor - (run.phase === 'defeat' ? 1 : 0)),
+    act: run.act,
+    bosses: run.act - 1 + (run.phase === 'victory' ? 1 : 0),
     items: Object.keys(run.equipment).length,
     hpBeforeBoss,
     prospection: run.prospection(),

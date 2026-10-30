@@ -125,3 +125,16 @@ Principaux enseignements (4 000 runs pour les déclencheurs, 1 000 pour les réc
 
 Runs complètes (1 500 runs, bot glouton, chemin au hasard) : sans objets 0-1 % de victoires sur le boss ; avec objets
 Iop 34 %, Crâ 43 % ; ≈ 3,6 objets portés (1,9 commun, 1,4 rare, 0,6 mythique, 0,2 légendaire).
+
+## Trois actes, Dofus et marchand (30/10/2026)
+
+Monstres des actes 2 et 3 écrits à leur échelle (PV ≈ ×1,7 et ×2,6, coups ≈ ×1,5 et ×2 par rapport à l'acte 1), puis
+réglage fin par acte (`ACT_SCALE` : acte 2 ×0,92, acte 3 ×0,76 PV et ×0,8 coups). Bot glouton, 800 runs, avec objets :
+
+| classe | boss 1 | boss 2 | boss 3 |
+|--------|--------|--------|--------|
+| Iop    | 37 %   | 19 %   | 5 %    |
+| Crâ    | 46 %   | 33 %   | 18 %   |
+
+Taux conditionnels : l'acte 2 est passé par ≈ 50 % (Iop) à 70 % (Crâ) des runs qui l'atteignent, l'acte 3 par ≈ 25 à 55 %.
+L'écart Iop / Crâ, déjà visible à l'acte 1, se creuse avec les actes : à corriger avec la diversité des monstres.

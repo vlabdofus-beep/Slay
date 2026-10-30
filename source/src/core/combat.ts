@@ -46,8 +46,10 @@ export interface PlayerInit {
   maxHp: number;
   dom?: Partial<Record<Element, number>>;
   blockBonus?: number;
-  /** Effets des objets équipés (tirés au début de la run). */
+  /** Effets des objets équipés (tirés au début de la run) et des Dofus. */
   effects?: ItemEffect[];
+  /** Résurrection disponible (Dofus, une fois par run). */
+  revive?: boolean;
 }
 
 export type Outcome = 'ongoing' | 'won' | 'lost';
@@ -66,6 +68,8 @@ export interface CombatResult {
   hp: number;
   turns: number;
   prospection: { next: number; run: number };
+  /** La résurrection a servi pendant ce combat. */
+  revived: boolean;
 }
 
 export interface Intent {
@@ -159,6 +163,8 @@ export class Combat {
   /** Prospection gagnée pendant le combat (prochain combat / reste de la run). */
   prospection = { next: 0, run: 0 };
   private tripleDone = false;
+  private reviveAvailable = false;
+  revived = false;
   private depth = 0;
   /** Élément de ce qui inflige des dégâts en ce moment (pour « un sort Feu achève un ennemi »). */
   private srcElement: Element | null = null;
@@ -192,12 +198,17 @@ export class Combat {
         (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount });
       }
     }
+    this.reviveAvailable = !!init.revive;
     enemyIds.forEach((id, i) => {
       const def = lib.monsters[id];
       if (!def) throw new Error(`Monstre inconnu : ${id}`);
       const hp = Math.max(1, Math.round(this.rng.range(def.hp[0], def.hp[1]) * scale.hp));
       this.enemies.push({ uid: i, def, hp, maxHp: hp, block: 0, status: {}, moveId: '', cycleIndex: 0, lastMoves: [], dead: false });
     });
+    for (const e of this.enemies) {
+      if (this.rules.has('ocre')) this.addStatus(e, 'puissance', 1);
+      if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
+    }
     this.drawPile = this.rng.shuffle([...deck]);
     for (const e of this.enemies) this.chooseMove(e);
     this.startPlayerTurn(true);
@@ -227,7 +238,7 @@ export class Combat {
 
   result(): CombatResult {
     if (this.outcome === 'ongoing') throw new Error('Combat en cours');
-    return { outcome: this.outcome, hp: this.player.hp, turns: this.turn, prospection: { ...this.prospection } };
+    return { outcome: this.outcome, hp: this.player.hp, turns: this.turn, prospection: { ...this.prospection }, revived: this.revived };
   }
 
   /** Dégâts qu'infligerait cet effet à cet ennemi, maintenant. */
@@ -429,11 +440,11 @@ export class Combat {
   private startPlayerTurn(first: boolean): void {
     this.turn++;
     this.player.block = this.rules.has('armure_persistante') && !first ? Math.floor(this.player.block / 2) : 0;
-    this.player.energy = BASE_ENERGY + (this.rules.has('pa_plus') ? 1 : 0);
+    this.player.energy = BASE_ENERGY + (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('ocre') ? 1 : 0);
     this.turnCards = 0;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
-    const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0);
+    const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('pioche_plus') ? 1 : 0);
     this.drawCards(target);
     this.emit('turnStart');
   }
@@ -489,12 +500,13 @@ export class Combat {
   }
 
   private enemyHit(e: Enemy, base: number, element: Element): number {
-    return calcDamage(
+    const d = calcDamage(
       Math.round(base * this.scale.damage),
       element,
       { status: e.status, dom: 0, weakMul: this.rules.has('faiblesse_forte') ? 0.5 : 0.75 },
       { status: this.player.status, weak: [], resist: [] },
     );
+    return this.rules.has('ivoire') ? Math.max(0, d - 2) : d;
   }
 
   /**
@@ -693,6 +705,12 @@ export class Combat {
 
   private checkEnd(): boolean {
     if (this.outcome !== 'ongoing') return true;
+    if (this.player.hp <= 0 && this.reviveAvailable) {
+      this.reviveAvailable = false;
+      this.revived = true;
+      this.player.hp = Math.ceil(this.player.maxHp / 2);
+      this.log.push('Le Dofus te ramène à la vie');
+    }
     if (this.player.hp <= 0) this.outcome = 'lost';
     else if (this.living().length === 0) {
       this.outcome = 'won';

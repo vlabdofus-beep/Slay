@@ -102,7 +102,7 @@ test('fin de combat propre : seuls les PV survivent', () => {
   const c = new Combat(LIBRARY, starterDeck('iop'), { hp: 80, maxHp: 80 }, ['tofu'], 5);
   playGreedy(c);
   const r = c.result();
-  assert.deepEqual(Object.keys(r).sort(), ['hp', 'outcome', 'prospection', 'turns']);
+  assert.deepEqual(Object.keys(r).sort(), ['hp', 'outcome', 'prospection', 'revived', 'turns']);
   assert.throws(() => c.playCard(0), /terminé/);
 });
 

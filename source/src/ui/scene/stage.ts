@@ -124,6 +124,12 @@ export const ENCOUNTER_PACK: Record<string, number> = {
   tofus: 32, prespic_tofus: 32, lisiere: 41,
   larve_moskito: 18, arakne_moskito: 18, foret: 9,
   rose_seule: 8, champs: 8, tournesol: 8,
+  // Acte 2
+  chafers: 98, wabbits: 46, kwaks: 22, sous_bois: 9, abraknydes: 59, bworks: 117, craqueleurs: 89, marais: 125,
+  clairiere: 9, abraknyde_sombre: 59, craqueleur_legendaire: 89, wa_wabbit: 46, bworkette: 117, abraknyde_ancestral: 22,
+  // Acte 3
+  egouts: 111, kolerats: 66, kanigrous: 169, craqueboules: 60, corbacs: 133, mulous: 55, piralaks: 84, frigost: 58,
+  kaskargo: 177, maitre_corbac: 133, dragon_cochon: 97, koulosse: 89, minotoror: 94,
 };
 
 function mulberry(seed: number) {

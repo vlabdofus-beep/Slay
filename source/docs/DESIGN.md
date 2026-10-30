@@ -39,7 +39,13 @@ Terre (armure, coups lourds) · Feu (brûlure, zone) · Eau (drain, économie) �
 - 6 nouveaux statuts : poison (ignore armure et bouclier, divisé par 2), bouclier (persistant), renvoi de dommages,
   érosion (armure et soins ÷ 2), esquive (annule un coup), étourdi (saute une action ; 2 pour un boss).
   La brûlure est maintenant absorbée par l'armure et le bouclier : c'est le poison qui passe à travers.
-- Boss : choix de 3 Dofus (relique-like), à venir.
+- Boss des actes 1 et 2 : choix d'un Dofus parmi 3 (`src/data/eggs.ts`, 18 Dofus : primordiaux, Dokoko, Domakuro,
+  Dolmanax…). Effets fixes et forts, gardés toute la run. Icônes : les 4 primordiaux de Dofus Survivors, les autres recolorés.
+- **Kamas** : gagnés à chaque combat (faible 12-18, normal 16-24, élite 30-40, boss 70-80 ; +50 % par acte ;
+  jusqu'à +50 % avec la prospection). On commence avec 60.
+- **Marchand** (case de carte à partir du 4e étage, au moins un par acte) : 5 cartes (3 communes ≈ 50, 2 rares ≈ 80),
+  3 objets (raretés tirées avec un bonus de prospection ; 75 / 115 / 170 / 260 selon la rareté), retrait d'une carte
+  (50, +25 à chaque retrait de la run).
 - Zaap : se reposer ou améliorer une carte. **Plus de forgemagie.**
 
 ## Données Dofus (v2)
@@ -52,8 +58,12 @@ Terre (armure, coups lourds) · Feu (brûlure, zone) · Eau (drain, économie) �
 - Valeurs d'équilibrage : toujours les nôtres (docs/BALANCE.md).
 
 ## Jeu jouable (v2)
-- Carte de l'acte façon Slay : 12 étages + boss ; étages 1-3 combats faibles ; élites et Zaaps à partir du 5e ;
-  12e étage = Zaap. Pas deux élites ou deux Zaaps d'affilée.
+- Trois actes : Amakna (Bouftou Royal), forêt des Abraknydes (Abraknyde Ancestral), landes de Brâkmar (Minotoror).
+  Chaque acte a ses monstres réels (coups simples pour l'instant : la diversité des monstres viendra ensuite),
+  son décor par rencontre, et les PV sont remis au maximum au début des actes 2 et 3.
+- Carte de chaque acte façon Slay : 12 étages + boss ; étages 1-3 combats faibles ; marchands à partir du 4e ; élites
+  et Zaaps à partir du 5e ; 12e étage = Zaap. Pas deux élites, deux Zaaps ou deux marchands d'affilée.
+  **Aucun chemin ne se croise** : un pas en diagonale est refusé s'il couperait la diagonale inverse.
 - Zaap : se reposer (30 % des PV max) ou améliorer une carte. Une action.
 - Écran de victoire : 1 carte parmi 3 (25 % de rares, 50 % après un élite) + objet selon la prospection.
 - Interface : `src/ui/` (DOM sans framework). Raccourcis : 1-9 pour jouer une carte, E pour finir le tour, Échap pour annuler.

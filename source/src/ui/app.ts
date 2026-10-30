@@ -9,7 +9,8 @@ import { ELEMENTS, SLOTS } from '../core/types.ts';
 import { DOFUS } from '../data/dofus.ts';
 import { ITEMS } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
-import { ACT1_SCALE, ENCOUNTERS } from '../data/monsters.ts';
+import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
+import { EGG_BY_ID } from '../data/eggs.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   cardText, ELEMENT_NAMES, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
@@ -20,7 +21,7 @@ import { BREED, STAGE, stage } from './scene/stage.ts';
 // ───────────── état de l'interface ─────────────
 
 type Selecting = { kind: 'card'; index: number } | null;
-type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' };
+type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'remove' } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' };
 
 const ui = {
   run: null as Run | null,
@@ -158,8 +159,10 @@ function sheet(run: Run): string {
     <button class="link" data-act="modal-deck">Voir le deck (${run.deck.length} cartes)</button>
     <h3>Équipement</h3><div class="slots">${slots}</div>
     ${effects ? `<ul class="fx-list">${effects}</ul>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
-    <h3>Prospection</h3>
-    <p class="prosp"><b>${prosp}</b> <span class="muted">${Math.round(100 * lootChance('normal', prosp))} % de chance d'objet après un combat, raretés ×${(1 + 2 * prospFactor(prosp)).toFixed(1)}</span></p>
+    ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b> ${esc(eggText(id))}</span></li>`).join('')}</ul>` : ''}
+    <h3>Kamas et prospection</h3>
+    <p class="prosp">${KAMAS(run.kamas)}</p>
+    <p class="prosp"><b>${prosp}</b> prospection <span class="muted">:${Math.round(100 * lootChance('normal', prosp))} % de chance d'objet après un combat, raretés ×${(1 + 2 * prospFactor(prosp)).toFixed(1)}</span></p>
   </aside>`;
 }
 
@@ -219,14 +222,22 @@ function startPreviews(): void {
   previewRaf = requestAnimationFrame(loop);
 }
 
-const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', boss: 'Boss' };
+const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', marchand: 'Marchand', boss: 'Boss' };
 /** Icônes officielles de l'interface Dofus (modes de Dofusle, objets de Dofus Survivors). */
 const uiIcon = (name: string, cls = 'ui-ico') => `<img class="${cls}" src="${asset(`ui/${name}.webp`)}" alt="" draggable="false">`;
 const NODE_ICON: Record<MapNode['type'], string> = {
   combat: uiIcon('combat'),
   elite: uiIcon('elite'),
   zaap: uiIcon('zaap'),
+  marchand: uiIcon('marchand'),
 } as Record<MapNode['type'], string>;
+const actName = (run: Run) => ACTS[run.act - 1].name;
+const KAMAS = (n: number) => `<span class="kamas">${uiIcon('kamas', 'k-ico')}${n}</span>`;
+const eggIcon = (id: string, cls = 'egg-ico') => `<img class="${cls}" src="${asset(`dofus/${EGG_BY_ID[id].icon}.webp`)}" alt="" draggable="false">`;
+function eggText(id: string): string {
+  const egg = EGG_BY_ID[id];
+  return [...statsText(egg.stats ?? {}).map((t) => `${t}.`), ...egg.effects.map(itemEffectText)].join(' ');
+}
 const INTENT_ICON: Record<string, string> = { attack: 'combat', defend: 'defense', buff: 'buff', debuff: 'debuff' };
 const intentIcon = (kind: string) => INTENT_ICON[kind] ? uiIcon(INTENT_ICON[kind], 'intent-ico') : '';
 
@@ -244,9 +255,11 @@ const hpRange = (hp: [number, number]) => {
 
 /** Infobulle d'une case : ce qu'on y trouve et ce qu'on y gagne. */
 function nodeTip(run: Run, n: MapNode): string {
-  const kind = n.type === 'boss' ? 'Boss' : n.type === 'elite' ? 'Élite' : n.type === 'zaap' ? 'Zaap' : n.floor < 4 ? 'Combat facile' : 'Combat';
+  const kind = n.type === 'boss' ? 'Boss' : n.type === 'elite' ? 'Élite' : n.type === 'zaap' ? 'Zaap' : n.type === 'marchand' ? 'Marchand' : n.floor < 4 ? 'Combat facile' : 'Combat';
   let body: string;
-  if (n.type === 'zaap') {
+  if (n.type === 'marchand') {
+    body = `<p class="tip-text">Des cartes, des objets et le retrait d'une carte du deck, contre des kamas. Tu en as ${run.kamas}.</p>`;
+  } else if (n.type === 'zaap') {
     body = `<p class="tip-text">Une halte avant de repartir. Une action au choix :</p>
       <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * ZAAP_HEAL)} PV</li><li>améliorer une carte</li></ul>`;
   } else {
@@ -258,7 +271,7 @@ function nodeTip(run: Run, n: MapNode): string {
         <span class="tip-aff">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}${!weak && !resist ? '<span>Aucune faiblesse</span>' : ''}</span>
       </li>`;
     }).join('');
-    const reward = n.type === 'boss' ? 'Le vaincre termine l\'acte.'
+    const reward = n.type === 'boss' ? (run.act < 3 ? 'Le vaincre termine l\'acte et te laisse choisir un Dofus.' : 'Le vaincre termine la run.')
       : n.type === 'elite' ? 'Récompense : une carte, plus souvent rare, et toujours un objet rare, mythique ou légendaire.'
       : `Récompense : une carte, et ${Math.round(100 * lootChance('normal', run.prospection()))} % de chance d'objet (prospection ${run.prospection()}).`;
     body = `<ul class="tip-mobs">${mobs}</ul><p class="tip-text">${reward}</p>`;
@@ -303,14 +316,14 @@ function viewMap(run: Run): string {
     .map((f) => `<span class="floor-no${f === run.stats.floor ? ' current' : ''}" style="top:${TOP + (m.floors - 1 - f) * H}px">${f}</span>`).join('');
   return `<main class="mapview">
     <section class="map-wrap">
-      <header class="map-head"><h2>Amakna</h2><p>Choisis ta route. Survole une case pour voir ce qui t'y attend.</p></header>
+      <header class="map-head"><h2>Acte ${run.act} : ${esc(actName(run))}</h2><p>Choisis ta route. Survole une case pour voir ce qui t'y attend.</p></header>
       <div class="map-scroll"><div class="map" style="width:${width}px;height:${height}px">
         <svg width="${width}" height="${height}" aria-hidden="true">${lines}</svg>
         ${floors}
         ${run.position === null ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 38}px">Départ</span>` : ''}
         ${nodes}
       </div></div>
-      <ul class="legend">${(['combat', 'elite', 'zaap'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
+      <ul class="legend">${(['combat', 'elite', 'zaap', 'marchand'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
     </section>
     ${sheet(run)}
   </main>`;
@@ -357,7 +370,8 @@ function topbarHtml(run: Run): string {
   return `<header class="topbar">
       <span class="tb-who"><img src="${asset(`classes/${breed.id}.png`)}" alt=""><b>${esc(breed.n)}</b></span>
       <span class="tb-hp" title="Points de vie">${HEART}${v?.hp ?? p.hp}/${p.maxHp}</span>
-      <span class="tb-floor">Étage ${run.stats.floor}</span>
+      <span class="tb-floor">Acte ${run.act}, étage ${run.stats.floor}</span>
+      <span class="tb-kamas" title="Kamas">${KAMAS(run.kamas)}</span>
       <span class="tb-enc"><b>${esc(title)}</b> ${run.node ? NODE_LABEL[run.node.type] : ''}, tour ${c.turn}</span>
       <span class="tb-actions">
         <button class="tb-btn" data-act="modal-deck">${uiIcon('deck')}Deck ${run.deck.length}</button>
@@ -420,7 +434,7 @@ function viewReward(run: Run): string {
   return `<main class="rewardview">
     <section class="reward">
       <h2 class="with-ico">${uiIcon(r.itemSource === 'elite' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
-      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}.</p>
+      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}. Tu ramasses ${KAMAS(r.kamas)} kamas.</p>
       <h3>${r.cardTaken ? 'Carte ajoutée au deck' : 'Ajoute une carte à ton deck'}</h3>
       <div class="row cards">${cards}</div>
       ${items ? `<h3>${r.itemTaken ? 'Objet équipé' : 'Choisis un objet'}</h3><p class="muted small">Prospection ${r.prospection}. La stat d'un objet est fixe ; son effet a été tiré pour cette run.</p><div class="row items">${items}</div>` : `<p class="muted small">Pas d'objet cette fois (prospection ${r.prospection}).</p>`}
@@ -447,13 +461,49 @@ function viewZaap(run: Run): string {
   </main>`;
 }
 
+function viewShop(run: Run): string {
+  const shop = run.shop!;
+  const tag = (price: number, sold: boolean) => sold ? '<span class="price sold">Vendu</span>' : `<span class="price${price > run.kamas ? ' short' : ''}">${KAMAS(price)}</span>`;
+  const cards = shop.cards.map((e) => `<div class="ware">${cardHtml(LIBRARY.cards[e.id], e.sold || e.price > run.kamas ? { disabled: true } : { act: 'buy-card', data: `data-id="${e.id}"` })}${tag(e.price, e.sold)}</div>`).join('');
+  const items = shop.items.map((e) => `<div class="ware">${itemTile(ITEMS.items[e.id], e.sold || e.price > run.kamas ? { dim: !e.sold, taken: e.sold } : { act: 'buy-item' })}${tag(e.price, e.sold)}</div>`).join('');
+  return `<main class="shopview">
+    <section class="shop">
+      <h2 class="with-ico">${uiIcon('marchand', 'h-ico')}Marchand</h2>
+      <p class="muted">Tu as ${KAMAS(run.kamas)} kamas. Un objet acheté remplace celui de son emplacement.</p>
+      <h3>Cartes</h3><div class="row cards wares">${cards}</div>
+      <h3>Objets</h3><div class="row items wares">${items}</div>
+      <h3>Service</h3>
+      <div class="row options">
+        <button class="option" data-act="modal-remove" ${shop.removed || shop.removePrice > run.kamas || run.deck.length <= 5 ? 'disabled' : ''}>${uiIcon('ameliorer', 'option-ico')}<b>Retirer une carte</b><span>${shop.removed ? 'Déjà fait chez ce marchand.' : `Retire définitivement une carte du deck pour ${shop.removePrice} kamas.`}</span></button>
+      </div>
+      <button class="primary" data-act="leave-shop">Reprendre la route</button>
+    </section>
+    ${sheet(run)}
+  </main>`;
+}
+
+function viewDofus(run: Run): string {
+  const next = ACTS[run.act];
+  const offer = run.dofusOffer.map((id) => `<button class="egg-pick" data-act="take-dofus" data-id="${id}">
+      ${eggIcon(id, 'egg-big')}<b>${esc(EGG_BY_ID[id].name)}</b><span>${esc(eggText(id))}</span></button>`).join('');
+  return `<main class="dofusview">
+    <section class="dofus-choice">
+      <h2>Choisis un Dofus</h2>
+      <p class="muted">Un seul des trois. Il t'accompagne jusqu'à la fin de la run. Ensuite : acte ${next.act}, ${esc(next.name)}, et tes PV sont remis au maximum.</p>
+      <div class="egg-row">${offer}</div>
+    </section>
+    ${sheet(run)}
+  </main>`;
+}
+
 function viewEnd(run: Run): string {
   const won = run.phase === 'victory';
   return `<main class="endview">
     <section class="end">
-      <h2 class="with-ico">${won ? uiIcon('victoire', 'h-ico') : ''}${won ? 'Le Bouftou Royal est tombé' : 'Défaite'}</h2>
-      <p>${won ? 'Amakna est libérée. La suite du voyage arrive avec les prochains actes.' : `Tu es tombé à l'étage ${run.stats.floor}.`}</p>
-      <p class="muted">${run.stats.combats} combats gagnés, dont ${run.stats.elites} élites. Deck de ${run.deck.length} cartes, ${Object.keys(run.equipment).length} objets équipés.</p>
+      <h2 class="with-ico">${won ? uiIcon('victoire', 'h-ico') : ''}${won ? 'Le Minotoror est tombé' : 'Défaite'}</h2>
+      <p>${won ? 'Les trois actes sont terminés : Amakna, la forêt des Abraknydes et les landes de Brâkmar.' : `Tu es tombé à l'acte ${run.act} (${esc(actName(run))}), étage ${run.stats.floor}.`}</p>
+      ${run.dofus.length ? `<p class="egg-row">${run.dofus.map((id) => `<span title="${esc(EGG_BY_ID[id].name)}">${eggIcon(id)}</span>`).join('')}</p>` : ''}
+      <p class="muted">${run.stats.combats} combats gagnés, dont ${run.stats.elites} élites. Deck de ${run.deck.length} cartes, ${Object.keys(run.equipment).length} objets équipés, ${run.stats.kamas} kamas gagnés.</p>
       <button class="primary" data-act="title">Nouvelle partie</button>
     </section>
     ${sheet(run)}
@@ -469,6 +519,9 @@ function viewModal(run: Run): string {
     const list = m.kind === 'deck' ? run.deck : m.pile === 'draw' ? [...run.combat!.drawPile].sort((a, b) => a.id.localeCompare(b.id)) : m.pile === 'discard' ? run.combat!.discardPile : run.combat!.exhaustPile;
     title = m.kind === 'deck' ? `Deck (${list.length})` : m.pile === 'draw' ? `Pioche (${list.length}, ordre masqué)` : m.pile === 'discard' ? `Défausse (${list.length})` : `Épuisées (${list.length})`;
     body = list.map((inst) => cardHtml(resolveCard(LIBRARY, inst), { inst })).join('') || '<p class="muted">Aucune carte.</p>';
+  } else if (m.kind === 'remove') {
+    title = `Retirer une carte (${run.shop?.removePrice ?? 0} kamas)`;
+    body = run.deck.map((inst) => cardHtml(resolveCard(LIBRARY, inst), { inst, act: 'remove-card', data: `data-uid="${inst.uid}"` })).join('');
   } else if (m.kind === 'upgrade') {
     title = 'Améliorer une carte';
     body = run.deck.filter((c) => !c.upgraded).map((inst) =>
@@ -559,7 +612,7 @@ function viewStyleguide(): string {
     `<span class="sg-back">${cardBack()}</span>`,
   ].join('');
   const frameLabels = ['Base : bronze', 'Commune : argent', 'Rare : or', 'Améliorée : reflet', 'Dos de la pioche'];
-  const icons = ['combat', 'elite', 'zaap', 'repos', 'ameliorer', 'forge', 'coffre', 'coffre-rare', 'deck', 'journal', 'defense', 'buff', 'debuff', 'victoire', 'dofus']
+  const icons = ['combat', 'elite', 'zaap', 'marchand', 'kamas', 'repos', 'ameliorer', 'forge', 'coffre', 'coffre-rare', 'deck', 'journal', 'defense', 'buff', 'debuff', 'victoire', 'dofus']
     .map((n) => `<figure class="sg-icon">${uiIcon(n, 'h-ico')}<figcaption>${n}</figcaption></figure>`).join('');
   const nums = (['terre', 'feu', 'eau', 'air', 'neutre', 'soin', 'armure'] as const)
     .map((el, i) => `<span class="sg-num"><span class="num n-${el}" style="animation:none;position:static;transform:none">${el === 'soin' ? '+6' : el === 'armure' ? 'Bloqué' : `−${8 + i}`}</span><small>${el}</small></span>`).join('');
@@ -571,7 +624,7 @@ function viewStyleguide(): string {
 
   const states = ['avail', 'here', 'done', 'locked'] as const;
   const stateNames = { avail: 'Accessible', here: 'Position actuelle', done: 'Visitée', locked: 'Pas encore accessible' };
-  const medals = (['combat', 'elite', 'zaap'] as const).map((t) => `<div class="sg-medal-row"><b>${NODE_LABEL[t]}</b>${states.map((st) =>
+  const medals = (['combat', 'elite', 'zaap', 'marchand'] as const).map((t) => `<div class="sg-medal-row"><b>${NODE_LABEL[t]}</b>${states.map((st) =>
     `<figure class="sg-node"><span class="sg-node-box"><span class="node t-${t} s-${st}">${NODE_ICON[t]}</span></span><figcaption>${stateNames[st]}</figcaption></figure>`).join('')}</div>`).join('')
     + `<div class="sg-medal-row"><b>Boss</b><figure class="sg-node big"><span class="sg-node-box"><span class="node t-boss s-locked"><span class="boss-art"><img src="${asset('ui/boss.png')}" alt=""></span></span></span><figcaption>Grand médaillon doré et plaque</figcaption></figure></div>`;
 
@@ -605,7 +658,7 @@ function viewStyleguide(): string {
 
 /** En-tête gravé, comme sur Dofusle : nom au centre, lieu et étage en dessous. */
 function brandBar(run: Run): string {
-  const where = run.stats.floor ? `Amakna, étage ${run.stats.floor} sur ${run.map.floors}` : 'Amakna, au départ';
+  const where = `Acte ${run.act}, ${actName(run)}${run.stats.floor ? `, étage ${run.stats.floor} sur ${run.map.floors}` : ', au départ'}`;
   return `<header class="brandbar"><p class="brand-name">Dofus Slay</p><p class="brand-sub">${where}</p></header>`;
 }
 
@@ -623,6 +676,8 @@ function render(): void {
   else if (run.phase === 'combat') html = viewCombat(run);
   else if (run.phase === 'reward') html = viewReward(run);
   else if (run.phase === 'zaap') html = viewZaap(run);
+  else if (run.phase === 'marchand') html = viewShop(run);
+  else if (run.phase === 'dofus') html = viewDofus(run);
   else html = viewEnd(run);
   document.body.dataset.screen = run ? run.phase : 'title';
   if (run?.phase !== 'combat' || !run.combat) { for (const ev of pending) clearTimeout(ev.timer); pending.length = 0; shown.clear(); }
@@ -774,7 +829,7 @@ function bossIntro(run: Run): void {
     <div class="bi-stage">
       <div class="bi-halo"></div>
       ${pic(boss.def.image, boss.def.name, 'bi-pic')}
-      <p class="bi-kicker">Gardien d'Amakna</p>
+      <p class="bi-kicker">Gardien de l'acte ${run.act} : ${esc(actName(run))}</p>
       <h2 class="bi-name">${esc(boss.def.name)}</h2>
       <p class="bi-meta">${boss.def.level ? `Niveau ${boss.def.level[1]}, ` : ''}${boss.maxHp} points de vie</p>
     </div>
@@ -1027,6 +1082,25 @@ function handle(act: string, d: DOMStringMap): void {
     case 'zaap-upgrade':
       run!.zaapUpgrade(Number(d.uid));
       ui.modal = null;
+      break;
+    case 'buy-card':
+      run!.buyCard(d.id!);
+      break;
+    case 'buy-item':
+      run!.buyItem(d.id!);
+      break;
+    case 'modal-remove':
+      ui.modal = { kind: 'remove' };
+      break;
+    case 'remove-card':
+      run!.removeCard(Number(d.uid));
+      ui.modal = null;
+      break;
+    case 'leave-shop':
+      run!.leaveShop();
+      break;
+    case 'take-dofus':
+      run!.takeDofus(d.id!);
       break;
     case 'leave-zaap':
       run!.leaveZaap();

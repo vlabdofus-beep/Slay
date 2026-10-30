@@ -23,6 +23,14 @@ const MONSTER_IDS = [
   31, 52, 61, 79, 59, 78, 101, 149, 103, 104, 98, // monstres d'Amakna
   148, 799, // élites : Chef de Guerre Bouftou, Tournesol Affamé
   147, // boss : Bouftou Royal
+  // Acte 2 : Abraknydes, Cania, marais
+  47, 256, 259, 54, 291, 83, 84, 64, 876, 53, 106, 198, 261, 211,
+  253, 669, 180, 792, // élites
+  173, // boss : Abraknyde Ancestral
+  // Acte 3 : Frigost, Brâkmar, landes
+  300, 299, 442, 483, 287, 784, 281, 102, 1075, 1043, 1044,
+  289, 113, 670, // élites
+  121, // boss : Minotoror
 ];
 // Catalogue d'objets : par emplacement, des objets réels répartis en 4 raretés selon leur niveau Dofus.
 const BANDS = [

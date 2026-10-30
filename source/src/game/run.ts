@@ -4,14 +4,15 @@ import { Combat } from '../core/combat.ts';
 import { rollEffect } from '../core/effects.ts';
 import { computeLoadout, type EffectTable, type Equipment, type Loadout } from '../core/loadout.ts';
 import { generateMap, type ActMap, type MapNode } from '../core/map.ts';
-import { itemOffer, lootChance, type LootSource } from '../core/offers.ts';
+import { itemOffer, lootChance, prospFactor, rollRarity, type LootSource } from '../core/offers.ts';
 import { Rng } from '../core/rng.ts';
-import type { CardInstance, ClassId } from '../core/types.ts';
+import type { CardInstance, ClassId, ItemRarity } from '../core/types.ts';
+import { EGGS, EGG_BY_ID } from '../data/eggs.ts';
 import { ITEMS, ITEM_LIST } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY, newCard, rewardPool, starterDeck } from '../data/library.ts';
-import { ACT1_SCALE, ENCOUNTERS, encountersOfTier, type EncounterTier } from '../data/monsters.ts';
+import { ACT_SCALE, ENCOUNTERS, encountersOfTier, type Act, type EncounterTier } from '../data/monsters.ts';
 
-export type Phase = 'map' | 'combat' | 'reward' | 'zaap' | 'victory' | 'defeat';
+export type Phase = 'map' | 'combat' | 'reward' | 'zaap' | 'marchand' | 'dofus' | 'victory' | 'defeat';
 
 export interface Reward {
   cards: string[];
@@ -22,7 +23,23 @@ export interface Reward {
   itemTaken: string | null;
   /** Prospection au moment du butin. */
   prospection: number;
+  /** Kamas gagnés. */
+  kamas: number;
 }
+
+export interface ShopEntry { id: string; price: number; sold: boolean }
+export interface Shop {
+  cards: ShopEntry[];
+  items: ShopEntry[];
+  /** Prix du retrait d'une carte (augmente à chaque retrait de la run). */
+  removePrice: number;
+  removed: boolean;
+}
+
+export const START_KAMAS = 60;
+export const CARD_PRICE = { commune: 50, rare: 80 };
+export const ITEM_PRICE: Record<ItemRarity, number> = { commun: 75, rare: 115, mythique: 170, legendaire: 260 };
+const KAMAS_BY_TIER: Record<EncounterTier, [number, number]> = { faible: [12, 18], normal: [16, 24], elite: [30, 40], boss: [70, 80] };
 
 export const ZAAP_HEAL = 0.3;
 const FIRST_NORMAL_FLOOR = 4;
@@ -33,7 +50,17 @@ export class Run {
   readonly gender: 'm' | 'f';
   readonly seed: number;
   readonly rng: Rng;
-  readonly map: ActMap;
+  map: ActMap;
+  act: Act = 1;
+  kamas = START_KAMAS;
+  /** Dofus obtenus (ids de data/eggs.ts). */
+  dofus: string[] = [];
+  /** Trois Dofus proposés après un boss. */
+  dofusOffer: string[] = [];
+  /** Le Dokoko a déjà servi dans cette run. */
+  reviveUsed = false;
+  shop: Shop | null = null;
+  removals = 0;
   deck: CardInstance[];
   equipment: Equipment = {};
   hp: number;
@@ -55,16 +82,16 @@ export class Run {
   /** Effets hors équipement (outils de simulation : chiffrage d'un effet isolé). */
   extraEffects: import('../core/effects.ts').ItemEffect[] = [];
   extraProspection = 0;
-  stats = { combats: 0, elites: 0, floor: 0 };
+  stats = { combats: 0, elites: 0, floor: 0, kamas: 0 };
   /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
-  readonly encounters: Record<string, string> = {};
+  encounters: Record<string, string> = {};
 
   constructor(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') {
     this.classe = classe;
     this.gender = gender;
     this.seed = seed;
     this.rng = new Rng(seed);
-    this.map = generateMap(seed ^ 0x5bd1e995);
+    this.map = generateMap(Run.mapSeed(seed, 1));
     this.deck = starterDeck(classe);
     this.baseMaxHp = CLASS_START_HP[classe] as number;
     this.hp = this.baseMaxHp;
@@ -73,14 +100,19 @@ export class Run {
     for (const it of ITEM_LIST) this.itemEffects[it.id] = rollEffect(it.rarity, fxRng);
   }
 
+  static mapSeed(seed: number, act: number): number {
+    return (seed ^ (0x5bd1e995 + (act - 1) * 0x9e3779b9)) >>> 0;
+  }
+
   /** Étage par étage, chaque case de combat reçoit une rencontre différente de celles de ses parents. */
   private assignEncounters(rng: Rng): void {
+    this.encounters = {};
     const nodes = Object.values(this.map.nodes).sort((a, b) => a.floor - b.floor || a.col - b.col);
     for (const node of nodes) {
-      if (node.type === 'zaap') continue;
+      if (node.type === 'zaap' || node.type === 'marchand') continue;
       const tier = Run.tierOf(node);
       const parents = nodes.filter((n) => n.next.includes(node.id)).map((n) => this.encounters[n.id]);
-      const pool = encountersOfTier(tier);
+      const pool = encountersOfTier(tier, this.act);
       const fresh = pool.filter((e) => !parents.includes(e));
       this.encounters[node.id] = rng.pick(fresh.length ? fresh : pool);
     }
@@ -92,8 +124,16 @@ export class Run {
 
   // ───────────── lecture ─────────────
 
+  /** Équipement + Dofus. */
   loadout(): Loadout {
-    return computeLoadout(this.equipment, ITEMS, this.itemEffects);
+    const l = computeLoadout(this.equipment, ITEMS, this.itemEffects);
+    for (const id of this.dofus) {
+      const egg = EGG_BY_ID[id];
+      l.pvBonus += egg.stats?.pv ?? 0;
+      l.prospection += egg.stats?.prospection ?? 0;
+      l.effects.push(...egg.effects);
+    }
+    return l;
   }
 
   /** Prospection actuelle : objets + gains de la run + bonus du prochain combat. */
@@ -126,6 +166,10 @@ export class Run {
       this.zaapUsed = false;
       return;
     }
+    if (node.type === 'marchand') {
+      this.openShop();
+      return;
+    }
     this.startCombat(this.encounters[id]);
   }
 
@@ -134,8 +178,8 @@ export class Run {
     this.encounter = encounter;
     this.combat = new Combat(
       LIBRARY, this.deck,
-      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects] },
-      ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), ACT1_SCALE,
+      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects], revive: this.dofus.includes('dokoko') && !this.reviveUsed },
+      ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), ACT_SCALE[this.act],
     );
     this.phase = 'combat';
   }
@@ -152,10 +196,19 @@ export class Run {
       return;
     }
     this.hp = c.player.hp; // seul ce qui survit au combat
+    if (c.result().revived) this.reviveUsed = true;
     this.stats.combats++;
     const type = this.node?.type;
+    const tier = this.node ? Run.tierOf(this.node) : 'normal';
+    const [kmin, kmax] = KAMAS_BY_TIER[tier];
+    const kamas = Math.round((kmin + this.rng.int(kmax - kmin + 1)) * (1 + 0.5 * (this.act - 1)) * (1 + 0.5 * prospFactor(this.prospection())));
+    this.kamas += kamas;
+    this.stats.kamas += kamas;
     if (type === 'boss') {
-      this.phase = 'victory';
+      if (this.act === 3) { this.phase = 'victory'; return; }
+      const owned = new Set(this.dofus);
+      this.dofusOffer = this.rng.shuffle(EGGS.filter((e) => !owned.has(e.id)).map((e) => e.id)).slice(0, 3);
+      this.phase = 'dofus';
       return;
     }
     if (type === 'elite') this.stats.elites++;
@@ -174,6 +227,7 @@ export class Run {
       itemSource: drops ? source : null,
       itemTaken: null,
       prospection: prosp,
+      kamas,
     };
     this.phase = 'reward';
   }
@@ -225,6 +279,97 @@ export class Run {
     if (this.phase !== 'reward') throw new Error('Pas de récompense en cours');
     this.reward = null;
     this.combat = null;
+    this.phase = 'map';
+  }
+
+  // ───────────── Dofus et passage d'acte ─────────────
+
+  takeDofus(id: string): void {
+    if (this.phase !== 'dofus' || !this.dofusOffer.includes(id)) throw new Error('Dofus non proposé');
+    const before = this.maxHp;
+    this.dofus.push(id);
+    this.hp += Math.max(0, this.maxHp - before);
+    this.dofusOffer = [];
+    this.nextAct();
+  }
+
+  /** Acte suivant : nouvelle carte, nouvelles rencontres, PV remis au maximum. */
+  private nextAct(): void {
+    this.act = (this.act + 1) as Act;
+    this.map = generateMap(Run.mapSeed(this.seed, this.act));
+    this.assignEncounters(new Rng(this.seed ^ (0x2c1b3c6d + this.act)));
+    this.position = null;
+    this.path = [];
+    this.node = null;
+    this.combat = null;
+    this.encounter = null;
+    this.reward = null;
+    this.prospNext = 0;
+    this.stats.floor = 0;
+    this.hp = this.maxHp;
+    this.phase = 'map';
+  }
+
+  // ───────────── marchand ─────────────
+
+  private openShop(): void {
+    const pool = rewardPool(this.classe);
+    const of = (r: string) => this.rng.shuffle(pool.filter((id) => LIBRARY.cards[id].rarity === r));
+    const vary = (n: number) => Math.round(n * (0.9 + this.rng.next() * 0.2));
+    const cards = [...of('commune').slice(0, 3), ...of('rare').slice(0, 2)].map((id) => ({
+      id, price: vary(CARD_PRICE[LIBRARY.cards[id].rarity === 'rare' ? 'rare' : 'commune']), sold: false,
+    }));
+    const prosp = this.prospection();
+    const equipped = new Set(Object.values(this.equipment));
+    const items: ShopEntry[] = [];
+    for (let i = 0; i < 3; i++) {
+      const rarity = rollRarity('normal', prosp + 60, this.rng);
+      const choices = ITEM_LIST.filter((it) => it.rarity === rarity && !equipped.has(it.id) && !items.some((x) => x.id === it.id));
+      if (!choices.length) continue;
+      const it = this.rng.pick(choices);
+      items.push({ id: it.id, price: vary(ITEM_PRICE[it.rarity]), sold: false });
+    }
+    this.shop = { cards, items, removePrice: 50 + 25 * this.removals, removed: false };
+    this.phase = 'marchand';
+  }
+
+  private pay(price: number): void {
+    if (this.phase !== 'marchand' || !this.shop) throw new Error('Pas chez le marchand');
+    if (this.kamas < price) throw new Error('Pas assez de kamas');
+    this.kamas -= price;
+  }
+
+  buyCard(id: string): void {
+    const e = this.shop?.cards.find((x) => x.id === id && !x.sold);
+    if (!e) throw new Error('Carte indisponible');
+    this.pay(e.price);
+    e.sold = true;
+    this.deck.push(newCard(id));
+  }
+
+  buyItem(id: string): void {
+    const e = this.shop?.items.find((x) => x.id === id && !x.sold);
+    if (!e) throw new Error('Objet indisponible');
+    this.pay(e.price);
+    e.sold = true;
+    this.equip(id);
+  }
+
+  /** Retire définitivement une carte du deck (une fois par marchand). */
+  removeCard(uid: number): void {
+    const shop = this.shop;
+    if (!shop || shop.removed) throw new Error('Retrait indisponible');
+    const i = this.deck.findIndex((c) => c.uid === uid);
+    if (i < 0) throw new Error('Carte introuvable');
+    this.pay(shop.removePrice);
+    shop.removed = true;
+    this.removals++;
+    this.deck.splice(i, 1);
+  }
+
+  leaveShop(): void {
+    if (this.phase !== 'marchand') throw new Error('Pas chez le marchand');
+    this.shop = null;
     this.phase = 'map';
   }
 

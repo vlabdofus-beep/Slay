@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateMap, MAP_FLOORS } from '../core/map.ts';
 import { ITEMS } from '../data/items.ts';
+import { ENCOUNTERS } from '../data/monsters.ts';
 import { playGreedy } from '../sim/policy.ts';
 import { Run } from './run.ts';
 
@@ -25,12 +26,23 @@ test('carte : boss accessible depuis chaque départ, règles d\'étage respecté
       if (n.type !== 'boss') assert.ok(n.next.length >= 1);
       if (n.floor <= 3) assert.equal(n.type, 'combat');
       if (n.floor < 5) assert.ok(n.type !== 'elite' && n.type !== 'zaap');
+      if (n.floor < 4) assert.notEqual(n.type, 'marchand');
       if (n.floor === MAP_FLOORS) assert.equal(n.type, 'zaap');
       if (n.floor === MAP_FLOORS - 1) assert.notEqual(n.type, 'zaap');
       for (const c of n.next.map((id) => m.nodes[id])) {
-        if (n.type === 'elite' || (n.type === 'zaap' && c.type !== 'boss' && n.floor !== MAP_FLOORS)) {
+        if (n.type === 'elite' || n.type === 'marchand' || (n.type === 'zaap' && c.type !== 'boss' && n.floor !== MAP_FLOORS)) {
           assert.notEqual(c.type, n.type, `seed ${seed} : ${n.type} suivi de ${c.type}`);
         }
+      }
+    }
+    assert.ok(Object.values(m.nodes).some((n) => n.type === 'marchand'), `seed ${seed} : aucun marchand`);
+    // Aucun croisement : pas d'arête (f, c) → (f+1, c+1) en même temps que (f, c+1) → (f+1, c).
+    for (const n of Object.values(m.nodes)) {
+      for (const id of n.next) {
+        const t = m.nodes[id];
+        if (t.type === 'boss' || t.col === n.col) continue;
+        const other = m.nodes[`${n.floor}:${t.col}`];
+        assert.ok(!other?.next.includes(`${t.floor}:${n.col}`), `seed ${seed} : chemins croisés à l'étage ${n.floor}`);
       }
     }
   }
@@ -54,6 +66,12 @@ function autoplay(run: Run): void {
         if (run.reward!.items.length) run.takeItem(run.reward!.items[0]);
         run.leaveReward();
         break;
+      case 'marchand':
+        run.leaveShop();
+        break;
+      case 'dofus':
+        run.takeDofus(run.dofusOffer[0]);
+        break;
       case 'zaap': {
         const up = run.deck.find((c) => !c.upgraded);
         if (run.hp < run.maxHp * 0.6 || !up) run.zaapRest();
@@ -67,6 +85,7 @@ function autoplay(run: Run): void {
 
 test('une run se joue de bout en bout (victoire ou défaite), de façon déterministe', () => {
   const outcomes: string[] = [];
+  let act2 = 0;
   for (let seed = 1; seed <= 20; seed++) {
     for (const classe of ['iop', 'cra'] as const) {
       const a = new Run(classe, seed);
@@ -75,10 +94,12 @@ test('une run se joue de bout en bout (victoire ou défaite), de façon détermi
       autoplay(b);
       assert.deepEqual([a.phase, a.hp, a.stats], [b.phase, b.hp, b.stats]);
       outcomes.push(a.phase);
+      if (a.act >= 2) act2++;
       if (a.phase === 'victory') assert.equal(a.position, 'boss');
     }
   }
-  assert.ok(outcomes.includes('victory'), 'au moins une victoire sur 40 runs');
+  assert.ok(outcomes.every((o) => o === 'victory' || o === 'defeat'));
+  assert.ok(act2 > 0, 'au moins une run atteint l\'acte 2 sur 40');
 });
 
 test('butin : les élites donnent toujours un objet (jamais commun), la prospection est conservée dans la récompense', () => {
@@ -104,6 +125,8 @@ test('butin : les élites donnent toujours un objet (jamais commun), la prospect
         }
         run.leaveReward();
       } else if (run.phase === 'zaap') run.leaveZaap();
+      else if (run.phase === 'marchand') run.leaveShop();
+      else if (run.phase === 'dofus') run.takeDofus(run.dofusOffer[0]);
     }
   }
   assert.ok(elites >= 1);
@@ -133,11 +156,73 @@ test('chaque case de combat connaît sa rencontre à l\'avance, et c\'est celle 
   const { ENCOUNTERS } = await import('../data/monsters.ts');
   const run = new Run('cra', 11);
   for (const n of Object.values(run.map.nodes)) {
-    if (n.type === 'zaap') assert.equal(run.encounters[n.id], undefined);
+    if (n.type === 'zaap' || n.type === 'marchand') assert.equal(run.encounters[n.id], undefined);
     else assert.equal(ENCOUNTERS[run.encounters[n.id]].tier, Run.tierOf(n));
   }
   const first = run.availableNodes()[0];
   const expected = run.encounters[first];
   run.enterNode(first);
   assert.equal(run.encounter, expected);
+});
+
+test('marchand : acheter une carte, un objet, retirer une carte ; les kamas baissent', () => {
+  const run = new Run('cra', 4);
+  const shopNode = Object.values(run.map.nodes).find((n) => n.type === 'marchand')!;
+  run.position = Object.values(run.map.nodes).find((n) => n.next.includes(shopNode.id))!.id;
+  run.kamas = 1000;
+  run.enterNode(shopNode.id);
+  assert.equal(run.phase, 'marchand');
+  const shop = run.shop!;
+  assert.equal(shop.cards.length, 5);
+  const deck = run.deck.length;
+  run.buyCard(shop.cards[0].id);
+  assert.equal(run.deck.length, deck + 1);
+  assert.equal(run.kamas, 1000 - shop.cards[0].price);
+  assert.throws(() => run.buyCard(shop.cards[0].id), /indisponible/);
+  const item = shop.items[0];
+  run.buyItem(item.id);
+  assert.equal(run.equipment[ITEMS.items[item.id].slot], item.id);
+  run.removeCard(run.deck[0].uid);
+  assert.equal(run.deck.length, deck);
+  assert.throws(() => run.removeCard(run.deck[0].uid), /indisponible/);
+  run.kamas = 0;
+  assert.throws(() => run.buyCard(shop.cards[1].id), /kamas/);
+  run.leaveShop();
+  assert.equal(run.phase, 'map');
+});
+
+test('boss des actes 1 et 2 : choix d\'un Dofus parmi 3, puis acte suivant avec PV au maximum', () => {
+  const run = new Run('iop', 8);
+  for (const act of [1, 2]) {
+    run.position = Object.values(run.map.nodes).find((n) => n.next.includes('boss'))!.id;
+    run.enterNode('boss');
+    const c = run.combat!;
+    c.enemies.forEach((e) => { e.hp = 0; e.dead = true; });
+    c.outcome = 'won';
+    run.hp = 10;
+    run.checkCombatEnd();
+    assert.equal(run.phase, 'dofus');
+    assert.equal(run.dofusOffer.length, 3);
+    run.takeDofus(run.dofusOffer[1]);
+    assert.equal(run.act, act + 1);
+    assert.equal(run.phase, 'map');
+    assert.equal(run.hp, run.maxHp);
+    assert.equal(run.dofus.length, act);
+    // Les rencontres du nouvel acte appartiennent à cet acte
+    for (const id of Object.values(run.encounters)) assert.equal(ENCOUNTERS[id].act, act + 1);
+  }
+});
+
+test('Dokoko : une résurrection par run', () => {
+  const run = new Run('iop', 2);
+  run.dofus.push('dokoko');
+  run.enterNode(run.availableNodes()[0]);
+  const c = run.combat!;
+  c.player.hp = 1;
+  c.enemies[0].status.puissance = 200;
+  c.hand = [];
+  c.endTurn();
+  assert.equal(c.outcome, 'ongoing');
+  assert.ok(c.player.hp > 1);
+  assert.equal(c.revived, true);
 });

@@ -50,6 +50,8 @@ body[data-screen="map"] { --accent: var(--emeraude); --accent-ink: #182303; }
 body[data-screen="combat"] { --accent: var(--pourpre); --accent-ink: #2b0d05; }
 body[data-screen="reward"] { --accent: var(--ocre); --accent-ink: #2a1904; }
 body[data-screen="zaap"] { --accent: var(--turquoise); --accent-ink: #062226; }
+body[data-screen="marchand"] { --accent: var(--ocre); --accent-ink: #2a1904; }
+body[data-screen="dofus"] { --accent: var(--gold); --accent-ink: #2a1904; }
 body[data-screen="victory"] { --accent: var(--gold); }
 body[data-screen="defeat"] { --accent: var(--ebene); --accent-ink: #1e140b; }
 body, .class-pick {
@@ -104,7 +106,7 @@ button:disabled { cursor: not-allowed; }
 .brandbar { display: flex; flex-direction: column; align-items: center; padding: 16px 16px 4px; }
 
 /* ───────── cadres : pierre gravée, double filet, biseau ───────── */
-.sheet, .reward, .zaap, .end, .modal-box, .map-scroll, .class-pick, .item, .option, .log, .tip {
+.sheet, .reward, .zaap, .end, .shop, .dofus-choice, .modal-box, .map-scroll, .class-pick, .item, .option, .log, .tip {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 45%), var(--panel);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
   box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 5px var(--line-soft), 0 12px 30px rgba(5, 10, 14, 0.45);
@@ -112,7 +114,7 @@ button:disabled { cursor: not-allowed; }
 }
 .primary, .end-turn, .active, .forge-el, .bar, .slot { border-radius: 3px; }
 @supports (corner-shape: bevel) {
-  .sheet, .reward, .zaap, .end, .modal-box, .map-scroll, .class-pick, .item, .option, .log, .tip { border-radius: 12px; corner-shape: bevel; }
+  .sheet, .reward, .zaap, .end, .shop, .dofus-choice, .modal-box, .map-scroll, .class-pick, .item, .option, .log, .tip { border-radius: 12px; corner-shape: bevel; }
   .primary, .end-turn, .active, .forge-el, .slot { border-radius: 7px; corner-shape: bevel; }
 }
 
@@ -171,7 +173,7 @@ button:disabled { cursor: not-allowed; }
 .class-pitch { font-size: .9rem; color: var(--muted); }
 
 /* ───────── mises en page avec fiche ───────── */
-.mapview, .rewardview, .zaapview, .endview { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.5rem; padding: 1rem 1.5rem 2rem; max-width: 1280px; margin: 0 auto; }
+.mapview, .rewardview, .zaapview, .endview, .shopview, .dofusview { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.5rem; padding: 1rem 1.5rem 2rem; max-width: 1280px; margin: 0 auto; }
 
 /* ───────── fiche du personnage ───────── */
 .sheet { padding: 1.2rem 1.2rem 1.4rem; align-self: start; position: sticky; top: 1rem; }
@@ -230,6 +232,7 @@ button:disabled { cursor: not-allowed; }
 }
 .node.t-elite { --ring: var(--pourpre); --ink: #ffb39c; --s: 54px; }
 .node.t-zaap { --ring: var(--turquoise); --ink: #8fe3dd; --s: 50px; }
+.node.t-marchand { --ring: var(--ocre); --ink: #ffd27a; --s: 50px; }
 .node.t-boss { --ring: var(--gold); --s: 92px; border-width: 3px; background: radial-gradient(circle at 40% 30%, #3c5262, var(--panel) 60%, var(--panel-deep)); }
 .node .ui-ico { width: 66%; height: 66%; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .6)); }
 .node svg { width: 48%; height: 48%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -570,8 +573,8 @@ body.is-dragging { cursor: grabbing; }
 .log ol { margin: 0; padding-left: 1.2rem; }
 
 /* ───────── récompense, Zaap, fin ───────── */
-.reward, .zaap, .end { padding: 1.6rem 1.8rem 1.8rem; align-self: start; }
-.reward h2, .zaap h2, .end h2 { color: var(--gold-2); }
+.reward, .zaap, .end, .shop, .dofus-choice { padding: 1.6rem 1.8rem 1.8rem; align-self: start; }
+.reward h2, .zaap h2, .end h2, .shop h2, .dofus-choice h2 { color: var(--gold-2); }
 .row { display: flex; gap: 1rem; flex-wrap: wrap; }
 .row.cards { padding-top: 12px; padding-left: 10px; }
 /* Raretés d'objets : la couleur se lit sur le liseré, l'étiquette et l'effet */
@@ -620,7 +623,7 @@ button.item:not(.off):hover { transform: translateY(-3px); border-color: var(--r
 
 /* ───────── petits écrans ───────── */
 @media (max-width: 980px) {
-  .mapview, .rewardview, .zaapview, .endview { grid-template-columns: minmax(0, 1fr); padding: .8rem .8rem 1.5rem; }
+  .mapview, .rewardview, .zaapview, .endview, .shopview, .dofusview { grid-template-columns: minmax(0, 1fr); padding: .8rem .8rem 1.5rem; }
   .map-scroll { justify-content: safe center; max-height: 70vh; }
   /* Sur mobile, l'infobulle devient un panneau fixe en bas de l'écran */
   .map .tip { position: fixed; left: 12px; right: 12px; bottom: 12px; top: auto; width: auto; transform: none; z-index: 20; }
@@ -775,3 +778,32 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 .sg-num { display: grid; justify-items: center; gap: 2px; }
 .sg-num small { color: var(--muted); font-size: .72rem; }
 .sg-back .card-back { display: grid; }
+
+/* ───────── kamas, marchand, Dofus ───────── */
+.kamas { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; color: #f3d67a; white-space: nowrap; }
+.k-ico { width: 18px; height: 18px; object-fit: contain; }
+.prosp .kamas { font: 700 1.2rem var(--title); margin-right: .3rem; }
+.tb-kamas .kamas { font-size: .95rem; }
+.wares { align-items: flex-start; }
+.ware { display: grid; justify-items: center; gap: .45rem; }
+.price { padding: 2px 12px; border-radius: 999px; background: var(--panel-deep); border: 1px solid var(--line); }
+.price.short .kamas { color: #e9a497; }
+.price.sold { color: var(--muted); font-size: .85rem; }
+.eggs { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; font-size: .8rem; line-height: 1.4; }
+.eggs li { display: grid; grid-template-columns: 34px 1fr; gap: .5rem; align-items: start; }
+.eggs b { display: block; font: 700 .88rem var(--title); color: var(--gold-2); }
+.egg-ico { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .6)); }
+.egg-row { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-top: 1rem; }
+.egg-pick {
+  width: 230px; display: grid; justify-items: center; gap: .5rem; padding: 1.4rem 1rem 1.2rem; text-align: center; cursor: pointer; color: var(--text); font: inherit;
+  background: radial-gradient(60% 45% at 50% 28%, rgba(240, 210, 142, .16), transparent 70%), var(--panel);
+  border: 1px solid var(--gold); border-radius: 12px; box-shadow: 0 10px 24px rgba(5, 10, 14, .5);
+  transition: transform .2s, box-shadow .2s;
+}
+@supports (corner-shape: bevel) { .egg-pick { corner-shape: bevel; } }
+.egg-pick:hover, .egg-pick:focus-visible { transform: translateY(-4px); box-shadow: 0 0 30px rgba(240, 200, 110, .4), 0 12px 26px rgba(5, 10, 14, .55); outline: none; }
+.egg-pick b { font: 700 1.2rem var(--title); color: var(--gold-2); }
+.egg-pick span { font-size: .86rem; line-height: 1.45; }
+.egg-big { width: 92px; height: 92px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .6)) drop-shadow(0 0 16px rgba(240, 210, 142, .35)); animation: egg-float 3.2s ease-in-out infinite; }
+@keyframes egg-float { 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .egg-big { animation: none; } }

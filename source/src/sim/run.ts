@@ -16,7 +16,7 @@ const f1 = (x: number) => x.toFixed(1);
 // ── 1. Chaque rencontre, deck de départ, PV pleins ──
 console.log(`\n=== Deck de départ, sans objets, PV pleins (${N} combats par case) ===`);
 console.log('rencontre        palier   ' + CLASSES.map((c) => `${c}: victoires / PV perdus / tours`.padEnd(36)).join(''));
-for (const enc of Object.keys(ENCOUNTERS)) {
+for (const enc of Object.keys(ENCOUNTERS).filter((e) => ENCOUNTERS[e].act === 1)) {
   const cols = CLASSES.map((classe) => {
     const maxHp = CLASS_START_HP[classe] as number;
     let wins = 0, lost = 0, turns = 0;
@@ -33,21 +33,23 @@ for (const enc of Object.keys(ENCOUNTERS)) {
 }
 
 // ── 2. Runs complètes ──
-console.log(`\n=== Acte 1 complet, ${N} runs par ligne (bot glouton, chemin au hasard, Zaap si PV bas) ===`);
-console.log('objets  classe  étage moyen  bat le boss  PV avant boss  objets portés  prospection  raretés trouvées');
+console.log(`\n=== Run complète (3 actes), ${N} runs par ligne (bot glouton, chemin au hasard, Zaap si PV bas) ===`);
+console.log('objets  classe  étages  boss 1  boss 2  boss 3  PV avant boss 1  objets portés  prospection  raretés trouvées');
 for (const noItems of [true, false]) {
   for (const classe of CLASSES) {
-    let floor = 0, won = 0, hp = 0, hpN = 0, items = 0, prosp = 0;
+    let floor = 0, hp = 0, hpN = 0, items = 0, prosp = 0;
+    const bosses = [0, 0, 0];
     const rar: Record<string, number> = {};
     for (let s = 1; s <= N; s++) {
       const r = botRun(classe, s, { noItems });
-      floor += r.floor; won += +r.won; items += r.items; prosp += r.prospection;
+      floor += r.floor; items += r.items; prosp += r.prospection;
+      for (let b = 0; b < r.bosses; b++) bosses[b]++;
       if (r.hpBeforeBoss !== null) { hp += r.hpBeforeBoss; hpN++; }
       for (const [k, v] of Object.entries(r.rarities)) rar[k] = (rar[k] ?? 0) + v;
     }
     const rs = ['commun', 'rare', 'mythique', 'legendaire'].map((k) => `${k} ${f1((rar[k] ?? 0) / N)}`).join(', ');
-    console.log(`${(noItems ? 'non' : 'oui').padEnd(7)} ${classe.padEnd(7)} ${f1(floor / N).padStart(11)}  ${pct(won / N).padStart(11)}  ` +
-      `${f1(hpN ? hp / hpN : 0).padStart(13)}  ${f1(items / N).padStart(13)}  ${f1(prosp / N).padStart(11)}  ${noItems ? '' : rs}`);
+    console.log(`${(noItems ? 'non' : 'oui').padEnd(7)} ${classe.padEnd(7)} ${f1(floor / N).padStart(6)}  ${bosses.map((b) => pct(b / N).padStart(6)).join('  ')}  ` +
+      `${f1(hpN ? hp / hpN : 0).padStart(15)}  ${f1(items / N).padStart(13)}  ${f1(prosp / N).padStart(11)}  ${noItems ? '' : rs}`);
   }
 }
 

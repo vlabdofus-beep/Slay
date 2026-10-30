@@ -198,8 +198,17 @@ export const RULES = {
   armure_offensive: 'À la fin de ton tour, inflige la moitié de ton armure en dégâts à un ennemi au hasard.',
   braises: 'Quand un ennemi qui brûle meurt, il inflige 2 fois sa brûlure à tous les autres ennemis.',
 } as const;
-export type RuleId = keyof typeof RULES;
-export const RULE_IDS = Object.keys(RULES) as RuleId[];
+/** Règles propres aux Dofus (récompenses de boss), hors du tirage des légendaires. */
+export const DOFUS_RULES = {
+  ivoire: 'Chaque coup que tu reçois inflige 2 dégâts de moins.',
+  pioche_plus: 'Tu pioches 1 carte de plus à chaque tour.',
+  resurrection: 'Une fois par run, quand tu tombes à 0 PV, tu reviens avec la moitié de tes PV.',
+  ocre: '+1 PA à chaque tour. Les monstres commencent chaque combat avec 1 puissance.',
+  cauchemar: 'Les monstres commencent chaque combat avec 3 vulnérabilité.',
+} as const;
+export type RuleId = keyof typeof RULES | keyof typeof DOFUS_RULES;
+export const RULE_IDS = Object.keys(RULES) as (keyof typeof RULES)[];
+export const ruleText = (r: RuleId): string => (r in RULES ? RULES[r as keyof typeof RULES] : DOFUS_RULES[r as keyof typeof DOFUS_RULES]);
 
 // ───────────── tirage ─────────────
 
@@ -269,7 +278,7 @@ export function partText(p: EffectPart): string {
 }
 
 export function effectText(e: ItemEffect): string {
-  if (e.kind === 'rule') return RULES[e.rule];
+  if (e.kind === 'rule') return ruleText(e.rule);
   const t = TRIGGER_BY_ID[e.parts[0].trigger];
   return `${t.text} : ${e.parts.map(partText).join(' et ')}.`;
 }
