@@ -33,7 +33,9 @@ Terre (armure, coups lourds) · Feu (brûlure, zone) · Eau (drain, économie) �
   - déclencheur × récompense (`src/core/effects.ts`) : 45 déclencheurs (dont 5 par élément) et 21 récompenses ;
   - commun : budget 6, rare : 11, mythique : 17 réparti sur deux récompenses du même déclencheur ;
   - légendaire : une des 22 règles écrites à la main (brûlure tenace, première carte gratuite, ricochet…).
-  - Base : environ 590 effets communs, 580 rares, 3 800 paires mythiques, 22 légendaires.
+  - Base : environ 570 effets communs, 590 rares, 3 900 paires mythiques, 22 légendaires.
+  - Un même objet se déclenche au plus 3 fois par tour (une fois pour pioche, PA, réduction de coût) ;
+    aucune autre limite : piles de brûlure et de poison illimitées, objets cumulables.
 - **Prospection** (stat et effets) : chance d'objet après un combat normal (45 % → 90 %) et raretés plus hautes
   (×1 → ×3), rendement décroissant p / (p + 100). Élites : toujours un objet, jamais commun.
 - 6 nouveaux statuts : poison (ignore armure et bouclier, divisé par 2), bouclier (persistant), renvoi de dommages,

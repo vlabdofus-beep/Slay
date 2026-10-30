@@ -203,22 +203,17 @@ test('faiblesses / résistances dérivées des résistances Dofus', async () => 
   assert.deepEqual(weakResist({ neutre: 14, terre: 14, feu: 14, eau: 14, air: 14 }), { weak: [], resist: [] });
 });
 
-test('plafonds : les effets d\'objets donnent au plus 2 cartes et 6 brûlure par tour ; une pile ne dépasse pas 15 brûlure', () => {
-  const c = combatWith(['bouftou'], ['iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee'],
-    { effects: [roll('attaque', 'pioche', 2), roll('attaque', 'brulure', 3)] });
+test('limite par objet : 3 déclenchements par tour (1 pour la pioche), sans plafond de pile ; deux objets se cumulent', () => {
+  const c = combatWith(['bouftou'], ['iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee'],
+    { effects: [roll('attaque', 'pioche', 2), roll('attaque', 'brulure', 3), roll('attaque', 'brulure', 3)] });
   c.player.energy = 9;
   c.enemies[0].hp = 999;
   c.drawPile = Array.from({ length: 10 }, () => newCard('iop_vitalite'));
   const hand0 = c.hand.length;
-  for (let i = 0; i < 4; i++) c.playCard(c.hand.findIndex((x) => x.id === 'iop_coup_epee'), 0);
-  assert.equal(c.hand.length, hand0 - 4 + 2);
-  assert.equal(c.enemies[0].status.brulure, 6);
-  c.enemies[0].status.brulure = 14;
-  c.fxStatus(c.enemies[0], 'brulure', 5); // budget du tour épuisé : rien
-  assert.equal(c.enemies[0].status.brulure, 14);
-  const d = combatWith(['bouftou'], []);
-  d.fxStatus(d.enemies[0], 'brulure', 3);
-  d.enemies[0].status.brulure = 14;
-  d.fxStatus(d.enemies[0], 'brulure', 3);
-  assert.equal(d.enemies[0].status.brulure, 15);
+  for (let i = 0; i < 5; i++) c.playCard(c.hand.findIndex((x) => x.id === 'iop_coup_epee'), 0);
+  assert.equal(c.hand.length, hand0 - 5 + 2); // la pioche ne joue qu'une fois
+  assert.equal(c.enemies[0].status.brulure, 18); // 2 objets × 3 déclenchements × 3
+  c.enemies[0].status.brulure = 40;
+  c.fxStatus(c.enemies[0], 'brulure', 10);
+  assert.equal(c.enemies[0].status.brulure, 50); // aucune limite de pile
 });

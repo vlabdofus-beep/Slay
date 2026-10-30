@@ -149,10 +149,12 @@ Médianes StS2 par acte et type de salle (exports Spire Codex) comparées aux n�
 Nos actes 2 et 3 étaient 25 à 35 % plus faibles que StS2 : c'est corrigé. Nos rencontres comptent souvent un monstre
 de plus, d'où des dégâts cumulés un peu plus hauts pour un coup max un peu plus bas.
 
-Plafonds ajoutés aux effets d'objets et de Dofus (`FX_CAP`, par tour) : 2 cartes, 2 PA, 2 PA de réduction, 6 brûlure,
-6 poison ; et une pile ne dépasse jamais 15 brûlure ou 20 poison (`STACK_CAP`), cartes comprises. Valeurs relevées :
-pioche 3,5 (max 2 par déclenchement), PA 7 (max 1), réduction 6 (max 1), brûlure et poison 1,6 (max 3 et 4),
-en zone 2,8 (max 2 et 3).
+**Limite par objet** (remplace les plafonds globaux, retirés à la demande : les gros builds font partie du jeu) :
+un même objet ou Dofus se déclenche au plus **3 fois par tour** ; **une fois** pour la pioche, les PA et les réductions
+de coût. Aucune limite de pile pour la brûlure ou le poison, et les objets se cumulent librement entre eux.
+L'objet l'indique dans son texte quand son déclencheur peut survenir plusieurs fois dans un tour, et le tirage chiffre
+sa fréquence en conséquence (au plus limite × 4,5 tours par combat). Valeurs relevées dans le tirage : pioche 3,5
+(max 2 par déclenchement), PA 7 (max 1), réduction 6 (max 1), brûlure et poison 1,6 (max 3 et 4), en zone 2,8.
 
 Bot glouton (cartes au hasard), 800 runs, avec objets, après calage : boss 1 battu 10 % (Iop) / 18 % (Crâ),
 boss 2 1 % / 8 %, boss 3 0 % / 2 %. Le bot joue nettement moins bien qu'un humain : ces chiffres servent à comparer

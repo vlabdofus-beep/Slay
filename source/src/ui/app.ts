@@ -159,7 +159,7 @@ function sheet(run: Run): string {
     ${bar(run.hp, run.maxHp, 'hp')}
     <button class="link" data-act="modal-deck">Voir le deck (${run.deck.length} cartes)</button>
     <h3>Équipement</h3><div class="slots">${slots}</div>
-    ${effects ? `<ul class="fx-list">${effects}</ul><p class="muted small">Par tour, les effets d'objets et de Dofus donnent au plus 2 cartes, 2 PA, 6 brûlure et 6 poison.</p>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
+    ${effects ? `<ul class="fx-list">${effects}</ul><p class="muted small">Un même objet se déclenche au plus 3 fois par tour (une fois pour la pioche, les PA et les réductions de coût). Les objets se cumulent entre eux.</p>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
     ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b> ${esc(eggText(id))}</span></li>`).join('')}</ul>` : ''}
     <h3>Kamas et prospection</h3>
     <p class="prosp">${KAMAS(run.kamas)}</p>

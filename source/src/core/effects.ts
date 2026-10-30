@@ -48,6 +48,8 @@ export interface TriggerDef {
   loot?: boolean;
   /** Nombre réel de déclenchements par combat, pour chiffrer la prospection (si différent de freq). */
   lootFreq?: number;
+  /** Ne peut survenir qu'une fois par tour (la limite par objet ne s'affiche pas). */
+  single?: boolean;
 }
 
 export interface RewardDef {
@@ -60,7 +62,15 @@ export interface RewardDef {
   ok?: (t: TriggerDef) => boolean;
   /** Récompense de butin : se chiffre en prospection, pas en puissance de combat. */
   loot?: boolean;
+  /** Nombre maximum de déclenchements par tour pour un même objet (défaut : DEFAULT_PER_TURN). */
+  perTurn?: number;
 }
+
+/** Un même objet ne se déclenche pas plus de 3 fois par tour ; pioche, PA et réduction : une fois. */
+export const DEFAULT_PER_TURN = 3;
+export const perTurn = (r: RewardDef) => r.perTurn ?? DEFAULT_PER_TURN;
+/** Déclencheurs qui peuvent survenir plusieurs fois dans un tour (la limite par tour se lit alors sur l'objet). */
+const REPEATABLE: EventId[] = ['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'];
 
 // ───────────── déclencheurs ─────────────
 
@@ -71,11 +81,11 @@ export const TRIGGERS: TriggerDef[] = [
     const E = EL_NAME[el];
     return [
       { id: `carte_${el}`, event: 'cardPlayed', kind: 'card', el, freq: 3.0, text: `Quand tu joues une carte ${E}`, test: isEl(el) },
-      { id: `premiere_${el}`, event: 'cardPlayed', kind: 'card', el, freq: 2.4, text: `Ta première carte ${E} de chaque tour`,
+      { id: `premiere_${el}`, event: 'cardPlayed', kind: 'card', single: true, el, freq: 2.4, text: `Ta première carte ${E} de chaque tour`,
         test: (c, x) => x.card?.element === el && c.turnEl[el] === 1 },
-      { id: `deuxieme_${el}`, event: 'cardPlayed', kind: 'card', el, freq: 0.8, text: `Quand tu joues ta 2e carte ${E} du tour`,
+      { id: `deuxieme_${el}`, event: 'cardPlayed', kind: 'card', single: true, el, freq: 0.8, text: `Quand tu joues ta 2e carte ${E} du tour`,
         test: (c, x) => x.card?.element === el && c.turnEl[el] === 2 },
-      { id: `ouverture_${el}`, event: 'cardPlayed', kind: 'card', el, freq: 1.4, text: `Ta première carte ${E} du combat`,
+      { id: `ouverture_${el}`, event: 'cardPlayed', kind: 'card', single: true, el, freq: 1.4, text: `Ta première carte ${E} du combat`,
         test: (c, x) => x.card?.element === el && c.combatEl[el] === 1 },
       { id: `acheve_${el}`, event: 'enemyKilled', el, freq: 0.5, loot: true, lootFreq: 0.8, text: `Quand un sort ${E} achève un ennemi`,
         test: (_c, x) => x.element === el },
@@ -102,10 +112,10 @@ export const TRIGGERS: TriggerDef[] = [
   { id: 'competence', event: 'cardPlayed', kind: 'card', freq: 2.5, text: 'Quand tu joues une compétence', test: (_c, x) => x.card?.type === 'competence' },
   { id: 'gratuite', event: 'cardPlayed', kind: 'card', freq: 2.2, text: 'Quand tu joues une carte à 0 PA', test: (_c, x) => x.cost === 0 },
   { id: 'chere', event: 'cardPlayed', kind: 'card', freq: 1.6, text: 'Quand tu joues une carte à 2 PA ou plus', test: (_c, x) => (x.cost ?? 0) >= 2 },
-  { id: 'premiere_carte', event: 'cardPlayed', kind: 'card', freq: 5, text: 'Ta première carte de chaque tour', test: (c) => c.turnCards === 1 },
+  { id: 'premiere_carte', event: 'cardPlayed', kind: 'card', single: true, freq: 5, text: 'Ta première carte de chaque tour', test: (c) => c.turnCards === 1 },
   { id: 'dernier_pa', event: 'cardPlayed', kind: 'card', freq: 4.5, text: 'Quand tu dépenses ton dernier PA',
     test: (c, x) => (x.cost ?? 0) > 0 && c.player.energy === 0 },
-  { id: 'trois_elements', event: 'cardPlayed', kind: 'card', freq: 0.4, text: 'La première fois que tu joues 3 éléments différents dans un tour',
+  { id: 'trois_elements', event: 'cardPlayed', kind: 'card', single: true, freq: 0.4, text: 'La première fois que tu joues 3 éléments différents dans un tour',
     test: (c, x) => !!x.card && x.card.element !== 'neutre' && c.turnElementsCount() === 3 && c.turnEl[x.card.element] === 1 },
   { id: 'zone', event: 'cardPlayed', kind: 'card', freq: 0.9, text: 'Quand un sort touche plusieurs ennemis', test: (_c, x) => (x.hits?.length ?? 0) >= 2 },
   { id: 'cible_brule', event: 'cardPlayed', kind: 'card', freq: 1.9, text: 'Quand tu attaques un ennemi qui brûle',
@@ -144,9 +154,9 @@ export const REWARDS: RewardDef[] = [
   { id: 'armure', value: 1.8, max: 12, ok: (t) => notWon(t) && t.event !== 'blockGained', text: (n) => `gagne ${n} armure`, apply: (c, n) => c.fxBlock(n) },
   { id: 'bouclier', value: 2.2, max: 12, ok: (t) => notWon(t) && t.event !== 'blockGained', text: (n) => `gagne ${n} bouclier`, apply: (c, n) => c.fxStatus(c.player, 'bouclier', n) },
   { id: 'soin', value: 2.8, max: 12, text: (n) => `soigne ${n} PV`, apply: (c, n) => c.fxHeal(n) },
-  { id: 'pioche', value: 3.5, max: 2, ok: inTurn, text: (n) => (n > 1 ? `pioche ${n} cartes` : 'pioche 1 carte'), apply: (c, n) => c.fxDraw(n) },
-  { id: 'pa', value: 7, max: 1, ok: inTurn, text: (n) => `+${n} PA`, apply: (c, n) => c.fxEnergy(n) },
-  { id: 'reduction', value: 6, max: 1, ok: inTurn, text: (n) => `ta prochaine carte coûte ${n} PA de moins`, apply: (c, n) => c.fxDiscount(n) },
+  { id: 'pioche', value: 3.5, max: 2, perTurn: 1, ok: inTurn, text: (n) => (n > 1 ? `pioche ${n} cartes` : 'pioche 1 carte'), apply: (c, n) => c.fxDraw(n) },
+  { id: 'pa', value: 7, max: 1, perTurn: 1, ok: inTurn, text: (n) => `+${n} PA`, apply: (c, n) => c.fxEnergy(n) },
+  { id: 'reduction', value: 6, max: 1, perTurn: 1, ok: inTurn, text: (n) => `ta prochaine carte coûte ${n} PA de moins`, apply: (c, n) => c.fxDiscount(n) },
   { id: 'esquive', value: 9, max: 2, ok: notWon, text: (n) => `+${n} esquive`, apply: (c, n) => c.fxStatus(c.player, 'esquive', n) },
   { id: 'renvoi', value: 1.2, max: 6, ok: notWon, text: (n) => `+${n} renvoi de dommages`, apply: (c, n) => c.fxStatus(c.player, 'renvoi', n) },
   foeStatus('brulure', 'brulure', 1.6, 'brûlure', 3),
@@ -221,8 +231,12 @@ export const BUDGET: Record<Exclude<ItemRarity, 'legendaire'>, number> = { commu
 export const PROSP_PER_POINT = 8;
 const TOLERANCE: [number, number] = [0.6, 1.5];
 
+/** Tours par combat en moyenne (sert à borner la fréquence d'un objet limité par tour). */
+const TURNS_PER_COMBAT = 4.5;
+
 export function partPower(t: TriggerDef, r: RewardDef, n: number): number {
-  return (r.loot ? (t.lootFreq ?? t.freq) / PROSP_PER_POINT : t.freq) * r.value * n;
+  const freq = REPEATABLE.includes(t.event) && !t.single ? Math.min(t.freq, perTurn(r) * TURNS_PER_COMBAT) : t.freq;
+  return (r.loot ? (t.lootFreq ?? freq) / PROSP_PER_POINT : freq) * r.value * n;
 }
 
 /** Quantité qui fait tenir la combinaison dans le budget, ou null si impossible. */
@@ -280,7 +294,11 @@ export function partText(p: EffectPart): string {
 export function effectText(e: ItemEffect): string {
   if (e.kind === 'rule') return ruleText(e.rule);
   const t = TRIGGER_BY_ID[e.parts[0].trigger];
-  return `${t.text} : ${e.parts.map(partText).join(' et ')}.`;
+  const lim = (p: EffectPart) => { const n = perTurn(REWARD_BY_ID[p.reward]); return n === 1 ? 'une fois par tour' : `${n} fois par tour au plus`; };
+  if (!REPEATABLE.includes(t.event) || t.single) return `${t.text} : ${e.parts.map(partText).join(' et ')}.`;
+  const same = new Set(e.parts.map(lim)).size === 1;
+  if (same) return `${t.text} : ${e.parts.map(partText).join(' et ')} (${lim(e.parts[0])}).`;
+  return `${t.text} : ${e.parts.map((p) => `${partText(p)} (${lim(p)})`).join(' et ')}.`;
 }
 
 /** Puissance chiffrée d'un effet (points par combat ; prospection convertie). Les règles valent un forfait. */

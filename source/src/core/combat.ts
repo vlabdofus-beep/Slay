@@ -1,4 +1,4 @@
-import { REWARD_BY_ID, TRIGGER_BY_ID, type EventId, type EvCtx, type ItemEffect, type RewardDef, type RuleId, type TriggerDef } from './effects.ts';
+import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EventId, type EvCtx, type ItemEffect, type RewardDef, type RuleId, type TriggerDef } from './effects.ts';
 import { Rng } from './rng.ts';
 import type {
   CardDef,
@@ -16,10 +16,7 @@ export const HAND_SIZE = 5;
 export const MAX_HAND = 10;
 export const BASE_ENERGY = 3;
 export const MAX_TURNS = 60;
-/** Plafonds des effets d'objets et de Dofus, par tour : rien ne doit pouvoir s'emballer en boucle. */
-export const FX_CAP = { pioche: 2, pa: 2, reduction: 2, brulure: 6, poison: 6 } as const;
-/** Plafond absolu d'une pile de brûlure ou de poison sur une même cible. */
-export const STACK_CAP = { brulure: 15, poison: 20 } as const;
+
 
 export interface Entity {
   hp: number;
@@ -135,7 +132,8 @@ export function resolveCard(lib: Library, inst: CardInstance): CardDef {
   return def;
 }
 
-interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number }
+/** Effet d'un objet : chaque objet ne peut se déclencher qu'un nombre limité de fois par tour (RewardDef.perTurn). */
+interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number }
 
 const ZERO_EL = (): Record<Element, number> => ({ terre: 0, feu: 0, eau: 0, air: 0, neutre: 0 });
 
@@ -167,8 +165,7 @@ export class Combat {
   /** Prospection gagnée pendant le combat (prochain combat / reste de la run). */
   prospection = { next: 0, run: 0 };
   private tripleDone = false;
-  /** Ce que les effets d'objets ont déjà donné ce tour (voir FX_CAP). */
-  private fxTurn = { pioche: 0, pa: 0, reduction: 0, brulure: 0, poison: 0 };
+
   private reviveAvailable = false;
   revived = false;
   private depth = 0;
@@ -201,7 +198,7 @@ export class Combat {
       for (const p of e.parts) {
         const trigger = TRIGGER_BY_ID[p.trigger], reward = REWARD_BY_ID[p.reward];
         if (!trigger || !reward) continue;
-        (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount });
+        (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0 });
       }
     }
     this.reviveAvailable = !!init.revive;
@@ -368,17 +365,8 @@ export class Combat {
   // ───────────── effets d'objets (appelés par les récompenses) ─────────────
 
   fxStatus(t: Entity, id: StatusId, n: number): void {
-    if (id === 'brulure' || id === 'poison') n = this.fxBudget(id, n);
-    if (n <= 0) return;
     if (t === this.player) this.addStatus(t, id, n);
     else this.statusOnEnemy(t as Enemy, id, n);
-  }
-
-  /** Part encore autorisée ce tour pour un effet plafonné. */
-  private fxBudget(k: keyof typeof FX_CAP, n: number): number {
-    const ok = Math.max(0, Math.min(n, FX_CAP[k] - this.fxTurn[k]));
-    this.fxTurn[k] += ok;
-    return ok;
   }
 
   fxBlock(n: number): void {
@@ -390,15 +378,15 @@ export class Combat {
   }
 
   fxDraw(n: number): void {
-    this.drawCards(this.fxBudget('pioche', n));
+    this.drawCards(n);
   }
 
   fxEnergy(n: number): void {
-    this.player.energy += this.fxBudget('pa', n);
+    this.player.energy += n;
   }
 
   fxDiscount(n: number): void {
-    this.discount += this.fxBudget('reduction', n);
+    this.discount += n;
   }
 
   /** Dégâts directs d'un effet d'objet : faiblesses élémentaires et vulnérabilité comptent, pas la puissance. */
@@ -421,6 +409,8 @@ export class Combat {
     this.depth++;
     for (const h of list) {
       if (h.trigger.test && !h.trigger.test(this, x)) continue;
+      if (h.used >= perTurn(h.reward)) continue;
+      h.used++;
       h.reward.apply(this, h.amount, x, h.trigger);
     }
     this.depth--;
@@ -432,8 +422,7 @@ export class Combat {
   }
 
   private addStatus(e: Entity, id: StatusId, amount: number): void {
-    const v = (e.status[id] ?? 0) + amount;
-    e.status[id] = id === 'brulure' || id === 'poison' ? Math.min(STACK_CAP[id], v) : v;
+    e.status[id] = (e.status[id] ?? 0) + amount;
   }
 
   /** Statut posé par le joueur sur un ennemi (règles « brûlure empoisonnée »). */
@@ -460,7 +449,7 @@ export class Combat {
     this.turnCards = 0;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
-    this.fxTurn = { pioche: 0, pa: 0, reduction: 0, brulure: 0, poison: 0 };
+    for (const list of Object.values(this.handlers)) for (const h of list ?? []) h.used = 0;
     const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('pioche_plus') ? 1 : 0);
     this.drawCards(target);
     this.emit('turnStart');
