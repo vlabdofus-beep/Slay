@@ -136,7 +136,8 @@ button:disabled { cursor: not-allowed; }
 
 /* ───────── barres ───────── */
 .bar { position: relative; display: block; height: 22px; background: var(--panel-deep); overflow: hidden; border: 1px solid var(--line); }
-.bar-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg, #d0614f, var(--pv) 55%, #8a2f26); transition: width .35s ease; }
+.bar-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg, #d0614f, var(--pv) 55%, #8a2f26); transition: width .22s cubic-bezier(.2,.8,.2,1); }
+.bar-trail { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg, #fff1c8, #e9c27a); opacity: .85; transition: width .5s ease-in .32s; }
 .bar-label { position: relative; display: block; text-align: center; font-size: .82rem; font-weight: 700; line-height: 20px; text-shadow: 0 1px 1px rgba(0, 0, 0, .6); }
 .shield { display: inline-block; margin-left: .4rem; padding: 0 .35rem; border-radius: 3px; background: var(--armure); color: #102028; font-size: .78rem; text-shadow: none; }
 
@@ -495,7 +496,6 @@ body[data-screen="combat"] .bg { display: none; }
 .hand-slot .card.dragging { transition: none; z-index: 6; pointer-events: none; }
 .hand-slot .card.will-play { box-shadow: 0 0 0 2px var(--gold-2), 0 0 30px rgba(240, 210, 142, .6); }
 .hand-slot .card.aiming { box-shadow: 0 0 0 2px var(--gold-2), 0 0 24px rgba(240, 210, 142, .5); }
-.hand-slot.casting { visibility: hidden; transition: none; }
 .hand .muted { position: absolute; transform: translate(-50%, -4rem); white-space: nowrap; }
 .combatview.busy .hand-slot, .combatview.busy .end-turn { pointer-events: none; }
 .combatview.busy .end-turn { opacity: .6; }
@@ -715,6 +715,7 @@ body[data-screen="styleguide"] { --accent: var(--gold); }
 }
 
 /* Carte qui file vers sa cible */
+.card-flying.to-pile { box-shadow: 0 6px 14px rgba(0, 0, 0, .5) !important; }
 .card-flying { position: fixed !important; margin: 0; z-index: 30; pointer-events: none; transform-origin: 50% 50%; box-shadow: 0 0 0 2px var(--gold-2), 0 0 26px rgba(240, 210, 142, .7) !important; }
 
 /* Entrée du boss */

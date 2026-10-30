@@ -242,7 +242,9 @@ class Stage {
   backdrop: HTMLCanvasElement | null = null;
   char: Character | null = null;
   charKey = '';
-  anim = { name: 'idle', t0: 0, hold: false };
+  anim = { name: 'idle', t0: 0, hold: false, rate: 1 };
+  /** Pose quittée : fondue courte pour éviter les sauts entre deux animations. */
+  prev: { name: string; t: number; at: number } | null = null;
   sparks: Spark[] = [];
   private raf = 0;
 
@@ -290,7 +292,7 @@ class Stage {
       void buildSpells(BREED[classe], gender, spellAnimsFor(classe));
     }
     for (const c of cardsOf(classe)) for (const f of castPlan(c).fx) loadFx(f[1]);
-    this.anim = { name: 'idle', t0: performance.now(), hold: false };
+    this.anim = { name: 'idle', t0: performance.now(), hold: false, rate: 1 };
     if (!this.raf) this.loop();
   }
 
@@ -305,17 +307,25 @@ class Stage {
     return { x: this.W * STAGE.playerX, y: this.H * STAGE.ground, h: this.H * STAGE.playerH };
   }
 
+  /** Vitesse de lecture : les sorts sont joués un peu plus vite que dans Dofus, pour garder le rythme des cartes. */
+  private rateOf(name: string): number {
+    return name === 'idle' || name === 'death' ? 1 : name === 'hit' ? 1.15 : 1.3;
+  }
+
   private play(name: string, hold = false): number {
     const n = animOf(this.char, name) ? name : name.startsWith('AnimAttaque') ? 'cast' : name;
-    this.anim = { name: n, t0: performance.now(), hold };
-    return animLength(this.char, n) || 0.6;
+    const now = performance.now();
+    if (this.char) this.prev = { name: this.anim.name, t: ((now - this.anim.t0) / 1000) * this.anim.rate, at: now };
+    const rate = this.rateOf(n);
+    this.anim = { name: n, t0: now, hold, rate };
+    return (animLength(this.char, n) || 0.6) / rate;
   }
 
   /** Lance une carte : animation, projectile, impacts. Renvoie le délai (ms) jusqu'à l'impact. */
   cast(card: CardDef, targets: { x: number; y: number }[], self: boolean): number {
     const plan = castPlan(card);
     this.play(plan.anim);
-    const shot = this.char ? shotTime(this.char, animOf(this.char, plan.anim) ? plan.anim : 'cast') : 0.2;
+    const shot = this.char ? shotTime(this.char, this.anim.name) / this.anim.rate : 0.2;
     const now = performance.now();
     const p = this.player;
     const missile = plan.fx.find((f) => f[0] === 'projectile' || f[0] === 'missile');
@@ -382,10 +392,22 @@ class Stage {
     x.beginPath(); x.ellipse(p.x, p.y + 2, p.h * 0.22, p.h * 0.05, 0, 0, Math.PI * 2); x.fill();
     this.sparks = this.sparks.filter((s) => !s.under || this.drawSpark(x, s, now));
     if (this.char) {
-      const t = (now - this.anim.t0) / 1000;
-      const len = animLength(this.char, this.anim.name);
-      if (this.anim.name !== 'idle' && !this.anim.hold && len && t > len) this.anim = { name: 'idle', t0: now, hold: false };
-      drawAnim(x, this.char, this.anim.name, (now - this.anim.t0) / 1000, p.x, p.y, p.h);
+      const a = this.anim;
+      const t = ((now - a.t0) / 1000) * a.rate;
+      const len = animLength(this.char, a.name);
+      if (a.name !== 'idle' && !a.hold && len && t > len) {
+        this.prev = { name: a.name, t: len, at: now };
+        this.anim = { name: 'idle', t0: now, hold: false, rate: 1 };
+      }
+      // Fondue de 110 ms depuis la pose quittée
+      const fade = this.prev ? 1 - (now - this.prev.at) / 110 : 0;
+      if (this.prev && fade > 0) {
+        x.globalAlpha = fade;
+        drawAnim(x, this.char, this.prev.name, this.prev.t, p.x, p.y, p.h);
+        x.globalAlpha = 1 - fade * 0.5;
+      } else this.prev = null;
+      drawAnim(x, this.char, this.anim.name, ((now - this.anim.t0) / 1000) * this.anim.rate, p.x, p.y, p.h);
+      x.globalAlpha = 1;
     }
     this.sparks = this.sparks.filter((s) => s.under || this.drawSpark(x, s, now));
   };

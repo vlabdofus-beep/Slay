@@ -34,8 +34,10 @@ const ui = {
   bossIntro: null as object | null,
   /** Animation en cours : les actions de combat attendent l'impact. */
   busy: false,
-  /** Carte en train d'être lancée (masquée de la main jusqu'à l'impact). */
-  casting: -1,
+  /** Cartes jouées dont le fantôme vole déjà (pas d'envol vers la défausse). */
+  flying: new Set<number>(),
+  /** Fin de combat en cours de mise en scène. */
+  ending: false,
   /** Monstres qui viennent d'attaquer (petit élan vers le joueur). */
   lunge: new Set<number>(),
   gender: loadGender(),
@@ -76,9 +78,9 @@ function pic(src: string | undefined, label: string, cls: string): string {
     src ? `<img src="${src}" alt="" loading="lazy" onerror="this.remove()">` : ''}</span>`;
 }
 
-function bar(value: number, max: number, cls: string, extra = ''): string {
+function bar(value: number, max: number, cls: string, extra = '', key = ''): string {
   const pct = Math.max(0, Math.min(100, (100 * value) / Math.max(1, max)));
-  return `<span class="bar ${cls}"><span class="bar-fill" style="width:${pct}%"></span><span class="bar-label">${value} / ${max}${extra}</span></span>`;
+  return `<span class="bar ${cls}"${key ? ` data-key="${key}"` : ''}><span class="bar-fill" style="width:${pct}%"></span><span class="bar-label">${value} / ${max}${extra}</span></span>`;
 }
 
 function statusChips(st: StatusMap): string {
@@ -335,16 +337,18 @@ function floatsHtml(uid: number): string {
 function enemyHtml(e: Enemy, targeting: boolean): string {
   const c = ui.run!.combat!;
   const it = intentSummary(c, e);
+  const v = shown.get(e.uid);
+  const hp = v?.hp ?? e.hp, block = v?.block ?? e.block, dead = v?.dead ?? e.dead;
   const weak = e.def.weak.map((el) => elIcon(el, 'el-mini')).join('');
   const resist = e.def.resist.map((el) => elIcon(el, 'el-mini')).join('');
   const can = targeting && !e.dead;
-  return `<button class="enemy${e.dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
-    ${e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
+  return `<button class="enemy${dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
+    ${dead || e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
     ${pic(e.def.image, e.def.name, 'enemy-pic')}
     ${floatsHtml(e.uid)}
     <span class="enemy-under">
       <span class="enemy-name">${esc(e.def.name)}</span>
-      ${bar(e.hp, e.maxHp, 'hp', e.block ? ` <span class="shield">${e.block}</span>` : '')}
+      ${bar(hp, e.maxHp, 'hp', block ? ` <span class="shield">${block}</span>` : '', `e${e.uid}`)}
       <span class="chips">${statusChips(e.status)}</span>
       <span class="affinity">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}</span>
     </span>
@@ -353,32 +357,16 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
 
 const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.5 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 4 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
 
-function viewCombat(run: Run): string {
+function topbarHtml(run: Run): string {
   const c = run.combat!;
   const p = c.player;
+  const v = shown.get(-1);
   const enc = run.encounter ? ENCOUNTERS[run.encounter] : null;
-  const targeting = ui.selecting !== null;
   const title = enc ? [...new Set(enc.monsters.map((id) => LIBRARY.monsters[id].name))].join(', ') : 'Combat';
   const breed = DOFUS.breeds[run.classe];
-  const n = c.hand.length;
-  const hand = c.hand.map((inst, i) => {
-    const def = c.cardDef(inst);
-    const sel = ui.selecting?.kind === 'card' && ui.selecting.index === i;
-    const o = i - (n - 1) / 2;
-    return `<div class="hand-slot${ui.casting === i ? ' casting' : ''}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: def.cost > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '' })}</div>`;
-  }).join('');
-  const actives = p.actives.map((a, i) => `<button class="active${a.used ? ' used' : ''}${ui.selecting?.kind === 'active' && ui.selecting.index === i ? ' sel' : ''}" data-act="active" data-index="${i}" ${a.used ? 'disabled' : ''} title="${esc(activeText(a.def))}">${esc(a.def.name)}</button>`).join('');
-  const passives = [
-    p.passives.terreArmure && PASSIVE_TEXT.terre(p.passives.terreArmure),
-    p.passives.feuBrulure && PASSIVE_TEXT.feu(p.passives.feuBrulure),
-    p.passives.eauSoin && PASSIVE_TEXT.eau(p.passives.eauSoin),
-    p.passives.airPioche && PASSIVE_TEXT.air(p.passives.airPioche),
-    p.passives.prisme && `Prisme ${p.passives.prisme}.`,
-  ].filter(Boolean);
-  return `<main class="combatview${ui.busy ? ' busy' : ''}">
-    <header class="topbar">
+  return `<header class="topbar">
       <span class="tb-who"><img src="${asset(`classes/${breed.id}.png`)}" alt=""><b>${esc(breed.n)}</b></span>
-      <span class="tb-hp" title="Points de vie">${HEART}${p.hp}/${p.maxHp}</span>
+      <span class="tb-hp" title="Points de vie">${HEART}${v?.hp ?? p.hp}/${p.maxHp}</span>
       <span class="tb-floor">Étage ${run.stats.floor}</span>
       <span class="tb-enc"><b>${esc(title)}</b> ${run.node ? NODE_LABEL[run.node.type] : ''}, tour ${c.turn}</span>
       <span class="tb-actions">
@@ -386,17 +374,48 @@ function viewCombat(run: Run): string {
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
         <button class="tb-btn" data-act="toggle-log" aria-pressed="${ui.logOpen}">${uiIcon('journal')}Journal</button>
       </span>
-    </header>
-    <section class="arena${targeting ? ' targeting' : ''}">
+    </header>`;
+}
+
+function arenaHtml(run: Run): string {
+  const c = run.combat!;
+  const p = c.player;
+  const v = shown.get(-1);
+  const hp = v?.hp ?? p.hp, block = v?.block ?? p.block;
+  const targeting = ui.selecting !== null;
+  const passives = [
+    p.passives.terreArmure && PASSIVE_TEXT.terre(p.passives.terreArmure),
+    p.passives.feuBrulure && PASSIVE_TEXT.feu(p.passives.feuBrulure),
+    p.passives.eauSoin && PASSIVE_TEXT.eau(p.passives.eauSoin),
+    p.passives.airPioche && PASSIVE_TEXT.air(p.passives.airPioche),
+    p.passives.prisme && `Prisme ${p.passives.prisme}.`,
+  ].filter(Boolean);
+  return `<section class="arena${targeting ? ' targeting' : ''}">
       <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
-        ${bar(p.hp, p.maxHp, 'hp', p.block ? ` <span class="shield">${p.block}</span>` : '')}
+        ${bar(hp, p.maxHp, 'hp', block ? ` <span class="shield">${block}</span>` : '', 'p')}
         ${floatsHtml(-1)}
         <span class="chips">${statusChips(p.status)}</span>
         ${passives.length ? `<span class="passives">${passives.join(' ')}</span>` : ''}
       </div>
       <div class="foes" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
       ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}
-    </section>
+    </section>`;
+}
+
+function viewCombat(run: Run): string {
+  const c = run.combat!;
+  const p = c.player;
+  const n = c.hand.length;
+  const hand = c.hand.map((inst, i) => {
+    const def = c.cardDef(inst);
+    const sel = ui.selecting?.kind === 'card' && ui.selecting.index === i;
+    const o = i - (n - 1) / 2;
+    return `<div class="hand-slot" data-cid="${inst.uid}" style="--o:${o}">${cardHtml(def, { inst, act: 'play', data: `data-index="${i}"`, disabled: def.cost > p.energy, selected: sel, live: true, hint: i < 9 ? String(i + 1) : '' })}</div>`;
+  }).join('');
+  const actives = p.actives.map((a, i) => `<button class="active${a.used ? ' used' : ''}${ui.selecting?.kind === 'active' && ui.selecting.index === i ? ' sel' : ''}" data-act="active" data-index="${i}" ${a.used ? 'disabled' : ''} title="${esc(activeText(a.def))}">${esc(a.def.name)}</button>`).join('');
+  return `<main class="combatview${ui.busy ? ' busy' : ''}">
+    ${topbarHtml(run)}
+    ${arenaHtml(run)}
     <footer class="tray">
       <button class="pile pile-draw" data-act="pile" data-pile="draw" title="Pioche : ${c.drawPile.length} cartes" aria-label="Pioche, ${c.drawPile.length} cartes">${c.drawPile.length ? cardBack('pb-2') + cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.drawPile.length}</b></button>
       <div class="gem${p.energy ? '' : ' empty'}" role="img" aria-label="${p.energy} PA sur ${BASE_ENERGY}"><b>${p.energy}/${BASE_ENERGY}</b><span>PA</span></div>
@@ -638,7 +657,11 @@ function render(): void {
   else if (run.phase === 'zaap') html = viewZaap(run);
   else html = viewEnd(run);
   document.body.dataset.screen = run ? run.phase : 'title';
+  if (run?.phase !== 'combat' || !run.combat) { for (const ev of pending) clearTimeout(ev.timer); pending.length = 0; shown.clear(); }
+  const handBefore = captureHand();
+  const barsBefore = captureBars();
   root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) : '');
+  if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
   if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender);
   else stage.hide();
   if (!run) startPreviews();
@@ -647,10 +670,124 @@ function render(): void {
     here?.scrollIntoView({ block: 'center' });
   }
   if (run?.phase === 'combat' && run.combat && run.node?.type === 'boss' && ui.bossIntro !== run.combat) bossIntro(run);
+  clearMarks();
+}
+
+function clearMarks(): void {
   ui.hit.clear();
   ui.lunge.clear();
   ui.playerHit = 0;
   ui.floats.clear();
+}
+
+/** Rendu partiel au moment d'un impact : seuls la scène et la barre du haut changent, la main reste en place
+ *  (une carte en cours de glisser n'est pas interrompue). */
+function renderArena(): void {
+  const run = ui.run;
+  const arena = root.querySelector('.arena');
+  const top = root.querySelector('.topbar');
+  if (!run?.combat || run.phase !== 'combat' || !arena || !top) { if (!drag) render(); return; }
+  const barsBefore = captureBars();
+  arena.outerHTML = arenaHtml(run);
+  top.outerHTML = topbarHtml(run);
+  tweenBars(barsBefore);
+  if (drag?.over != null) root.querySelector(`.enemy[data-uid="${drag.over}"]`)?.classList.add('aimed');
+  clearMarks();
+}
+
+// ───────────── mouvements de la main ─────────────
+// La main est entièrement redessinée à chaque action ; on rejoue le mouvement (technique FLIP) :
+// chaque carte glisse de son ancienne place à la nouvelle, les cartes piochées sortent de la pioche,
+// les cartes défaussées filent vers la défausse.
+
+type HandShot = Map<number, { slot: DOMRect; card: DOMRect; el: HTMLElement }>;
+
+function captureHand(): HandShot {
+  const m: HandShot = new Map();
+  root.querySelectorAll<HTMLElement>('.hand-slot[data-cid]').forEach((s) => {
+    const card = s.querySelector('.card') as HTMLElement | null;
+    if (card) m.set(Number(s.dataset.cid), { slot: s.getBoundingClientRect(), card: card.getBoundingClientRect(), el: card });
+  });
+  return m;
+}
+
+const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+
+function animateHand(before: HandShot): void {
+  const flying = new Set(ui.flying);
+  ui.flying.clear();
+  if (reduceMotion()) return;
+  const drawR = root.querySelector('.pile-draw')?.getBoundingClientRect();
+  const discR = root.querySelector('.pile-discard')?.getBoundingClientRect();
+  const present = new Set<number>();
+  let drawn = 0;
+  root.querySelectorAll<HTMLElement>('.hand-slot[data-cid]').forEach((s) => {
+    const cid = Number(s.dataset.cid);
+    present.add(cid);
+    const r = s.getBoundingClientRect();
+    const old = before.get(cid);
+    if (old) {
+      const dx = old.slot.left - r.left, dy = old.slot.top - r.top;
+      if (Math.abs(dx) + Math.abs(dy) > 1) s.animate([{ translate: `${dx}px ${dy}px` }, { translate: '0 0' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    } else if (drawR) {
+      const a = center(drawR), b = center(r);
+      s.animate([
+        { translate: `${a.x - b.x}px ${a.y - b.y}px`, scale: '.22', opacity: 0 },
+        { opacity: 1, offset: 0.25 },
+        { translate: '0 0', scale: '1', opacity: 1 },
+      ], { duration: 420, delay: drawn++ * 70, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' });
+    }
+  });
+  if (!discR) return;
+  let k = 0;
+  for (const [cid, old] of before) {
+    if (present.has(cid) || flying.has(cid)) continue;
+    const ghost = old.el.cloneNode(true) as HTMLElement;
+    ghost.classList.remove('sel', 'dragging', 'aiming', 'will-play');
+    ghost.classList.add('card-flying', 'to-pile');
+    Object.assign(ghost.style, { left: `${old.card.left}px`, top: `${old.card.top}px`, width: `${old.card.width}px`, height: `${old.card.height}px`, transform: 'none' });
+    document.body.appendChild(ghost);
+    const a = center(old.card), b = center(discR);
+    const anim = ghost.animate([
+      { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(.2) rotate(25deg)`, opacity: 0.2 },
+    ], { duration: 360, delay: k++ * 45, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'both' });
+    anim.onfinish = () => ghost.remove();
+  }
+}
+
+// Barres de vie : la barre glisse vers sa nouvelle valeur, une traînée claire montre les PV perdus.
+function captureBars(): Map<string, number> {
+  const m = new Map<string, number>();
+  root.querySelectorAll<HTMLElement>('.bar[data-key]').forEach((b) => {
+    const f = b.querySelector('.bar-fill') as HTMLElement | null;
+    if (f) m.set(b.dataset.key!, parseFloat(f.style.width));
+  });
+  return m;
+}
+
+function tweenBars(before: Map<string, number>): void {
+  if (reduceMotion()) return;
+  root.querySelectorAll<HTMLElement>('.bar[data-key]').forEach((b) => {
+    const old = before.get(b.dataset.key!);
+    const f = b.querySelector('.bar-fill') as HTMLElement | null;
+    if (old == null || !f) return;
+    const now = parseFloat(f.style.width);
+    if (Math.abs(old - now) < 0.1) return;
+    f.style.transition = 'none';
+    f.style.width = `${old}%`;
+    if (now < old) {
+      const trail = document.createElement('span');
+      trail.className = 'bar-trail';
+      trail.style.width = `${old}%`;
+      b.insertBefore(trail, f);
+      requestAnimationFrame(() => { trail.style.width = `${now}%`; });
+      setTimeout(() => trail.remove(), 1100);
+    }
+    void f.offsetWidth;
+    f.style.transition = '';
+    f.style.width = `${now}%`;
+  });
 }
 
 // ───────────── entrée du boss : le seul grand moment de mise en scène ─────────────
@@ -692,7 +829,17 @@ function bossIntro(run: Run): void {
 
 // ───────────── actions ─────────────
 
-type Snap = { foes: Map<number, { hp: number; block: number }>; hp: number; block: number };
+// ───────────── impacts ─────────────
+// La logique s'applique dès qu'une carte est jouée (PA, main, cibles possibles), ce qui permet d'enchaîner
+// les cartes sans attendre la fin des animations. L'affichage, lui, garde les anciennes valeurs (PV, armure,
+// mort) jusqu'à l'impact du sort : c'est la table `shown`.
+
+type Vals = { hp: number; block: number; dead: boolean };
+type Snap = Map<number, Vals>;
+interface Impact { before: Snap; after: Snap; el?: Element; timer: number }
+
+const shown = new Map<number, Vals>();
+const pending: Impact[] = [];
 
 function pushFloat(uid: number, f: { n: number; el: Element | 'soin' | 'armure'; text?: string }): void {
   const l = ui.floats.get(uid) ?? [];
@@ -700,36 +847,78 @@ function pushFloat(uid: number, f: { n: number; el: Element | 'soin' | 'armure';
   ui.floats.set(uid, l);
 }
 
-/** Après une action : chiffres et marques visuelles, puis fin de combat (laissée visible un instant).
- *  `el` : élément de ce qui a frappé les monstres (carte jouée) ; sinon, brûlure → feu. */
-function afterCombatAction(snap: Snap, el?: Element): void {
-  const run = ui.run!;
-  const c = run.combat!;
-  for (const e of c.enemies) {
-    const b = snap.foes.get(e.uid);
-    if (!b) continue;
-    if (b.hp > e.hp) { ui.hit.add(e.uid); pushFloat(e.uid, { n: b.hp - e.hp, el: el ?? 'feu' }); }
-    else if (el && b.block > e.block && b.hp === e.hp) pushFloat(e.uid, { n: 0, el: 'armure', text: 'Bloqué' });
-  }
-  const p = c.player;
-  if (p.hp < snap.hp) {
-    ui.playerHit = snap.hp - p.hp;
-    pushFloat(-1, { n: snap.hp - p.hp, el: 'neutre' });
-    if (p.hp > 0) stage.hurt();
-  } else if (p.hp > snap.hp) pushFloat(-1, { n: p.hp - snap.hp, el: 'soin' });
-  if (p.block > snap.block && !el) { /* armure gagnée en fin de tour : la barre suffit */ }
-  else if (p.block > snap.block) pushFloat(-1, { n: p.block - snap.block, el: 'armure', text: `+${p.block - snap.block}` });
-  ui.selecting = null;
-  if (c.outcome !== 'ongoing' && stage.visible) {
-    if (c.outcome === 'lost') stage.die();
-    ui.busy = true;
-    setTimeout(() => { ui.busy = false; run.checkCombatEnd(); render(); }, c.outcome === 'lost' ? 1800 : 1000);
-  } else run.checkCombatEnd();
-}
-
 function snapshot(): Snap {
   const c = ui.run!.combat!;
-  return { foes: new Map(c.enemies.map((e) => [e.uid, { hp: e.hp, block: e.block }])), hp: c.player.hp, block: c.player.block };
+  const m: Snap = new Map(c.enemies.map((e) => [e.uid, { hp: e.hp, block: e.block, dead: e.dead }]));
+  m.set(-1, { hp: c.player.hp, block: c.player.block, dead: c.player.hp <= 0 });
+  return m;
+}
+
+function changedIn(ev: { before: Snap; after: Snap }): number[] {
+  const out: number[] = [];
+  for (const [uid, a] of ev.after) {
+    const b = ev.before.get(uid);
+    if (b && (b.hp !== a.hp || b.block !== a.block || b.dead !== a.dead)) out.push(uid);
+  }
+  return out;
+}
+
+/** Enregistre ce qu'une action a changé ; l'affichage suivra après `delay` ms. */
+function schedule(before: Snap, after: Snap, el: Element | undefined, delay: number): void {
+  const ev: Impact = { before, after, el, timer: 0 };
+  const uids = changedIn(ev);
+  if (!uids.length) return;
+  for (const uid of uids) if (!shown.has(uid)) shown.set(uid, before.get(uid)!);
+  pending.push(ev);
+  if (delay <= 0) { resolve(ev); return; }
+  ev.timer = window.setTimeout(() => { resolve(ev); renderArena(); settle(); }, delay);
+}
+
+/** Impact : les valeurs affichées rattrapent la logique, avec chiffres et secousses. */
+function resolve(ev: Impact): void {
+  const i = pending.indexOf(ev);
+  if (i < 0) return;
+  pending.splice(i, 1);
+  clearTimeout(ev.timer);
+  for (const uid of changedIn(ev)) {
+    const later = pending.some((p) => changedIn(p).includes(uid));
+    if (later) shown.set(uid, ev.after.get(uid)!); else shown.delete(uid);
+    const a = ev.before.get(uid)!, b = ev.after.get(uid)!;
+    if (uid === -1) {
+      if (b.hp < a.hp) {
+        ui.playerHit = a.hp - b.hp;
+        pushFloat(-1, { n: a.hp - b.hp, el: 'neutre' });
+        if (b.hp > 0) stage.hurt();
+      } else if (b.hp > a.hp) pushFloat(-1, { n: b.hp - a.hp, el: 'soin' });
+      if (b.block > a.block && ev.el) pushFloat(-1, { n: 0, el: 'armure', text: `+${b.block - a.block}` });
+    } else if (b.hp < a.hp) {
+      ui.hit.add(uid);
+      pushFloat(uid, { n: a.hp - b.hp, el: ev.el ?? 'feu' });
+    } else if (ev.el && b.block < a.block) pushFloat(uid, { n: 0, el: 'armure', text: 'Bloqué' });
+  }
+}
+
+/** Tous les impacts en attente, tout de suite (avant le tour des monstres). */
+function flushImpacts(): void {
+  for (const ev of [...pending]) resolve(ev);
+}
+
+/** Fin de combat : on attend le dernier impact, on laisse la scène visible un instant, puis on passe à la suite. */
+function settle(): void {
+  const run = ui.run;
+  const c = run?.combat;
+  if (!run || !c || c.outcome === 'ongoing') return;
+  ui.busy = true;
+  if (pending.length || ui.ending) return;
+  ui.ending = true;
+  if (c.outcome === 'lost') stage.die();
+  setTimeout(() => {
+    ui.ending = false;
+    ui.busy = false;
+    shown.clear();
+    run.checkCombatEnd();
+    render();
+  }, !stage.visible ? 0 : c.outcome === 'lost' ? 1800 : 1000);
 }
 
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -750,7 +939,7 @@ function flyCard(index: number, to: { x: number; y: number }, ms: number): void 
     { transform: 'translate(0, 0) scale(1) rotate(0deg)', opacity: 1, filter: 'brightness(1)' },
     { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - 70}px) scale(.62) rotate(${tilt}deg)`, opacity: 1, filter: 'brightness(1.25)', offset: 0.5 },
     { transform: `translate(${dx}px, ${dy}px) scale(.18) rotate(${tilt * 2}deg)`, opacity: 0, filter: 'brightness(2.2)' },
-  ], { duration: Math.max(260, Math.min(ms, 520)), easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
+  ], { duration: Math.max(240, Math.min(ms, 650)), easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
   anim.onfinish = () => ghost.remove();
 }
 
@@ -762,49 +951,47 @@ function enemyPoint(uid: number): { x: number; y: number } | null {
   return { x: r.left + r.width / 2, y: r.bottom - r.height * 0.06 };
 }
 
-/** Joue une carte : l'animation part tout de suite, l'effet s'applique à l'impact. */
+/** Joue une carte : la logique s'applique tout de suite, l'animation part, l'affichage suit à l'impact. */
 function playCard(index: number, target?: number): void {
   const run = ui.run!;
   const c = run.combat!;
   if (ui.busy || !c.hand[index]) return;
-  const def = c.cardDef(c.hand[index]);
+  const inst = c.hand[index];
+  const def = c.cardDef(inst);
   if (def.cost > c.player.energy) return;
   const living = c.living();
   const uid = def.target === 'enemy' ? (target ?? living[0]?.uid) : undefined;
   const points = (def.target === 'enemy' ? [uid as number] : def.target === 'all_enemies' ? living.map((e) => e.uid) : [])
     .map(enemyPoint).filter((p): p is { x: number; y: number } => !!p);
   const delay = stage.visible ? stage.cast(def, points, def.target === 'self') : 0;
-  ui.selecting = null;
   const p = stage.player;
-  flyCard(index, points[0] ?? { x: p.x, y: p.y - p.h * 0.5 }, delay);
-  const apply = () => {
-    const snap = snapshot();
-    try { c.playCard(index, uid); } catch (err) { console.error(err); }
-    ui.busy = false;
-    ui.casting = -1;
-    afterCombatAction(snap, def.element);
-    render();
-  };
-  if (!delay) { apply(); return; }
-  ui.busy = true;
-  ui.casting = index;
-  setTimeout(apply, delay);
+  ui.flying.add(inst.uid);
+  flyCard(index, points[0] ?? { x: p.x, y: p.y - p.h * 0.55 }, delay);
+  ui.selecting = null;
+  const before = snapshot();
+  try { c.playCard(index, uid); } catch (err) { console.error(err); }
+  schedule(before, snapshot(), def.element, delay);
+  settle();
 }
 
 function useActive(index: number, target?: number): void {
   if (ui.busy) return;
-  const snap = snapshot();
+  const before = snapshot();
   ui.run!.combat!.useActive(index, target);
-  afterCombatAction(snap, 'neutre');
+  schedule(before, snapshot(), 'neutre', 0);
+  ui.selecting = null;
+  settle();
 }
 
 function endTurn(): void {
   if (ui.busy) return;
   const c = ui.run!.combat!;
+  flushImpacts();
   for (const e of c.living()) if (c.intent(e).damage > 0) ui.lunge.add(e.uid);
-  const snap = snapshot();
+  const before = snapshot();
   c.endTurn();
-  afterCombatAction(snap);
+  schedule(before, snapshot(), undefined, 0);
+  settle();
 }
 
 function select(kind: 'card' | 'active', index: number): void {
@@ -1034,7 +1221,7 @@ document.addEventListener('keydown', (ev) => {
 (window as unknown as { __game: unknown }).__game = {
   get run() { return ui.run; },
   newRun(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') { ui.run = new Run(classe, seed, gender); ui.modal = null; ui.selecting = null; render(); },
-  playCard, endTurn, stage,
+  playCard, endTurn, stage, drawAnim,
   get busy() { return ui.busy; },
   render,
 };

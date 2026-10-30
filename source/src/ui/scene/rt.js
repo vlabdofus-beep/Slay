@@ -117,11 +117,37 @@ function rtMissile(P,names,FR,shot){
  if(!best)return null;const S=RT_S,u=best.u;const w=Math.ceil((u.x1-u.x0)*S)+4,h=Math.ceil((u.y1-u.y0)*S)+4;if(w<4||h<4)return null;
  const c=document.createElement('canvas');c.width=w;c.height=h;rtFrame(c.getContext('2d'),P,names,best.keep,-u.x0*S+2,-u.y0*S+2,S);
  return c}
-/* cuisson : chaque animation reçoit sa propre planche ; méta compatible avec drawAnim */
+/* ───── images intermédiaires ─────
+   Les animations de Dofus sont stockées à 15 (ou 7,5) images par seconde. On calcule une image
+   entre chaque paire : chaque pièce du squelette est interpolée (matrice et opacité) si elle
+   existe dans les deux images et ne fait pas de saut ; sinon on garde la pose de départ. */
+function rtMid(a,b){
+ const seen={},idx={};
+ for(let i=0;i<b.length;i++){const k=b[i][0];const o=seen[k]=(seen[k]||0)+1;idx[k+'#'+o]=b[i]}
+ const cnt={},out=[];
+ for(const r of a){const k=r[0];const o=cnt[k]=(cnt[k]||0)+1;const q=idx[k+'#'+o];
+  if(!q||q.length!==r.length){out.push(r);continue}
+  const detA=r[1]*r[5]-r[2]*r[4],detB=q[1]*q[5]-q[2]*q[4];
+  const lin=Math.abs(r[1]-q[1])+Math.abs(r[2]-q[2])+Math.abs(r[4]-q[4])+Math.abs(r[5]-q[5]);
+  const mv=Math.hypot(r[3]-q[3],r[6]-q[6]);
+  if(detA*detB<=0||lin>1.2||mv>90){out.push(r);continue}
+  const m=r.slice();for(let j=1;j<r.length;j++)m[j]=(r[j]+q[j])/2;out.push(m)}
+ return out}
+function rtTween(A){
+ const d={};
+ for(const [dir,FR] of Object.entries(A.d)){
+  const o=[];for(let i=0;i<FR.length;i++){o.push(FR[i]);const nx=i+1<FR.length?FR[i+1]:(A.loop?FR[0]:null);if(nx)o.push(rtMid(FR[i],nx))}
+  d[dir]=o}
+ return {...A,d,fps:A.fps*2,shot:A.shot==null?null:A.shot*2}}
+
+/* cuisson : chaque animation reçoit sa propre planche ; méta compatible avec drawAnim.
+   opt.dirs : directions à garder (le jeu n'affiche que la direction 1). opt.tween : doubler les images. */
 async function rtBake(P,pack,opt={}){
  const S=RT_S,SS=opt.ss||1.25,meta={S,a:{}};
- for(const [an,A] of Object.entries(pack.anims)){
+ for(let [an,A] of Object.entries(pack.anims)){
   if(opt.only&&!opt.only.includes(an))continue;
+  if(opt.dirs){const d={};for(const k of opt.dirs)if(A.d[k])d[k]=A.d[k];if(Object.keys(d).length)A={...A,d}}
+  if(opt.tween)A=rtTween(A);
   if(rtGLInit()){try{
    const gs=[];for(const [dir,FR] of Object.entries(A.d)){const bb=rtBBox(P,pack.names,FR,opt.sp);if(!bb)continue;gs.push({dir,FR,bb,w:Math.ceil((bb.x1-bb.x0)*S),h:Math.ceil((bb.y1-bb.y0)*S)})}
    if(gs.length){const MAXW=4096;let X=0,Y=0,rowH=0;const pos=[];
@@ -175,7 +201,7 @@ export function buildCharacter(breed, gender) {
     const [look, base] = await Promise.all([rtLoad(`look_${key}`), rtLoad('base')]);
     if (!look || !base) return null;
     const P = await rtPrepare(look, [], look.cols || []);
-    const meta = await rtBake(await rtSprites(P, base), base, { only: BASE_ANIMS });
+    const meta = await rtBake(await rtSprites(P, base), base, { only: BASE_ANIMS, dirs: ['1'], tween: true });
     meta.ref = Math.round(meta.a.idle.d[1].ay);
     return { key, meta, sp: null, _P: P, _breed: breed };
   })();
@@ -190,7 +216,7 @@ export function buildSpells(breed, gender, names) {
     const ch = await buildCharacter(breed, gender);
     const sp = await rtLoad(`sp_${breed}`);
     if (!ch || !sp) return ch;
-    ch.sp = await rtBake(await rtSprites(ch._P, sp), sp, { sp: true, only: names });
+    ch.sp = await rtBake(await rtSprites(ch._P, sp), sp, { sp: true, only: names, dirs: ['1'], tween: true });
     return ch;
   })();
   return spells[key];
@@ -228,5 +254,6 @@ export function drawAnim(ctx, ch, name, t, x, y, h, flip = false) {
 export function shotTime(ch, name) {
   const A = animOf(ch, name); if (!A) return 0.25;
   const D = A.d[1] || Object.values(A.d)[0];
-  return (A.shot != null ? A.shot : D.n / 2) / A.fps;
+  const raw = (A.shot != null && A.shot > 0 ? A.shot : D.n * 0.4) / A.fps;
+  return Math.min(0.6, Math.max(0.22, raw));
 }

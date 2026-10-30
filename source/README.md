@@ -25,7 +25,9 @@ python3 tools/spire_benchmarks.py reference/     # repères StS2 (exports Spire 
 Le personnage (Iop ou Crâ, homme ou femme au choix sur l'écran titre) se tient à gauche, les monstres à droite,
 sur un décor d'Amakna propre à chaque rencontre. On joue une carte en la glissant sur un monstre (flèche de visée)
 ou, pour une carte sans cible, en la lâchant au-dessus de la main ; le clic et les touches 1 à 9 restent possibles.
-Le personnage lance l'animation du sort ; l'effet s'applique à l'impact.
+Le personnage lance l'animation du sort ; l'effet s'applique à l'impact. On peut enchaîner les cartes sans attendre :
+la logique est immédiate, l'affichage (PV, armure, chiffres) suit au moment où chaque sort touche. Les animations de
+Dofus (15 images/s) sont doublées à la cuisson par interpolation du squelette.
 
 ## Organisation
 - `src/core` : moteur sans interface (combat, items, offres, carte de l'acte, RNG).
