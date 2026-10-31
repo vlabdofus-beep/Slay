@@ -28,17 +28,20 @@ function value(c: Combat, a: Move): number {
   const blockValue = (amt: number) => Math.min(amt, needBlock) + Math.max(0, amt - needBlock) * 0.1;
   let v = 0;
   let dealsDamage = false;
-  for (const fx of p.effects) {
+  let killDmg = 0;
+  const run = (effects: Effect[], w: number): void => {
+  for (const fx of effects) {
     switch (fx.type) {
       case 'damage':
       case 'drain':
         dealsDamage = true;
         for (const e of targets) {
           const d = c.estimateDamage(fx, e, p.def);
+          killDmg += d;
           const eff = Math.min(d, e.hp + e.block);
-          v += eff;
-          if (d >= e.hp + e.block) v += 6;
-          if (fx.type === 'drain') v += 0.7 * Math.min(eff, missingHp);
+          v += w * eff;
+          if (d >= e.hp + e.block) v += w * 6;
+          if (fx.type === 'drain') v += w * 0.7 * Math.min(eff, missingHp);
         }
         break;
       case 'block':
@@ -67,7 +70,7 @@ function value(c: Combat, a: Move): number {
         v += 3 * fx.amount;
         break;
       case 'status': {
-        const n = fx.on === 'self' ? 1 : fx.on === 'all_enemies' ? c.living().length : targets.length;
+        const n = w * (fx.on === 'self' ? 1 : fx.on === 'all_enemies' ? c.living().length : targets.length);
         if (fx.status === 'puissance') v += 4 * fx.amount * n;
         else if (fx.status === 'vulnerabilite') v += 2.5 * fx.amount * n;
         else if (fx.status === 'faiblesse') v += 1.5 * fx.amount * n;
@@ -76,8 +79,37 @@ function value(c: Combat, a: Move): number {
         else v += 1.5 * fx.amount * n;
         break;
       }
+      case 'if': {
+        const t = targets[0];
+        const ok = fx.cond === 'cible_morte' ? !!t && killDmg >= t.hp + t.block : c.checkCond(fx.cond, t);
+        const before = v;
+        run(fx.then, 1);
+        v = before + (v - before) * w * (ok ? 1 : 0.1);
+        break;
+      }
+      case 'spend':
+        if (fx.what === 'puissance') v -= w * 3 * Math.max(0, c.player.status.puissance ?? 0);
+        else v -= w * 2 * c.aim;
+        break;
+      case 'echo':
+        v += w * 7;
+        break;
+      case 'spread':
+        for (const e of targets) v += w * 0.8 * (e.status[fx.status] ?? 0) * Math.max(0, c.living().length - 1);
+        break;
+      case 'detonate':
+        for (const e of targets) v += w * Math.min(e.hp, e.status[fx.status] ?? 0);
+        break;
+      case 'exhaustHand':
+        v -= w * 1.5 * (c.hand.length - 1);
+        break;
+      case 'addCard':
+        v += w * 3.5 * fx.count;
+        break;
     }
   }
+  };
+  run(p.effects, 1);
   const cost = p.cost;
   return v / Math.max(cost, 0.5);
 }

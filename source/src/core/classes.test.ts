@@ -112,3 +112,116 @@ test('au moins 50 nouvelles cartes jouables, des pouvoirs et des armes neutres d
     c.playCard(0, def.target === 'enemy' ? c.enemies[0].uid : undefined);
   }
 });
+
+// ───────────── sorts inventés : mécaniques ─────────────
+
+test('enchaînement : bonus seulement après une attaque', () => {
+  const c = combatWith('iop', ['iop_enchainement', 'iop_coup_epee', 'iop_enchainement']);
+  const e = c.enemies[0];
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 6);
+  c.playCard(0, e.uid);
+  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 11);
+});
+
+test('coup de grâce : PA et pioche seulement si la cible meurt', () => {
+  const c = combatWith('iop', ['iop_coup_de_grace', 'iop_coup_de_grace']);
+  c.drawPile = [newCard('iop_vitalite'), newCard('iop_vitalite')];
+  const e = c.enemies[0];
+  c.playCard(0, e.uid);
+  assert.equal(c.player.energy, 8);
+  e.hp = 5;
+  c.playCard(0, e.uid);
+  assert.ok(e.dead);
+  assert.equal(c.player.energy, 7 + 1);
+  assert.equal(c.hand.length, 1);
+});
+
+test('explosion de rage : consomme la puissance', () => {
+  const c = combatWith('iop', ['iop_explosion_rage']);
+  c.player.status.puissance = 3;
+  const e = c.enemies[0], before = e.hp;
+  c.playCard(0, e.uid);
+  assert.equal(before - e.hp, 8 + 6 * 3 + 3);
+  assert.equal(c.player.status.puissance ?? 0, 0);
+});
+
+test("frappe écrasante ignore l'armure ; charge blindée frappe de son armure", () => {
+  const c = combatWith('iop', ['iop_frappe_ecrasante', 'iop_charge_blindee']);
+  const e = c.enemies[0];
+  e.block = 20;
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 12); assert.equal(e.block, 20);
+  e.block = 0; c.player.block = 9;
+  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 9);
+});
+
+test('dédoublement : la prochaine attaque est lancée deux fois', () => {
+  const c = combatWith('iop', ['iop_dedoublement', 'iop_coup_epee', 'iop_coup_epee']);
+  const e = c.enemies[0];
+  c.playCard(0);
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 12);
+  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 6);
+});
+
+test('conservée et innée', () => {
+  const deck = [...Array(12)].map(() => newCard('iop_coup_epee'));
+  deck.push(newCard('iop_cri_de_guerre'));
+  const c = new Combat(LIBRARY, deck, { hp: 50, maxHp: 80, classe: 'iop' }, ['bouftou'], 3);
+  assert.ok(c.hand.some((i) => i.id === 'iop_cri_de_guerre'));
+  c.hand.push(newCard('iop_tourbillon'));
+  c.enemies[0].status.etourdi = 1;
+  c.endTurn();
+  assert.ok(c.hand.some((i) => i.id === 'iop_tourbillon'));
+});
+
+test('furie écarlate : puissance et perte de PV à chaque tour', () => {
+  const c = combatWith('iop', ['iop_furie_ecarlate']);
+  c.playCard(0);
+  const hp = c.player.hp;
+  c.enemies[0].status.etourdi = 1;
+  c.endTurn();
+  assert.equal(c.player.status.puissance, 1);
+  assert.equal(c.player.hp, hp - 2);
+});
+
+test('Crâ : carquois crée des flèches, tir chargé consomme la Visée', () => {
+  const c = combatWith('cra', ['cra_carquois', 'cra_tir_charge']);
+  c.playCard(0);
+  assert.equal(c.hand.filter((i) => i.id === 'cra_fleche_improvisee').length, 2);
+  c.playCard(c.hand.findIndex((i) => i.id === 'cra_fleche_improvisee'), c.enemies[0].uid);
+  c.playCard(c.hand.findIndex((i) => i.id === 'cra_fleche_improvisee'), c.enemies[0].uid);
+  assert.equal(c.aim, 2);
+  const e = c.enemies[0], before = e.hp;
+  c.playCard(c.hand.findIndex((i) => i.id === 'cra_tir_charge'), e.uid);
+  assert.equal(before - e.hp, 4 + 6 * 2);
+  assert.equal(c.aim, 0);
+  assert.equal(c.exhaustPile.length, 2);
+});
+
+test('poison : propagation et détonation', () => {
+  const c = new Combat(LIBRARY, starterDeck('cra'), { hp: 50, maxHp: 80, classe: 'cra' }, ['bouftou', 'bouftou', 'bouftou'], 5);
+  c.player.energy = 9;
+  c.hand = [newCard('cra_fleche_contagieuse'), newCard('cra_fleche_necrotique')];
+  for (const e of c.enemies) { e.hp = 200; e.maxHp = 200; e.block = 0; e.status = {}; e.def = { ...e.def, weak: [], resist: [], powers: [] }; }
+  const [a, b, d] = c.enemies;
+  a.status.poison = 5;
+  c.playCard(0, a.uid);
+  assert.equal(b.status.poison, 5);
+  assert.equal(d.status.poison, 5);
+  const before = a.hp;
+  c.playCard(0, a.uid);
+  assert.equal(before - a.hp, 5);
+  assert.equal(a.status.poison, 5);
+});
+
+test("tir d'exécution : bonus sur une cible blessée", () => {
+  const c = combatWith('cra', ['cra_tir_execution', 'cra_tir_execution']);
+  const e = c.enemies[0];
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 7);
+  e.hp = 200;
+  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 14);
+});
+
+test('les cartes créées ne sont jamais proposées en récompense', () => {
+  assert.ok(!rewardPool('cra').includes('cra_fleche_improvisee'));
+  assert.ok(rewardPool('cra').includes('cra_carquois'));
+});

@@ -110,3 +110,21 @@ Chaque classe a un passif permanent, l'équivalent de la relique de départ de S
 Écran `#bestiaire` (`src/ui/bestiary.ts`), ouvert depuis l'accueil, la carte et la barre du combat ; Échap ou « Reprendre la partie » ramène où l'on était. Cinq onglets avec recherche par nom : monstres (fiche complète : PV et dégâts tels qu'en jeu, faiblesses, mécaniques, actions et leur rythme, seconde phase, rencontres où on le croise), cartes (filtres classe, type, rareté, élément, version améliorée), objets (en partie, avec l'effet tiré pour la run), Dofus, effets et statuts (statuts, passifs, déclencheurs, récompenses, règles légendaires et des Dofus).
 
 Pour l'instant tout est visible. `known()` dans `bestiary.ts` est l'endroit où brancher plus tard un bestiaire qui se remplit au fil des rencontres. Les monstres qu'aucune rencontre ne fait apparaître (Tortue Bleue, Branche Invocatrice) n'y figurent pas.
+
+## Sorts inventés (31/10/2026)
+
+26 cartes sans sort Dofus derrière (14 Iop, 12 Crâ) et une carte créée en combat (Flèche Improvisée). Nom, coût et élément sont inventés ; l'icône est celle d'un sort d'une autre classe qui colle à l'idée. Elles portent des mécaniques nouvelles :
+
+- **Conditions** évaluées au moment de l'effet : si la cible meurt (Coup de Grâce : +1 PA, pioche 1), si elle a moins de la moitié de ses PV (Tir d'Exécution), si elle est vulnérable, si tu as moins de la moitié de tes PV, si la carte précédente du tour était une attaque (Enchaînement).
+- **Conservée** (reste en main en fin de tour) et **Innée** (toujours dans la première main).
+- **Écho** : Dédoublement lance deux fois la prochaine attaque.
+- **Consommer** : Explosion de Rage frappe avec toute la puissance puis la perd ; Tir Chargé frappe avec la Visée accumulée puis la remet à zéro (sans la faire avancer).
+- **Poison** : Flèche Contagieuse copie le poison de la cible sur les autres ennemis, Flèche Nécrotique le fait perdre d'un coup sans qu'il diminue.
+- **Cartes créées** : Carquois Garni met des Flèches Improvisées (0 PA, épuisées) en main ; chacune compte pour la Visée.
+- Dégâts **perçants** (Frappe Écrasante), dégâts égaux à l'armure (Charge Blindée), Rage Aveugle qui épuise la main et frappe par carte épuisée, Furie Écarlate (+1 puissance et −2 PV par tour, se marie avec Violence).
+
+## Apparence du personnage (31/10/2026)
+
+- **Netteté** : les personnages ne sont plus des planches cuites à petite taille puis agrandies. Chaque image est rendue en WebGL à la taille réelle d'affichage (densité d'écran comprise), une seule fois, puis réutilisée. Les animations de base se préparent en tâche de fond au début du combat ; celles des sorts au premier lancer.
+- **Couleurs** : 5 pastilles sur l'écran titre (peau, cheveux, trois couleurs de tenue), par classe et par sexe, gardées dans le navigateur. Bouton pour revenir aux couleurs d'origine.
+- **Coiffe et cape** : l'objet équipé change l'apparence en combat (40 des 44 coiffes et capes ont leur vraie apparence Dofus, reprise de Dofus Survivors via `tools/import-survivors-assets.mjs` → `src/data/skins.json` et `public/game/anims/accp*.js`).

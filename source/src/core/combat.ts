@@ -4,6 +4,7 @@ import { COURROUX, VISEE } from './classes.ts';
 import type {
   CardDef,
   ClassId,
+  CondId,
   GrantFx,
   ScaleId,
   CardInstance,
@@ -186,6 +187,10 @@ export class Combat {
   playedById: Record<string, number> = {};
   /** Pouvoirs actifs (cartes de pouvoir jouées), pour l'affichage. */
   powers: { id: string; name: string; icon?: string; n: number }[] = [];
+  /** Type de la carte jouée juste avant, ce tour (enchaînements). */
+  prevType: CardDef['type'] | null = null;
+  /** Prochaines attaques lancées une fois de plus (Dédoublement). */
+  echo = 0;
   /** Multiplicateur de la carte en cours (Visée). */
   private dmgMul = 1;
   /** Cartes jouées ce tour / ce combat, et par élément. */
@@ -238,6 +243,9 @@ export class Combat {
       if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
     }
     this.drawPile = this.rng.shuffle([...deck]);
+    // Cartes innées : sur le dessus de la pioche (la pioche se fait par la fin du tableau).
+    const innate = this.drawPile.filter((i) => this.cardDef(i).innate);
+    if (innate.length) this.drawPile = [...this.drawPile.filter((i) => !innate.includes(i)), ...innate];
     for (const e of this.enemies) this.chooseMove(e);
     this.startPlayerTurn(true);
     this.emit('combatStart');
@@ -266,6 +274,8 @@ export class Combat {
       case 'statuts': return target ? DEBUFFS.filter((s) => (target.status[s] ?? 0) > 0).length : 0;
       case 'main': return this.hand.length;
       case 'lancers': return cardId ? this.playedById[cardId] ?? 0 : 0;
+      case 'visee': return this.aim;
+      case 'epuisees': return this.exhaustPile.length;
     }
   }
 
@@ -403,10 +413,12 @@ export class Combat {
     this.player.energy -= cost;
     this.discount = 0;
     this.log.push(`Joue ${def.name}${target ? ` sur ${target.def.name}` : ''}`);
-    const twice = this.rules.has('double_premier') && this.combatCards === 0;
-    // Visée (Crâ) : la 4e attaque est doublée.
+    let twice = this.rules.has('double_premier') && this.combatCards === 0;
+    if (!twice && this.echo > 0 && def.type === 'attaque') { this.echo--; twice = true; }
+    // Visée (Crâ) : toutes les VISEE attaques, l'attaque est doublée. Une carte qui consomme la Visée ne la fait pas avancer.
     this.dmgMul = 1;
-    if (this.classe === 'cra' && def.type === 'attaque') {
+    const spendsAim = def.effects.some((f) => f.type === 'spend' && f.what === 'visee');
+    if (this.classe === 'cra' && def.type === 'attaque' && !spendsAim) {
       if (this.aimReady()) { this.dmgMul = 2; this.aim = 0; this.fired['classe'] = (this.fired['classe'] ?? 0) + 1; this.log.push('Visée : dégâts doublés'); }
       else this.aim++;
     }
@@ -423,6 +435,7 @@ export class Combat {
     else if (def.exhaust) this.exhaustPile.push(inst);
     else this.discardPile.push(inst);
     if (def.type === 'attaque') this.turnAttacks++;
+    this.prevType = def.type;
     this.playedById[def.id] = (this.playedById[def.id] ?? 0) + 1;
 
     if (def.type !== 'attaque') for (const e of this.living()) {
@@ -466,8 +479,10 @@ export class Combat {
     }
     if (this.checkEnd()) return;
     if (!this.rules.has('main_gardee')) {
-      this.discardPile.push(...this.hand);
-      this.hand = [];
+      // Les cartes conservées restent en main.
+      const keep = this.hand.filter((i) => this.cardDef(i).retain);
+      this.discardPile.push(...this.hand.filter((i) => !keep.includes(i)));
+      this.hand = keep;
     }
     for (const e of this.enemies) e.m.lostThisTurn = 0;
 
@@ -517,6 +532,10 @@ export class Combat {
   /** Visée : rapproche le prochain tir doublé (s'arrête juste avant). */
   fxCharge(n: number): void {
     if (this.classe === 'cra') this.aim = Math.min(VISEE - 1, this.aim + n);
+  }
+
+  fxLoseHp(n: number): void {
+    this.applyHit(this.player, n, { pierce: true, dot: true });
   }
 
   fxDiscount(n: number): void {
@@ -588,6 +607,7 @@ export class Combat {
     this.player.energy = BASE_ENERGY + (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('ocre') ? 1 : 0);
     this.turnCards = 0;
     this.turnAttacks = 0;
+    this.prevType = null;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
     for (const list of Object.values(this.handlers)) for (const h of list ?? []) h.used = 0;
@@ -800,12 +820,34 @@ export class Combat {
     const targets = def.target === 'all_enemies' ? this.living() : target ? [target] : [];
     const hit = new Set<Enemy>();
     this.srcElement = def.element;
-    for (const fx of def.effects) {
+    this.runEffects(def.effects, def, targets, target, hit);
+    this.srcElement = null;
+    return hit;
+  }
+
+  /** Condition d'un effet « si … », au moment où il se résout. */
+  checkCond(cond: CondId, target: Enemy | undefined): boolean {
+    switch (cond) {
+      case 'cible_morte': return !!target && target.dead;
+      case 'cible_blessee': return !!target && !target.dead && target.hp * 2 < target.maxHp;
+      case 'cible_vulnerable': return !!target && (target.status.vulnerabilite ?? 0) > 0;
+      case 'cible_empoisonnee': return !!target && (target.status.poison ?? 0) > 0;
+      case 'cible_brule': return !!target && (target.status.brulure ?? 0) > 0;
+      case 'pv_bas': return this.player.hp * 2 < this.player.maxHp;
+      case 'apres_attaque': return this.prevType === 'attaque';
+      case 'apres_competence': return this.prevType === 'competence';
+      case 'premiere_carte': return this.turnCards === 0;
+      case 'main_vide': return this.hand.length === 0;
+    }
+  }
+
+  private runEffects(effects: Effect[], def: CardDef, targets: Enemy[], target: Enemy | undefined, hit: Set<Enemy>): void {
+    for (const fx of effects) {
       switch (fx.type) {
         case 'damage':
         case 'drain': {
           const hits = fx.type === 'damage' ? (fx.hits ?? 1) : 1;
-          const pierce = fx.element === 'air' && this.rules.has('air_perce');
+          const pierce = (fx.type === 'damage' && !!fx.pierce) || (fx.element === 'air' && this.rules.has('air_perce'));
           for (let h = 0; h < hits; h++) {
             for (const e of targets) {
               if (e.dead) continue;
@@ -873,10 +915,37 @@ export class Combat {
           else for (const e of targets) this.statusOnEnemy(e, fx.status, fx.amount);
           break;
         }
+        case 'if':
+          if (this.checkCond(fx.cond, target ?? targets[0])) this.runEffects(fx.then, def, targets, target, hit);
+          break;
+        case 'spend':
+          if (fx.what === 'puissance') delete this.player.status.puissance;
+          else this.aim = 0;
+          break;
+        case 'echo':
+          this.echo += fx.count;
+          break;
+        case 'spread':
+          for (const e of targets) {
+            const n = e.status[fx.status] ?? 0;
+            if (n > 0) for (const o of this.living()) if (o !== e) this.statusOnEnemy(o, fx.status, n);
+          }
+          break;
+        case 'detonate':
+          for (const e of targets) {
+            const n = e.status[fx.status] ?? 0;
+            if (n <= 0 || e.dead) continue;
+            this.applyHit(e, n, { pierce: fx.status === 'poison', dot: true });
+            hit.add(e);
+            this.markIfDead(e);
+          }
+          break;
+        case 'exhaustHand':
+          this.exhaustPile.push(...this.hand);
+          this.hand = [];
+          break;
       }
     }
-    this.srcElement = null;
-    return hit;
   }
 
   private enemyAct(e: Enemy): void {

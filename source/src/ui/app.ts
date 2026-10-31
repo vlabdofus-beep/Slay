@@ -18,7 +18,8 @@ import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
-import { buildCharacter, drawAnim, type Character } from './scene/rt.js';
+import { buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
+import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
 
 // ───────────── état de l'interface ─────────────
@@ -46,7 +47,34 @@ const ui = {
   /** Monstres qui viennent d'attaquer (petit élan vers le joueur). */
   lunge: new Set<number>(),
   gender: loadGender(),
+  /** Couleurs choisies à l'accueil, par classe et sexe (5 emplacements, null = d'origine). */
+  colors: loadColors(),
 };
+
+function loadColors(): Record<string, (number | null)[]> {
+  try { return JSON.parse(localStorage.getItem('slay.colors') ?? '{}'); } catch { return {}; }
+}
+function saveColors(): void {
+  try { localStorage.setItem('slay.colors', JSON.stringify(ui.colors)); } catch { /* stockage indisponible */ }
+}
+/** Couleurs d'origine de chaque classe, lues dans son fichier d'apparence. */
+const baseColors: Record<string, number[]> = {};
+function loadBaseColors(id: 'iop' | 'cra', g: 'm' | 'f'): void {
+  const k = `${id}${g}`;
+  if (baseColors[k]) return;
+  baseColors[k] = [];
+  void defaultColors(BREED[id], g).then((c) => { baseColors[k] = c; if (!ui.run && location.hash !== '#bestiaire') render(); });
+}
+/** Peau d'accessoire d'un objet équipé (coiffe ou cape), si on la connaît. */
+const skinOf = (itemId: string | undefined): number => {
+  const it = itemId ? ITEMS.items[itemId] : null;
+  return it?.dofusId ? (SKINS as Record<string, number>)[String(it.dofusId)] ?? 0 : 0;
+};
+/** Apparence du personnage d'une partie : couleurs choisies + coiffe et cape portées. */
+function appearanceOf(run: Run): Appearance {
+  const accs = [skinOf(run.equipment.coiffe), skinOf(run.equipment.cape)].filter((n) => n > 0);
+  return { cols: ui.colors[`${run.classe}${run.gender}`] ?? [], accs };
+}
 
 function loadGender(): Record<'iop' | 'cra', 'm' | 'f'> {
   try {
@@ -303,6 +331,24 @@ function sheet(run: Run): string {
 
 // ───────────── écrans ─────────────
 
+const COLOR_NAMES = ['Peau', 'Cheveux', 'Tenue 1', 'Tenue 2', 'Tenue 3'];
+const hex = (n: number) => `#${(n >>> 0).toString(16).padStart(6, '0').slice(-6)}`;
+/** Couleurs du personnage : 5 pastilles (sélecteur de couleur natif) et retour aux couleurs d'origine. */
+function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
+  loadBaseColors(id, g);
+  const base = baseColors[`${id}${g}`] ?? [];
+  const mine = ui.colors[`${id}${g}`] ?? [];
+  const sw = COLOR_NAMES.map((name, i) => {
+    const v = mine[i] ?? base[i];
+    if (v == null) return '';
+    return `<label class="swatch${mine[i] != null ? ' custom' : ''}" title="${name}" style="--c:${hex(v)}"><span class="sr-only">${name}</span>
+      <input type="color" value="${hex(v)}" data-color="${id}" data-g="${g}" data-i="${i}"></label>`;
+  }).join('');
+  const custom = mine.some((v) => v != null);
+  return `<div class="colors" aria-label="Couleurs du personnage">${sw}
+    <button class="color-reset" data-act="color-reset" data-classe="${id}" data-g="${g}" ${custom ? '' : 'disabled'} title="Couleurs d'origine" aria-label="Revenir aux couleurs d'origine">↺</button></div>`;
+}
+
 function viewTitle(): string {
   const choice = (id: 'iop' | 'cra') => {
     const b = DOFUS.breeds[id];
@@ -317,6 +363,7 @@ function viewTitle(): string {
       <span class="class-pitch">${CLASS_INFO[id].pitch}</span>
       <span class="class-passive">${passiveBadge(id)}<span><b>${esc(PASSIVES[id]!.name)}</b> ${esc(PASSIVES[id]!.text)}</span></span>
       <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
+      ${colorRow(id, g)}
       <button class="primary" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? "l'Iop" : 'le Crâ'}</button>
     </div>`;
   };
@@ -332,6 +379,7 @@ function viewTitle(): string {
 
 // Aperçus animés de l'écran titre
 const previews: Record<string, Character | null | 'loading'> = {};
+const shownPreview: Record<string, Character | undefined> = {};
 let previewRaf = 0;
 function startPreviews(): void {
   if (previewRaf) return;
@@ -342,15 +390,22 @@ function startPreviews(): void {
     previewRaf = requestAnimationFrame(loop);
     for (const cv of canvases) {
       const id = cv.dataset.preview as 'iop' | 'cra';
-      const key = `${id}${ui.gender[id]}`;
+      const g = ui.gender[id];
+      const cols = ui.colors[`${id}${g}`] ?? [];
+      const key = `${id}${g}|${cols.join(',')}`;
       if (!(key in previews)) {
         previews[key] = 'loading';
-        void buildCharacter(BREED[id], ui.gender[id]).then((ch) => { previews[key] = ch; });
+        void buildCharacter(BREED[id], g, { cols }).then((c) => { previews[key] = c; });
       }
-      const ch = previews[key];
+      // Pendant qu'une nouvelle teinte se prépare, on garde l'ancienne à l'écran.
+      const got = previews[key];
+      if (got && got !== 'loading') shownPreview[`${id}${g}`] = got;
+      const ch: Character | null = got && got !== 'loading' ? got : shownPreview[`${id}${g}`] ?? null;
+      const dpr = Math.min(3, window.devicePixelRatio || 1), size = Math.round(220 * dpr);
+      if (cv.width !== size) { cv.width = size; cv.height = size; }
       const x = cv.getContext('2d')!;
       x.clearRect(0, 0, cv.width, cv.height);
-      if (ch && ch !== 'loading') {
+      if (ch) {
         cv.parentElement!.classList.add('ready');
         drawAnim(x, ch, 'idle', (performance.now() - t0) / 1000, cv.width / 2, cv.height * 0.93, cv.height * 0.7);
       } else cv.parentElement!.classList.remove('ready');
@@ -889,7 +944,7 @@ function render(): void {
   const barsBefore = captureBars();
   root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) : '');
   if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
-  if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender);
+  if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
   else stage.hide();
   if (!run) startPreviews();
   if (run?.phase === 'map') {
@@ -1243,6 +1298,10 @@ function handle(act: string, d: DOMStringMap): void {
       ui.modal = null;
       break;
     }
+    case 'color-reset':
+      delete ui.colors[`${d.classe}${d.g}`];
+      saveColors();
+      break;
     case 'gender':
       ui.gender[d.classe as 'iop' | 'cra'] = d.g === 'f' ? 'f' : 'm';
       try { localStorage.setItem('slay.gender', JSON.stringify(ui.gender)); } catch { /* stockage indisponible */ }
@@ -1444,6 +1503,26 @@ window.addEventListener('resize', () => {
   resizeT = window.setTimeout(() => { if (ui.run?.phase === 'combat' && !drag) render(); }, 120);
 });
 
+// Couleurs du personnage : la pastille suit le curseur tout de suite, l'aperçu se recalcule quand on s'arrête.
+let colorT = 0;
+document.addEventListener('input', (ev) => {
+  const el = ev.target as HTMLInputElement;
+  if (!el.matches?.('[data-color]')) return;
+  const key = `${el.dataset.color}${el.dataset.g}`, i = Number(el.dataset.i);
+  (el.parentElement as HTMLElement).style.setProperty('--c', el.value);
+  clearTimeout(colorT);
+  colorT = window.setTimeout(() => {
+    const cur = (ui.colors[key] ?? [null, null, null, null, null]).slice();
+    cur[i] = parseInt(el.value.slice(1), 16);
+    ui.colors[key] = cur;
+    saveColors();
+  }, 160);
+});
+document.addEventListener('change', (ev) => {
+  const el = ev.target as HTMLInputElement;
+  if (el.matches?.('[data-color]')) window.setTimeout(render, 200);
+});
+
 document.addEventListener('input', (ev) => {
   const el = ev.target as HTMLInputElement;
   if (!el.matches?.('[data-bx-q]')) return;
@@ -1481,7 +1560,7 @@ document.addEventListener('keydown', (ev) => {
 (window as unknown as { __game: unknown }).__game = {
   get run() { return ui.run; },
   newRun(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') { ui.run = new Run(classe, seed, gender); ui.modal = null; ui.selecting = null; render(); },
-  playCard, endTurn, stage, drawAnim,
+  playCard, endTurn, stage, drawAnim, items: ITEMS,
   get busy() { return ui.busy; },
   render,
 };

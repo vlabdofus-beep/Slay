@@ -22,6 +22,7 @@ const MAP_PACKS = [
   55, 58, 60, 66, 84, 94, 97, 111, 133, 169, 177, // acte 3 : glaces, palais gelé, brume, désert, corail, labyrinthe, forge, ravins, Brâkmar
 ];
 const FX_BUCKETS = 300; // même hachage que l'outil d'empaquetage de Survivors
+const bucketOfN = (s, n) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % n; };
 const bucketOf = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % FX_BUCKETS; };
 
 const html = readFileSync(join(src, 'index.html'), 'utf8');
@@ -57,6 +58,38 @@ for (const b of buckets) {
   if (existsSync(f)) copy(f, `public/game/fx/p${b}.js`);
 }
 writeFileSync(dest('src/data/spellfx.json'), JSON.stringify({ buckets: FX_BUCKETS, spells: table }) + '\n');
+
+// Apparences des coiffes et capes portées : table objet Dofus → peau (ITEM_SKIN de Survivors),
+// puis paquets d'accessoires réduits aux seules peaux de nos objets (même hachage, 80 paquets).
+const ACC_BK = 80;
+const skinTable = (() => {
+  const i = html.indexOf('ITEM_SKIN=') + 'ITEM_SKIN='.length;
+  let depth = 0, k = i;
+  for (; k < html.length; k++) { if (html[k] === '{') depth++; else if (html[k] === '}' && --depth === 0) break; }
+  return JSON.parse(html.slice(i, k + 1));
+})();
+const DOFUS = JSON.parse(readFileSync(join(root, 'src/data/dofus.json'), 'utf8'));
+const skins = {};
+for (const it of DOFUS.catalog) {
+  if (it.slot !== 'coiffe' && it.slot !== 'cape') continue;
+  const sk = skinTable[it.id];
+  if (sk) skins[it.id] = Math.abs(sk);
+}
+writeFileSync(dest('src/data/skins.json'), JSON.stringify(skins) + '\n');
+const wanted = new Set(Object.values(skins).map((n) => `acc_${n}`));
+const byBucket = {};
+for (const k of wanted) (byBucket[bucketOfN(k, ACC_BK)] ??= []).push(k);
+let accN = 0;
+for (const [b, keys] of Object.entries(byBucket)) {
+  const f = join(src, `anims/accp${b}.js`);
+  if (!existsSync(f)) continue;
+  const lines = readFileSync(f, 'utf8').split('\n').filter((l) => keys.some((k) => l.startsWith(`DSV_RT("${k}",`)));
+  accN += lines.length;
+  const out = lines.join('\n') + '\n';
+  writeFileSync(dest(`public/game/anims/accp${b}.js`), out);
+  bytes += out.length;
+}
+console.log(`Apparences : ${Object.keys(skins).length} coiffes et capes, ${accN} peaux dans ${Object.keys(byBucket).length} paquets.`);
 
 console.log(`Import terminé : ${(bytes / 1048576).toFixed(1)} Mo, ${Object.keys(table).length} sorts avec animation/effets, ` +
   `${gfx.size} effets dans ${buckets.size} paquets.`);

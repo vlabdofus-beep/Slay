@@ -1,4 +1,4 @@
-import type { Bonus, CardDef, CardTarget, CardType, ClassId, Effect, Element, Rarity, ScaleId, StatusId } from '../core/types.ts';
+import type { Bonus, CardDef, CardTarget, CardType, ClassId, CondId, Effect, Element, Rarity, ScaleId, StatusId } from '../core/types.ts';
 import { paToCost, spell, spellElement, spellIcon } from './dofus.ts';
 
 // Cartes reliées aux vrais sorts Dofus (src/data/dofus.json) : le NOM, l'ÉLÉMENT, le COÛT (via les PA)
@@ -269,4 +269,99 @@ export const NEUTRAL_CARDS: CardDef[] = [
     [dmg(14, 'neutre'), status('vulnerabilite', 1, 'target')], [dmg(18, 'neutre'), status('vulnerabilite', 2, 'target')]),
 ];
 
-export const ALL_CARDS: CardDef[] = [...IOP_CARDS, ...CRA_CARDS, ...NEUTRAL_CARDS];
+
+// ───────────── Sorts inventés (31/10/2026) ─────────────
+// Pas de sort Dofus derrière : nom, coût et élément sont les nôtres. L'icône vient d'un sort d'une autre
+// classe dont l'image colle à l'idée. Ils portent les mécaniques que les vrais sorts ne couvraient pas :
+// conditions (« si la cible meurt… »), enchaînements, sorts conservés ou innés, écho, consommation de la
+// puissance ou de la Visée, propagation et détonation du poison, cartes créées en combat.
+
+interface InventedSpec {
+  id: string; name: string; classe: ClassId; cost: number; type: CardType; element: Element; target: CardTarget;
+  rarity: Rarity; icon: number; effects: Effect[]; upgrade: Effect[]; upgradeCost?: number;
+  exhaust?: boolean; retain?: boolean; innate?: boolean; token?: boolean; lore?: string;
+}
+function invented(s: InventedSpec): CardDef {
+  const d: CardDef = {
+    id: s.id, name: s.name, classe: s.classe, cost: s.cost, type: s.type, element: s.element, target: s.target, rarity: s.rarity,
+    effects: s.effects, upgrade: s.upgradeCost !== undefined ? { effects: s.upgrade, cost: s.upgradeCost } : { effects: s.upgrade },
+    icon: spellIcon(s.icon),
+  };
+  if (s.exhaust) d.exhaust = true;
+  if (s.retain) d.retain = true;
+  if (s.innate) d.innate = true;
+  if (s.token) d.token = true;
+  if (s.lore) d.lore = s.lore;
+  return d;
+}
+const when = (cond: CondId, ...then: Effect[]): Effect => ({ type: 'if', cond, then });
+const pierce = (amount: number, element: Element): Effect => ({ type: 'damage', amount, element, pierce: true });
+const spend = (what: 'puissance' | 'visee'): Effect => ({ type: 'spend', what });
+const echo = (count = 1): Effect => ({ type: 'echo', count });
+const spread = (s: StatusId): Effect => ({ type: 'spread', status: s });
+const detonate = (s: StatusId): Effect => ({ type: 'detonate', status: s });
+const create = (card: string, count: number): Effect => ({ type: 'addCard', card, count, pile: 'hand' });
+
+export const IOP_INVENTED: CardDef[] = [
+  invented({ id: 'iop_enchainement', name: 'Enchaînement', classe: 'iop', cost: 1, type: A, element: 'terre', target: 'enemy', rarity: 'commune', icon: 11939,
+    effects: [dmg(6, 'terre'), when('apres_attaque', dmg(5, 'terre'))], upgrade: [dmg(8, 'terre'), when('apres_attaque', dmg(7, 'terre'))],
+    lore: 'Le premier coup ouvre la garde, le second la traverse.' }),
+  invented({ id: 'iop_coup_de_grace', name: 'Coup de Grâce', classe: 'iop', cost: 1, type: A, element: 'feu', target: 'enemy', rarity: 'commune', icon: 12007,
+    effects: [dmg(7, 'feu'), when('cible_morte', energy(1), draw(1))], upgrade: [dmg(10, 'feu'), when('cible_morte', energy(1), draw(1))] }),
+  invented({ id: 'iop_tourbillon', name: 'Tourbillon de Lames', classe: 'iop', cost: 2, type: A, element: 'air', target: 'all_enemies', rarity: 'rare', icon: 11963, retain: true,
+    effects: [dmg(5, 'air', 2)], upgrade: [dmg(7, 'air', 2)] }),
+  invented({ id: 'iop_explosion_rage', name: 'Explosion de Rage', classe: 'iop', cost: 2, type: A, element: 'feu', target: 'enemy', rarity: 'rare', icon: 11955,
+    effects: [dmgPer(8, 'feu', 'puissance', 6), spend('puissance')], upgrade: [dmgPer(10, 'feu', 'puissance', 8), spend('puissance')] }),
+  invented({ id: 'iop_frappe_ecrasante', name: 'Frappe Écrasante', classe: 'iop', cost: 2, type: A, element: 'terre', target: 'enemy', rarity: 'commune', icon: 12775,
+    effects: [pierce(12, 'terre')], upgrade: [pierce(16, 'terre')] }),
+  invented({ id: 'iop_charge_blindee', name: 'Charge Blindée', classe: 'iop', cost: 1, type: A, element: 'eau', target: 'enemy', rarity: 'commune', icon: 12583,
+    effects: [dmgPer(0, 'eau', 'armure', 1)], upgrade: [dmgPer(0, 'eau', 'armure', 1)], upgradeCost: 0 }),
+  invented({ id: 'iop_tempete_coups', name: 'Tempête de Coups', classe: 'iop', cost: 1, type: A, element: 'air', target: 'enemy', rarity: 'commune', icon: 11975,
+    effects: [dmg(2, 'air', 3), when('cible_vulnerable', dmg(2, 'air', 2))], upgrade: [dmg(3, 'air', 3), when('cible_vulnerable', dmg(3, 'air', 2))] }),
+  invented({ id: 'iop_rage_aveugle', name: 'Rage Aveugle', classe: 'iop', cost: 1, type: A, element: 'terre', target: 'enemy', rarity: 'rare', icon: 11947,
+    effects: [{ type: 'exhaustHand' }, dmgPer(4, 'terre', 'epuisees', 3)], upgrade: [{ type: 'exhaustHand' }, dmgPer(6, 'terre', 'epuisees', 4)] }),
+  invented({ id: 'iop_vitalite_insolente', name: 'Vitalité Insolente', classe: 'iop', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: 12156,
+    effects: [block(6), when('pv_bas', block(6))], upgrade: [block(8), when('pv_bas', block(8))] }),
+  invented({ id: 'iop_cri_de_guerre', name: 'Cri de Guerre', classe: 'iop', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: 12874, innate: true, exhaust: true,
+    effects: [status('faiblesse', 2, 'all_enemies'), status('vulnerabilite', 1, 'all_enemies')], upgrade: [status('faiblesse', 3, 'all_enemies'), status('vulnerabilite', 2, 'all_enemies')] }),
+  invented({ id: 'iop_pacte_sang', name: 'Pacte de Sang', classe: 'iop', cost: 0, type: C, element: 'neutre', target: 'self', rarity: 'rare', icon: 11977, exhaust: true,
+    effects: [loseHp(6), energy(2), draw(2)], upgrade: [loseHp(4), energy(2), draw(2)] }),
+  invented({ id: 'iop_dedoublement', name: 'Dédoublement', classe: 'iop', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'rare', icon: 11964, exhaust: true,
+    effects: [echo()], upgrade: [echo()], upgradeCost: 0 }),
+  invented({ id: 'iop_fievre_combat', name: 'Fièvre du Combat', classe: 'iop', cost: 1, type: P, element: 'neutre', target: 'self', rarity: 'rare', icon: 11949,
+    effects: [power('attaque', ['degats', 2])], upgrade: [power('attaque', ['degats', 3])] }),
+  invented({ id: 'iop_furie_ecarlate', name: 'Furie Écarlate', classe: 'iop', cost: 2, type: P, element: 'neutre', target: 'self', rarity: 'rare', icon: 12484,
+    effects: [power('debut_tour', ['puissance', 1], ['perte_pv', 2])], upgrade: [power('debut_tour', ['puissance', 1], ['perte_pv', 2])], upgradeCost: 1 }),
+];
+
+export const CRA_INVENTED: CardDef[] = [
+  invented({ id: 'cra_fleche_improvisee', name: 'Flèche Improvisée', classe: 'cra', cost: 0, type: A, element: 'air', target: 'enemy', rarity: 'base', icon: 13826, token: true, exhaust: true,
+    effects: [dmg(4, 'air')], upgrade: [dmg(6, 'air')] }),
+  invented({ id: 'cra_carquois', name: 'Carquois Garni', classe: 'cra', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: 12588,
+    effects: [create('cra_fleche_improvisee', 2)], upgrade: [create('cra_fleche_improvisee', 3)],
+    lore: 'Des flèches taillées à la hâte : elles ne servent qu\'une fois, mais chacune compte pour la Visée.' }),
+  invented({ id: 'cra_tir_charge', name: 'Tir Chargé', classe: 'cra', cost: 1, type: A, element: 'air', target: 'enemy', rarity: 'rare', icon: 12527,
+    effects: [dmgPer(4, 'air', 'visee', 6), spend('visee')], upgrade: [dmgPer(6, 'air', 'visee', 8), spend('visee')] }),
+  invented({ id: 'cra_fleche_venimeuse', name: 'Flèche Venimeuse', classe: 'cra', cost: 0, type: A, element: 'air', target: 'enemy', rarity: 'commune', icon: 12020,
+    effects: [dmg(2, 'air'), status('poison', 3, 'target')], upgrade: [dmg(3, 'air'), status('poison', 4, 'target')] }),
+  invented({ id: 'cra_fleche_contagieuse', name: 'Flèche Contagieuse', classe: 'cra', cost: 1, type: A, element: 'eau', target: 'enemy', rarity: 'commune', icon: 12738,
+    effects: [dmg(4, 'eau'), spread('poison')], upgrade: [dmg(6, 'eau'), status('poison', 2, 'target'), spread('poison')] }),
+  invented({ id: 'cra_fleche_necrotique', name: 'Flèche Nécrotique', classe: 'cra', cost: 1, type: C, element: 'neutre', target: 'enemy', rarity: 'rare', icon: 12010, exhaust: true,
+    effects: [detonate('poison')], upgrade: [detonate('poison')], upgradeCost: 0 }),
+  invented({ id: 'cra_pluie_empoisonnee', name: 'Pluie Empoisonnée', classe: 'cra', cost: 2, type: A, element: 'air', target: 'all_enemies', rarity: 'rare', icon: 13387,
+    effects: [dmg(4, 'air'), status('poison', 4, 'all_enemies')], upgrade: [dmg(5, 'air'), status('poison', 6, 'all_enemies')] }),
+  invented({ id: 'cra_tir_execution', name: "Tir d'Exécution", classe: 'cra', cost: 1, type: A, element: 'terre', target: 'enemy', rarity: 'commune', icon: 12002,
+    effects: [dmg(7, 'terre'), when('cible_blessee', dmg(7, 'terre'))], upgrade: [dmg(9, 'terre'), when('cible_blessee', dmg(9, 'terre'))] }),
+  invented({ id: 'cra_volee', name: 'Volée de Flèches', classe: 'cra', cost: 2, type: A, element: 'air', target: 'enemy', rarity: 'commune', icon: 12538,
+    effects: [dmg(3, 'air', 4)], upgrade: [dmg(4, 'air', 4)] }),
+  invented({ id: 'cra_repli_strategique', name: 'Repli Stratégique', classe: 'cra', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: 12207, retain: true,
+    effects: [block(7), charge(1)], upgrade: [block(10), charge(1)] }),
+  invented({ id: 'cra_oeil_lynx', name: 'Œil de Lynx', classe: 'cra', cost: 0, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: 12301, innate: true,
+    effects: [draw(1), charge(1)], upgrade: [draw(2), charge(1)] }),
+  invented({ id: 'cra_marque_chasseur', name: 'Marque du Chasseur', classe: 'cra', cost: 1, type: C, element: 'neutre', target: 'enemy', rarity: 'rare', icon: 12034, exhaust: true,
+    effects: [status('vulnerabilite', 2, 'target'), charge(4)], upgrade: [status('vulnerabilite', 3, 'target'), charge(4)] }),
+  invented({ id: 'cra_esprit_faucon', name: 'Esprit du Faucon', classe: 'cra', cost: 1, type: P, element: 'neutre', target: 'self', rarity: 'rare', icon: 12834,
+    effects: [power('competence', ['visee', 1])], upgrade: [power('competence', ['visee', 1])], upgradeCost: 0 }),
+];
+
+export const ALL_CARDS: CardDef[] = [...IOP_CARDS, ...CRA_CARDS, ...NEUTRAL_CARDS, ...IOP_INVENTED, ...CRA_INVENTED];

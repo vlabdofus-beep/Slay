@@ -30,5 +30,5 @@ export function starterDeck(classe: ClassId): CardInstance[] {
 
 /** Cartes proposées en récompense (hors cartes de base). */
 export function rewardPool(classe: ClassId): string[] {
-  return ALL_CARDS.filter((c) => (c.classe === classe || c.classe === 'neutre') && c.rarity !== 'base').map((c) => c.id);
+  return ALL_CARDS.filter((c) => (c.classe === classe || c.classe === 'neutre') && c.rarity !== 'base' && !c.token).map((c) => c.id);
 }

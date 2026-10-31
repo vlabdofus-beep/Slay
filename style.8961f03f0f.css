@@ -1014,3 +1014,16 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 }
 .bx-mtile.r-escorte { border-top: 3px solid #7d4a3f; }
 .bx-rank.r-escorte { color: #d9a297; border-color: #5e3a33; }
+
+/* Couleurs du personnage (écran titre) */
+.colors { display: flex; align-items: center; gap: .4rem; margin: 0 0 .2rem; }
+.swatch { position: relative; width: 24px; height: 24px; border-radius: 50%; background: var(--c); cursor: pointer;
+  box-shadow: 0 0 0 2px var(--panel-deep), 0 0 0 3px var(--line); transition: transform .15s, box-shadow .15s; }
+.swatch:hover { transform: scale(1.12); }
+.swatch.custom { box-shadow: 0 0 0 2px var(--panel-deep), 0 0 0 3px var(--gold); }
+.swatch:focus-within { box-shadow: 0 0 0 2px var(--panel-deep), 0 0 0 4px var(--gold-2); }
+.swatch input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
+.color-reset { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-deep); color: var(--muted); cursor: pointer; font-size: .85rem; line-height: 1; }
+.color-reset:not(:disabled):hover { color: var(--gold-2); border-color: var(--gold); }
+.color-reset:disabled { opacity: .35; }
+@media (prefers-reduced-motion: reduce) { .swatch { transition: none; } }

@@ -5,7 +5,7 @@ import SPELLFX from '../../data/spellfx.json' with { type: 'json' };
 import { ENCOUNTERS } from '../../data/monsters.ts';
 import { ALL_CARDS } from '../../data/cards.ts';
 import type { CardDef, ClassId, Element } from '../../core/types.ts';
-import { animLength, animOf, buildCharacter, buildSpells, drawAnim, shotTime, type Character } from './rt.js';
+import { animLength, animOf, buildCharacter, buildSpells, drawAnim, shotTime, type Appearance, type Character } from './rt.js';
 
 /** Géométrie commune au canvas et au DOM (fractions de la fenêtre). */
 export const STAGE = { horizon: 0.5, ground: 0.66, playerX: 0.22, playerH: 0.3 };
@@ -286,18 +286,19 @@ class Stage {
   }
 
   /** Affiche la scène pour une rencontre, avec le personnage du joueur. */
-  show(encounter: string, classe: ClassId, gender: 'm' | 'f'): void {
+  show(encounter: string, classe: ClassId, gender: 'm' | 'f', app: Appearance = {}): void {
     this.mount();
     this.canvas!.classList.add('on');
     this.visible = true;
     const pack = ENCOUNTER_PACK[encounter] ?? ENCOUNTERS[encounter]?.pack ?? 18;
     if (pack !== this.packId || !this.backdrop) { this.backdrop = null; void this.setPack(pack); }
-    const key = `${classe}${gender}`;
+    const key = `${classe}${gender}|${(app.cols ?? []).join(',')}|${(app.accs ?? []).join(',')}`;
     if (key !== this.charKey) {
       this.charKey = key;
-      this.char = null;
-      void buildCharacter(BREED[classe], gender).then((c) => { if (this.charKey === key && c) this.char = c; });
-      void buildSpells(BREED[classe], gender, spellAnimsFor(classe));
+      // L'ancienne apparence reste affichée le temps de préparer la nouvelle (changement de coiffe).
+      if (!this.char || !this.char.key.startsWith(`${BREED[classe]}${gender}|`)) this.char = null;
+      void buildCharacter(BREED[classe], gender, app).then((c) => { if (this.charKey === key && c) this.char = c; });
+      void buildSpells(BREED[classe], gender, spellAnimsFor(classe), app).then((c) => { if (this.charKey === key && c) this.char = c; });
     }
     for (const c of cardsOf(classe)) for (const f of castPlan(c).fx) loadFx(f[1]);
     this.anim = { name: 'idle', t0: performance.now(), hold: false, rate: 1 };

@@ -1,6 +1,7 @@
 // Texte lisible des cartes, effets, intentions et stats. Une seule source pour toute l'interface.
 import type { Combat, Enemy } from '../core/combat.ts';
-import type { CardDef, CardTarget, Effect, Element, ScaleId, StatusId, Stats } from '../core/types.ts';
+import type { CardDef, CardTarget, CondId, Effect, Element, ScaleId, StatusId, Stats } from '../core/types.ts';
+import { LIBRARY } from '../data/library.ts';
 import { effectText as itemEffectText, ruleText, type ItemEffect, type RuleId } from '../core/effects.ts';
 
 /** Ce qui fait grossir une carte (« +3 par attaque déjà jouée ce tour »). */
@@ -12,6 +13,21 @@ export const SCALE_TEXT: Record<ScaleId, string> = {
   statuts: 'par altération sur la cible',
   main: 'par carte en main',
   lancers: 'par lancer précédent de cette carte ce combat',
+  visee: 'par cran de Visée',
+  epuisees: 'par carte épuisée ce combat',
+};
+
+export const COND_TEXT: Record<CondId, string> = {
+  cible_morte: 'Si la cible meurt',
+  cible_blessee: 'Si la cible a moins de la moitié de ses PV',
+  cible_vulnerable: 'Si la cible est vulnérable',
+  cible_empoisonnee: 'Si la cible est empoisonnée',
+  cible_brule: 'Si la cible brûle',
+  pv_bas: 'Si tu as moins de la moitié de tes PV',
+  apres_attaque: 'Si ta carte précédente ce tour est une attaque',
+  apres_competence: 'Si ta carte précédente ce tour est une compétence',
+  premiere_carte: "Si c'est ta première carte du tour",
+  main_vide: 'Si ta main est vide',
 };
 
 export const ELEMENT_NAMES: Record<Element, string> = {
@@ -54,7 +70,8 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
       const n = amountHtml(fx.amount, liveAmount(c, fx, cardElement, def));
       const hits = fx.hits && fx.hits > 1 ? ` ×${fx.hits}` : '';
       const more = fx.bonus ? `, <b>+${fx.bonus.n}</b> ${SCALE_TEXT[fx.bonus.per]}` : '';
-      return `Inflige ${n}${hits} ${fx.element === 'neutre' ? 'dégâts neutres' : `dégâts ${ELEMENT_NAMES[fx.element]}`}${zone}${more}.`;
+      const pierce = fx.pierce ? " qui ignorent l'armure et le bouclier" : '';
+      return `Inflige ${n}${hits} ${fx.element === 'neutre' ? 'dégâts neutres' : `dégâts ${ELEMENT_NAMES[fx.element]}`}${pierce}${zone}${more}.`;
     }
     case 'drain':
       return `Vole ${amountHtml(fx.amount, liveAmount(c, fx, cardElement, def))} PV ${fx.element === 'neutre' ? '' : `(${ELEMENT_NAMES[fx.element]})`}${zone}.`.replace(' .', '.');
@@ -70,6 +87,26 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
       return `Visée <b>+${fx.amount}</b>.`;
     case 'multiply':
       return `${fx.factor === 2 ? 'Double' : fx.factor === 3 ? 'Triple' : `Multiplie par ${fx.factor}`} le ${STATUS_INFO[fx.status].name.toLowerCase()} de la cible.`;
+    case 'if': {
+      const inner = fx.then.map((t) => effectText(t, target, c, cardElement, def).replace(/\.$/, '')).filter(Boolean);
+      const body = inner.map((t, i) => (i === 0 ? t.charAt(0).toLowerCase() + t.slice(1) : t.charAt(0).toLowerCase() + t.slice(1))).join(', ');
+      return `<i>${COND_TEXT[fx.cond]}</i> : ${body}.`;
+    }
+    case 'spend':
+      return fx.what === 'puissance' ? 'Puis perds toute ta puissance.' : 'Puis remet la Visée à zéro (cette carte ne la fait pas avancer).';
+    case 'echo':
+      return fx.count > 1 ? `Tes <b>${fx.count}</b> prochaines attaques sont lancées deux fois.` : 'Ta prochaine attaque est lancée deux fois.';
+    case 'spread':
+      return `Copie le ${STATUS_INFO[fx.status].name.toLowerCase()} de la cible sur tous les autres ennemis.`;
+    case 'detonate':
+      return `La cible perd tout de suite autant de PV que son ${STATUS_INFO[fx.status].name.toLowerCase()}, sans qu'il diminue.`;
+    case 'exhaustHand':
+      return 'Épuise les autres cartes de ta main.';
+    case 'addCard': {
+      const card = LIBRARY.cards[fx.card];
+      const where = fx.pile === 'hand' ? 'ta main' : fx.pile === 'draw' ? 'ta pioche' : 'ta défausse';
+      return `Ajoute <b>${fx.count}</b> ${esc(card?.name ?? fx.card)} dans ${where}.`;
+    }
     case 'grant':
       return fx.fx.map((g) => (g.kind === 'rule' ? ruleText(g.rule as RuleId) : itemEffectText(g as ItemEffect))).join(' ');
     case 'heal':
@@ -94,6 +131,8 @@ export function cardText(def: CardDef, c: Combat | null = null): string {
   if (def.type === 'pouvoir') lines.unshift('<i>Pouvoir, actif tout le combat :</i>');
   if (def.unplayable) lines.push('Injouable.');
   if (def.endTurnDamage) lines.push(`Si elle est encore en main en fin de tour, tu subis <b>${def.endTurnDamage}</b> dégâts.`);
+  if (def.innate) lines.unshift('<i>Innée.</i>');
+  if (def.retain) lines.push('<i>Conservée</i> : reste en main en fin de tour.');
   if (def.ethereal) lines.push('Éphémère : épuisée si elle reste en main en fin de tour.');
   if (def.exhaust) lines.push('Épuisée après usage.');
   return lines.join(' ');

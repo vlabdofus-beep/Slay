@@ -187,3 +187,7 @@ Bot glouton, 300 runs par ligne, objets compris, nouvelles cartes dans le pool. 
 Visée toutes les 4 attaques valait près d'un tiers de dégâts d'attaque en plus : trop fort face au Courroux. Courroux à 2 attaques revenait à une Forme démoniaque gratuite (+1 puissance quasiment chaque tour) : trop fort pour un joueur humain dans les longs combats de boss. On garde 3 attaques et 5 tirs, ce qui remet les deux classes à égalité.
 
 Repères des nouvelles cartes : mêmes que le reste (0 PA ≈ 3-4 dégâts, 1 PA ≈ 6-8, 2 PA ≈ 10-15). Les cartes à bonus partent plus bas (Massacre : 2 dégâts +3 par attaque déjà jouée). Les pouvoirs coûtent ce que coûtent leurs effets d'objet de rareté équivalente.
+
+## Sorts inventés (31/10/2026)
+
+Même bot, 300 runs par classe, passifs actifs. Boss 1 / 2 / 3 atteints : Iop 16 % / 2 % / 0 % (avant : 18 / 2 / 0), Crâ 14 % / 2 % / 0 % (avant : 19 / 3 / 0). La légère baisse vient surtout de la dilution du deck : le bot joue mal les cartes à condition et les combos. Repères : Enchaînement et Tir d'Exécution valent une attaque à 1 PA de 6-7 dégâts qui double dans le bon cas ; Pacte de Sang et Dédoublement sont rares et épuisés.

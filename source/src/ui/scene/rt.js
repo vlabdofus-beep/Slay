@@ -8,13 +8,17 @@ const RT = { reg: {}, wait: {} };
 window.DSV_RT = (k, d) => { RT.reg[k] = d; (RT.wait[k] || []).forEach((f) => f(d)); RT.wait[k] = []; };
 
 /** Charge un fichier d'animation (base, look_<classe><m|f>, sp_<classe>). */
+/** Accessoires (coiffes, capes) : regroupés par paquets, même hachage que Dofus Survivors. */
+export const ACC_BK = 80;
+export const bkOf = (s, n) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % n; };
 export function rtLoad(k) {
   if (RT.reg[k]) return Promise.resolve(RT.reg[k]);
   return new Promise((res) => {
     (RT.wait[k] = RT.wait[k] || []).push(res);
-    if (!document.querySelector(`script[data-rt="${k}"]`)) {
+    const f = k.startsWith('acc_') ? `accp${bkOf(k, ACC_BK)}` : k;
+    if (!document.querySelector(`script[data-rt="${f}"]`)) {
       const sc = document.createElement('script');
-      sc.src = `${BASE}${k}.js`; sc.dataset.rt = k; sc.onerror = () => res(null);
+      sc.src = `${BASE}${f}.js`; sc.dataset.rt = f; sc.onerror = () => res(null);
       document.head.appendChild(sc);
     }
     setTimeout(() => res(RT.reg[k] || null), 60000);
@@ -189,34 +193,70 @@ const BASE_ANIMS = ['idle', 'hit', 'death', 'cast', 'strike'];
 const built = {};
 const spells = {};
 
+/* Apparence : couleurs (5 emplacements, null = couleur d'origine) et peaux d'accessoires (coiffe, cape). */
+const lookKey = (breed, gender, app) => `${breed}${gender}|${((app && app.cols) || []).join(',')}|${((app && app.accs) || []).join(',')}`;
+const charCols = (look, cols) => { const c = (look.cols || []).slice(); (cols || []).forEach((v, i) => { if (v != null) c[i + 1] = v; }); return c; };
+
+/** Couleurs d'origine d'une classe (emplacements 1 à 5), pour l'écran de personnalisation. */
+export async function defaultColors(breed, gender) {
+  const look = await rtLoad(`look_${breed}${gender}`);
+  return look ? (look.cols || []).slice(1, 6) : [];
+}
+
+/* Méta d'animation sans planche : boîte englobante et ancrage seulement, les images sont rendues en direct (WebGL)
+   à la taille de l'écran. Sans WebGL, on garde la cuisson d'origine. */
+function rtMeta(P, pack, opt) {
+  const S = RT_S, meta = { S, a: {} };
+  for (let [an, A] of Object.entries(pack.anims)) {
+    if (opt.only && !opt.only.includes(an)) continue;
+    const FR0 = A.d[1] || Object.values(A.d)[0]; if (!FR0) continue;
+    if (opt.tween) A = rtTween({ ...A, d: { 1: FR0 } });
+    const FR = A.d[1];
+    const bb = rtBBox(P, pack.names, FR, opt.sp); if (!bb) continue;
+    const w = Math.ceil((bb.x1 - bb.x0) * S), h = Math.ceil((bb.y1 - bb.y0) * S);
+    meta.a[an] = { fps: A.fps, loop: A.loop, shot: A.shot, img: null, fr: FR, P, names: pack.names,
+      d: { 1: { w, h, ax: Math.round(-bb.x0 * S * 100) / 100, ay: Math.round(-bb.y0 * S * 100) / 100, n: FR.length, f: [] } } };
+    if (opt.sp) { try { meta.a[an].mis = rtMissile(P, pack.names, FR, A.shot == null ? FR.length / 2 : A.shot); } catch (e) { /* pas de projectile */ } }
+  }
+  return meta;
+}
+const live = () => !window.__rtBaked && rtGLInit();
+
 /**
  * Construit un personnage (animations de base : attente, coup reçu, mort, lancer, frappe).
  * @param {number} breed 8 = Iop, 9 = Crâ
  * @param {'m'|'f'} gender
+ * @param {{cols?: (number|null)[], accs?: number[]}} [app] couleurs et peaux d'accessoires
  */
-export function buildCharacter(breed, gender) {
-  const key = `${breed}${gender}`;
+export function buildCharacter(breed, gender, app) {
+  const key = lookKey(breed, gender, app);
   if (built[key]) return built[key];
   built[key] = (async () => {
-    const [look, base] = await Promise.all([rtLoad(`look_${key}`), rtLoad('base')]);
+    const [look, base] = await Promise.all([rtLoad(`look_${breed}${gender}`), rtLoad('base')]);
     if (!look || !base) return null;
-    const P = await rtPrepare(look, [], look.cols || []);
-    const meta = await rtBake(await rtSprites(P, base), base, { only: BASE_ANIMS, dirs: ['1'], tween: true });
+    const accs = (await Promise.all(((app && app.accs) || []).map((s) => rtLoad(`acc_${s}`)))).filter(Boolean);
+    const P = await rtPrepare(look, accs, charCols(look, app && app.cols));
+    const PB = await rtSprites(P, base);
+    const opt = { only: BASE_ANIMS, dirs: ['1'], tween: true };
+    const meta = live() ? rtMeta(PB, base, opt) : await rtBake(PB, base, opt);
     meta.ref = Math.round(meta.a.idle.d[1].ay);
     return { key, meta, sp: null, _P: P, _breed: breed };
   })();
   return built[key];
 }
 
-/** Ajoute au personnage les animations de sorts demandées (chargées une seule fois). */
-export function buildSpells(breed, gender, names) {
-  const key = `${breed}${gender}`;
+/** Ajoute au personnage les animations de sorts demandées (chargées une seule fois par apparence). */
+export function buildSpells(breed, gender, names, app) {
+  const key = lookKey(breed, gender, app);
   if (spells[key]) return spells[key];
   spells[key] = (async () => {
-    const ch = await buildCharacter(breed, gender);
+    const ch = await buildCharacter(breed, gender, app);
     const sp = await rtLoad(`sp_${breed}`);
     if (!ch || !sp) return ch;
-    ch.sp = await rtBake(await rtSprites(ch._P, sp), sp, { sp: true, only: names, dirs: ['1'], tween: true });
+    const PS = await rtSprites(ch._P, sp);
+    const opt = { sp: true, only: names, dirs: ['1'], tween: true };
+    ch.sp = live() ? rtMeta(PS, sp, opt) : await rtBake(PS, sp, opt);
+    ch.sp.ref = ch.meta.ref;
     return ch;
   })();
   return spells[key];
@@ -237,14 +277,84 @@ export function animLength(ch, name) {
 
 /**
  * Dessine une image d'animation (direction 1 = vers la droite, vue de trois quarts).
- * h = hauteur à l'écran du personnage au repos. Renvoie false si l'animation manque.
+ * h = hauteur à l'écran du personnage au repos. Rendu en direct à la résolution réelle du canvas (net à toute taille).
+ */
+/* Rendu direct : chaque image est rendue en WebGL à la taille d'affichage, une seule fois, puis rangée dans une
+   planche 2D (ou un canvas par image si la planche serait trop grande). Une image ne dépasse pas MAX_PX pixels. */
+const MAX_PX = 700000;
+function qFor(D, base) { return Math.min(base, Math.sqrt(MAX_PX / Math.max(1, D.w * D.h))); }
+function frameOf(ch, A, D, i, base) {
+  const q = qFor(D, base);
+  const W = Math.ceil(D.w * q), H = Math.ceil(D.h * q); if (W < 1 || H < 1) return null;
+  const qk = Math.round(q * 1000);
+  if (!A.cache || A.cache.q !== qk) {
+    const cols = Math.max(1, Math.min(D.n, Math.floor(4096 / (W + 1))));
+    const rows = Math.ceil(D.n / cols);
+    const sheet = rows * (H + 1) <= 4096 ? document.createElement('canvas') : null;
+    if (sheet) { sheet.width = Math.min(D.n, cols) * (W + 1); sheet.height = rows * (H + 1); }
+    A.cache = { q: qk, sheet, cols, done: [], f: [], n: 0 };
+  }
+  const cc = A.cache;
+  let src = cc.sheet, sx = 0, sy = 0;
+  if (src) { sx = (i % cc.cols) * (W + 1); sy = Math.floor(i / cc.cols) * (H + 1); }
+  if (!(src ? cc.done[i] : cc.f[i])) {
+    try {
+      rtGLBegin(W, H);
+      rtFrameGL(null, A.P, A.names, A.fr[i], D.ax * q, D.ay * q, ch.meta.S * q, true);
+    } catch (e) { console.warn(e); return null; }
+    if (src) { src.getContext('2d').drawImage(RTGL.c, 0, 0, W, H, sx, sy, W, H); cc.done[i] = true; }
+    else { const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(RTGL.c, 0, 0); cc.f[i] = c; }
+    cc.n++;
+  }
+  return { src: src || cc.f[i], sx, sy, W, H, q };
+}
+
+/* Préparation en tâche de fond : les images des animations sont rendues par petites tranches, pour qu'un sort
+   lancé pour la première fois ne fasse pas d'à-coup. */
+const WARM_ORDER = ['idle', 'hit', 'cast', 'strike'];
+function warm(ch) {
+  if (ch._warming) return;
+  ch._warming = true;
+  const step = () => {
+    const base = ch._base; if (!base) { ch._warming = false; return; }
+    const t0 = performance.now();
+    // Animations de base seulement : celles des sorts se rendent à leur premier lancer.
+    const names = [...WARM_ORDER, ...Object.keys(ch.meta.a)];
+    for (const nm of names) {
+      const A = animOf(ch, nm); if (!A || A.img) continue;
+      const D = A.d[1];
+      for (let i = 0; i < D.n; i++) {
+        const before = A.cache && A.cache.q === Math.round(qFor(D, base) * 1000) && (A.cache.done[i] || A.cache.f[i]);
+        if (before) continue;
+        frameOf(ch, A, D, i, base);
+        if (performance.now() - t0 > 6) { setTimeout(step, 30); return; }
+      }
+    }
+    ch._warming = false;
+  };
+  setTimeout(step, 100);
+}
+
+/**
+ * Dessine une image d'animation (direction 1 = vers la droite, vue de trois quarts).
+ * h = hauteur à l'écran du personnage au repos. Rendu net à la résolution réelle du canvas.
  */
 export function drawAnim(ctx, ch, name, t, x, y, h, flip = false) {
   const A = animOf(ch, name) || animOf(ch, 'idle'); if (!A) return false;
   const D = A.d[1] || Object.values(A.d)[0]; if (!D) return false;
   let i = Math.floor(t * A.fps); i = A.loop ? i % D.n : Math.min(D.n - 1, i);
-  const [fx, fy] = D.f[i];
   const k = h / ch.meta.ref;
+  if (!A.img) {
+    const m = ctx.getTransform(); const dev = Math.max(1, Math.hypot(m.a, m.b));
+    const base = k * dev;
+    if (ch._base !== base) { ch._base = base; warm(ch); }
+    const f = frameOf(ch, A, D, i, base); if (!f) return false;
+    const r = k / f.q;
+    ctx.save(); ctx.translate(x, y); if (flip) ctx.scale(-1, 1);
+    ctx.drawImage(f.src, f.sx, f.sy, f.W, f.H, -D.ax * k, -D.ay * k, f.W * r, f.H * r);
+    ctx.restore(); return true;
+  }
+  const [fx, fy] = D.f[i];
   ctx.save(); ctx.translate(x, y); if (flip) ctx.scale(-1, 1);
   ctx.drawImage(A.img, fx, fy, D.w, D.h, -D.ax * k, -D.ay * k, D.w * k, D.h * k);
   ctx.restore(); return true;

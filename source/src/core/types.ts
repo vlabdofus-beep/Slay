@@ -29,7 +29,11 @@ export type StatusMap = Partial<Record<StatusId, number>>;
 export type StatusTarget = 'target' | 'self' | 'all_enemies';
 
 /** Ce qui fait grossir une valeur de carte : « +3 dégâts par attaque déjà jouée ce tour »… */
-export type ScaleId = 'attaques' | 'puissance' | 'armure' | 'ennemis' | 'statuts' | 'main' | 'lancers';
+export type ScaleId = 'attaques' | 'puissance' | 'armure' | 'ennemis' | 'statuts' | 'main' | 'lancers' | 'visee' | 'epuisees';
+/** Condition d'un effet de carte, évaluée au moment où l'effet se résout (dans l'ordre de la carte). */
+export type CondId =
+  | 'cible_morte' | 'cible_blessee' | 'cible_vulnerable' | 'cible_empoisonnee' | 'cible_brule'
+  | 'pv_bas' | 'apres_attaque' | 'apres_competence' | 'premiere_carte' | 'main_vide';
 export interface Bonus { per: ScaleId; n: number }
 /** Un effet de pouvoir : même grammaire que les objets (déclencheur × récompense), ou une règle. */
 export type GrantFx =
@@ -37,7 +41,7 @@ export type GrantFx =
   | { kind: 'rule'; rule: string };
 
 export type Effect =
-  | { type: 'damage'; amount: number; element: Element; hits?: number; bonus?: Bonus }
+  | { type: 'damage'; amount: number; element: Element; hits?: number; bonus?: Bonus; pierce?: boolean }
   /** Dégâts dont les PV réellement perdus par la cible sont rendus au lanceur (Eau). */
   | { type: 'drain'; amount: number; element: Element }
   | { type: 'block'; amount: number; bonus?: Bonus }
@@ -56,7 +60,19 @@ export type Effect =
   /** Multiplie un statut déjà posé sur la cible. */
   | { type: 'multiply'; status: StatusId; factor: number }
   /** Pouvoir : effet permanent jusqu'à la fin du combat. */
-  | { type: 'grant'; fx: GrantFx[] };
+  | { type: 'grant'; fx: GrantFx[] }
+  /** Effets qui ne se produisent que si la condition est remplie à ce moment. */
+  | { type: 'if'; cond: CondId; then: Effect[] }
+  /** Consomme une ressource : toute la puissance, ou toute la Visée (Crâ). */
+  | { type: 'spend'; what: 'puissance' | 'visee' }
+  /** Ta prochaine attaque est lancée une fois de plus. */
+  | { type: 'echo'; count: number }
+  /** Copie un statut de la cible sur tous les autres ennemis. */
+  | { type: 'spread'; status: StatusId }
+  /** La cible subit tout de suite les dégâts de son statut (poison : sans protection), sans qu'il diminue. */
+  | { type: 'detonate'; status: StatusId }
+  /** Épuise toutes les autres cartes de la main. */
+  | { type: 'exhaustHand' };
 
 export type CardType = 'attaque' | 'competence' | 'pouvoir';
 export type CardTarget = 'enemy' | 'all_enemies' | 'self';
@@ -84,6 +100,12 @@ export interface CardDef {
    *  dégâts subis si elle est encore en main en fin de tour. */
   unplayable?: boolean;
   ethereal?: boolean;
+  /** Conservée : reste en main en fin de tour. */
+  retain?: boolean;
+  /** Innée : toujours dans la main du premier tour. */
+  innate?: boolean;
+  /** Carte créée en combat (jamais proposée en récompense). */
+  token?: boolean;
   endTurnDamage?: number;
   status?: boolean;
 }
