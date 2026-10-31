@@ -210,3 +210,10 @@ Nos cartes de récompense étaient en dessous : 0 PA ≈ 3–4, 1 PA ≈ 5–6, 
 - Les cartes de base (Coup d'épée/d'arc 6, Vitalité/Tir de Repli 5) restent sur les Frappe et Défense de StS.
 
 Effet (bot, 300 runs par classe, boss 1 / 2 / 3 atteints) : Iop 16 / 2 / 0 % → **25 / 4 / 0 %**, Crâ 14 / 2 / 0 % → **34 / 9 / 3 %**. Le Crâ profite davantage (zones, poison, Visée qui double des coups plus gros) : à surveiller en jeu.
+
+## Rage, Colère et résistances réelles (31/10/2026)
+
+- **Rage** : +n puissance toutes les 4 cartes que joue le joueur (au lieu de chaque compétence). **Colère** : +n puissance toutes les 3 attaques jouées (au lieu de chaque perte de PV). Les monstres à coups multiples (Chef Crocodaille, Bworkette…) ne s'emballent plus ; un compteur sur l'icône indique combien de cartes restent avant le prochain gain.
+- **Résistances** : fin du tout-ou-rien (×1,5 / ×0,5). Chaque monstre porte ses pourcentages réels de Dofus dans les cinq éléments, neutre compris : 20 % = −20 % de dégâts, −10 % = +10 %, 100 % = insensible. En moyenne : 18,6 % en neutre, 10 à 13 % par élément.
+- Les monstres en deviennent plus solides d'environ 13 % : leurs PV sont multipliés par 0,88 (`RES_HP`) pour garder la même durée de combat.
+- Bot, 300 runs : Iop 28 / 3 / 0 %, Crâ 35 / 8 / 0 % (avant : 25 / 4 / 0 et 34 / 9 / 3).

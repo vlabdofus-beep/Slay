@@ -54,15 +54,4 @@ export function monster(id: number): DofusMonster {
   return m;
 }
 
-/** Résistances Dofus → faiblesse(s) et résistance(s) du jeu.
- *  Si l'écart entre la meilleure et la pire résistance élémentaire est d'au moins 15 points,
- *  le ou les éléments les plus bas deviennent des faiblesses (×1,5) et les plus hauts des résistances (×0,5). */
-export function weakResist(res: DofusMonster['res']): { weak: Element[]; resist: Element[] } {
-  const els: DofusEl[] = ['terre', 'feu', 'eau', 'air'];
-  const vals = els.map((e) => res[e]);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  if (max - min < 15) return { weak: [], resist: [] };
-  return { weak: els.filter((e) => res[e] === min), resist: els.filter((e) => res[e] === max) };
-}
 

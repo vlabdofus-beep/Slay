@@ -14,23 +14,25 @@ function setup(enemies: string[], hand: string[], hp = 70) {
   return c;
 }
 
-test('calcDamage : puissance, faiblesse, vulnérabilité, faiblesse/résistance élémentaire', () => {
+test('calcDamage : puissance, faiblesse, vulnérabilité, résistances en %', () => {
   assert.equal(calcDamage(6, 'terre', noAtk, noDef), 6);
   assert.equal(calcDamage(6, 'terre', { status: { puissance: 2 }, dom: 1 }, noDef), 9);
   assert.equal(calcDamage(8, 'terre', { status: { faiblesse: 1 }, dom: 0 }, noDef), 6);
   assert.equal(calcDamage(6, 'terre', noAtk, { ...noDef, status: { vulnerabilite: 1 } }), 9);
-  assert.equal(calcDamage(6, 'feu', noAtk, { ...noDef, weak: ['feu'] }), 9);
-  assert.equal(calcDamage(6, 'terre', noAtk, { ...noDef, resist: ['terre'] }), 3);
-  assert.equal(calcDamage(6, 'neutre', noAtk, { ...noDef, weak: ['feu'], resist: ['terre'] }), 6);
+  // Résistances en % comme dans Dofus : négatif = plus de dégâts, 100 = insensible, le neutre compte aussi.
+  assert.equal(calcDamage(10, 'feu', noAtk, { ...noDef, res: { feu: -20 } }), 12);
+  assert.equal(calcDamage(10, 'terre', noAtk, { ...noDef, res: { terre: 35 } }), 6);
+  assert.equal(calcDamage(10, 'neutre', noAtk, { ...noDef, res: { neutre: 10, feu: -50 } }), 9);
+  assert.equal(calcDamage(10, 'eau', noAtk, { ...noDef, res: { eau: 100 } }), 0);
 });
 
-test('une faiblesse élémentaire s\'applique sur chaque coup d\'une attaque multi-coups', () => {
-  const c = setup(['tofu'], ['iop_zenith']); // 7 air x2, Tofu faible à l'air
+test('une résistance négative s\'applique sur chaque coup d\'une attaque multi-coups', () => {
+  const c = setup(['tofu'], ['iop_zenith']); // 7 air x2, Tofu à -5 % en air
   c.enemies[0].hp = 999;
   c.enemies[0].status = {}; // sans son esquive d'Agilité
   const before = c.enemies[0].hp;
   c.playCard(0);
-  assert.equal(before - c.enemies[0].hp, 20); // floor(7*1.5)=10, deux fois
+  assert.equal(before - c.enemies[0].hp, 14); // floor(7*1.05)=7, deux fois
 });
 
 test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () => {
@@ -38,8 +40,8 @@ test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () =
   const e = c.enemies[0];
   e.block = 3;
   const before = e.hp;
-  c.playCard(0); // 5 feu x1.5 = 7 ; 3 absorbés ; 4 PV perdus ; brûlure 2
-  assert.equal(before - e.hp, 4);
+  c.playCard(0); // 5 feu, Bouftou à -10 % en feu = 5 ; 3 absorbés ; 2 PV perdus ; brûlure 2
+  assert.equal(before - e.hp, 2);
   assert.equal(e.status.brulure, 2);
   c.hand = [];
   c.endTurn();
@@ -49,8 +51,8 @@ test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () =
 test('le drain rend les PV réellement retirés', () => {
   const c = setup(['prespic'], ['cra_fleche_devorante'], 50);
   c.enemies[0].block = 0;
-  c.playCard(0); // drain 7 feu, Prespic neutre au feu => 7 PV perdus, 7 rendus ; ses épines renvoient 1
-  assert.equal(c.player.hp, 56);
+  c.playCard(0); // drain 7 feu, Prespic à -15 % en feu => 8 PV perdus, 8 rendus ; ses épines renvoient 1
+  assert.equal(c.player.hp, 57);
 });
 
 test('une attaque de zone et un statut de zone touchent tous les ennemis', () => {

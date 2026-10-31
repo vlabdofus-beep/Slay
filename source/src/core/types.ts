@@ -123,10 +123,8 @@ export interface MonsterDef {
   id: string;
   name: string;
   hp: [number, number];
-  /** Éléments subis à +50 %. */
-  weak: Element[];
-  /** Éléments subis à -50 %. */
-  resist: Element[];
+  /** Résistances en % par élément, reprises de Dofus (négatif = faiblesse ; 100 = insensible). */
+  res: Record<Element, number>;
   moves: Record<string, MonsterMove>;
   pattern: MovePattern;
   dofusId?: number;
@@ -146,7 +144,7 @@ export interface MonsterDef {
  * Mécaniques de monstres (repères : Slay the Spire, adaptées et complétées) :
  * - carapace n : gagne n armure à la fin de chacun de ses tours
  * - epines n : renvoie n dégâts à chaque coup qu'il reçoit
- * - colere n : gagne n puissance chaque fois qu'il perd des PV
+ * - colere n x : gagne n puissance toutes les x attaques que joue le joueur
  * - enroulement n : la première fois qu'il perd des PV, gagne n armure
  * - rituel n : gagne n puissance à la fin de chacun de ses tours (sauf le premier)
  * - spores n : en mourant, applique n vulnérabilité au joueur
@@ -157,17 +155,17 @@ export interface MonsterDef {
  * - regeneration n : se soigne de n à la fin de ses tours
  * - esquive n : commence le combat avec n esquive
  * - cameleon : résiste à l'élément du dernier coup reçu
- * - rage n : gagne n puissance chaque fois que le joueur joue une compétence
+ * - rage n x : gagne n puissance toutes les x cartes que joue le joueur
  * - sommeil t a : dort t tours (gagne a armure par tour), se réveille plus tôt s'il perd des PV
  * - plafond n : ne perd jamais plus de n PV par tour
  * - artefact n : annule les n prochains malus qu'on lui applique
  */
 export type MonsterPower =
-  | { kind: 'carapace'; n: number } | { kind: 'epines'; n: number } | { kind: 'colere'; n: number }
+  | { kind: 'carapace'; n: number } | { kind: 'epines'; n: number } | { kind: 'colere'; n: number; every: number }
   | { kind: 'enroulement'; n: number } | { kind: 'rituel'; n: number } | { kind: 'spores'; n: number }
   | { kind: 'explosion'; turns: number; dmg: number } | { kind: 'division' } | { kind: 'voleur'; n: number; turns: number }
   | { kind: 'gardien' } | { kind: 'regeneration'; n: number } | { kind: 'esquive'; n: number } | { kind: 'cameleon' }
-  | { kind: 'rage'; n: number } | { kind: 'sommeil'; turns: number; block: number } | { kind: 'plafond'; n: number }
+  | { kind: 'rage'; n: number; every: number } | { kind: 'sommeil'; turns: number; block: number } | { kind: 'plafond'; n: number }
   | { kind: 'artefact'; n: number };
 
 export interface CardInstance {

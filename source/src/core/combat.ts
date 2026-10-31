@@ -50,6 +50,8 @@ export interface Enemy extends Entity {
   m: {
     turns: number; hurtOnce: boolean; asleep: number; lostThisTurn: number; artefact: number;
     stolen: number; lastEl: Element | null; phased: boolean; split: boolean;
+    /** Rage / Colère : cartes (ou attaques) jouées depuis le dernier gain de puissance. */
+    count: number;
     /** S'est enfui (voleur) ou s'est divisé : ne compte pas comme une victoire sur lui. */
     gone?: 'fui' | 'divise' | 'explose';
   };
@@ -117,8 +119,8 @@ export interface AttackerCtx {
 }
 export interface DefenderCtx {
   status: StatusMap;
-  weak: readonly Element[];
-  resist: readonly Element[];
+  /** Résistances en % (Dofus) : 20 = −20 % de dégâts, −10 = +10 %. */
+  res?: Partial<Record<Element, number>>;
   /** Multiplicateur de la vulnérabilité du défenseur (1,5 par défaut). */
   vulnMul?: number;
   /** Multiplicateur si le défenseur est étourdi (règle « étourdi fragile »). */
@@ -129,10 +131,8 @@ export interface DefenderCtx {
 export function calcDamage(base: number, element: Element, atk: AttackerCtx, def: DefenderCtx): number {
   let d = base + (atk.status.puissance ?? 0) + atk.dom;
   if (atk.status.faiblesse) d *= atk.weakMul ?? 0.75;
-  if (element !== 'neutre') {
-    if (def.weak.includes(element)) d *= 1.5;
-    else if (def.resist.includes(element)) d *= 0.5;
-  }
+  const r = Math.min(100, def.res?.[element] ?? 0);
+  if (r) d *= 1 - r / 100;
   if (def.status.vulnerabilite) d *= def.vulnMul ?? 1.5;
   if (def.status.etourdi && def.stunMul) d *= def.stunMul;
   return Math.max(0, Math.floor(d));
@@ -438,9 +438,15 @@ export class Combat {
     this.prevType = def.type;
     this.playedById[def.id] = (this.playedById[def.id] ?? 0) + 1;
 
-    if (def.type !== 'attaque') for (const e of this.living()) {
-      const r = power(e, 'rage');
-      if (r) this.addStatus(e, 'puissance', r.n);
+    // Rage : toutes les x cartes jouées ; Colère : toutes les x attaques jouées.
+    for (const e of this.living()) {
+      const p = power(e, 'rage') ?? (def.type === 'attaque' ? power(e, 'colere') : undefined);
+      if (!p) continue;
+      if (++e.m.count >= p.every) {
+        e.m.count = 0;
+        this.addStatus(e, 'puissance', p.n);
+        this.log.push(`${e.def.name} : ${p.kind === 'rage' ? 'Rage' : 'Colère'}, +${p.n} puissance`);
+      }
     }
     this.turnCards++;
     this.combatCards++;
@@ -662,7 +668,7 @@ export class Combat {
     const h = hp ?? Math.max(1, Math.round(this.rng.range(def.hp[0], def.hp[1]) * this.scale.hp));
     const e: Enemy = {
       uid: this.enemies.length, def, hp: h, maxHp: h, block: 0, status: {}, moveId: '', cycleIndex: 0, lastMoves: [], dead: false,
-      m: { turns: 0, hurtOnce: false, asleep: 0, lostThisTurn: 0, artefact: 0, stolen: 0, lastEl: null, phased: false, split: false },
+      m: { turns: 0, hurtOnce: false, asleep: 0, lostThisTurn: 0, artefact: 0, stolen: 0, lastEl: null, phased: false, split: false, count: 0 },
     };
     const sl = power(e, 'sommeil');
     if (sl) e.m.asleep = sl.turns;
@@ -675,10 +681,16 @@ export class Combat {
     return e;
   }
 
+  /** Résistances d'un monstre à cet instant : Peau de roche ajoute 50 % dans l'élément du dernier coup reçu. */
+  resOf(e: Enemy): Record<Element, number> {
+    const r = { ...e.def.res };
+    if (power(e, 'cameleon') && e.m.lastEl) r[e.m.lastEl] = Math.min(100, r[e.m.lastEl] + 50);
+    return r;
+  }
+
   private defCtx(e: Enemy): DefenderCtx {
-    const cam: Element[] = power(e, 'cameleon') && e.m.lastEl && e.m.lastEl !== 'neutre' ? [e.m.lastEl] : [];
     return {
-      status: e.status, weak: e.def.weak.filter((w) => !cam.includes(w)), resist: [...e.def.resist, ...cam],
+      status: e.status, res: this.resOf(e),
       vulnMul: this.rules.has('vulne_forte') ? 1.75 : 1.5,
       stunMul: this.rules.has('etourdi_fragile') ? 2 : 1,
     };
@@ -693,7 +705,7 @@ export class Combat {
       Math.round(base * this.scale.damage),
       element,
       { status: e.status, dom: 0, weakMul: this.rules.has('faiblesse_forte') ? 0.5 : 0.75 },
-      { status: this.player.status, weak: [], resist: [] },
+      { status: this.player.status },
     );
     return this.rules.has('ivoire') ? Math.max(0, d - 2) : d;
   }
@@ -751,8 +763,6 @@ export class Combat {
     }
     if (lost <= 0 || e.hp <= 0) return;
     if (e.m.asleep > 0) { e.m.asleep = 0; this.log.push(`${e.def.name} se réveille`); this.chooseMove(e); }
-    const an = power(e, 'colere');
-    if (an) this.addStatus(e, 'puissance', an.n);
     const cu = power(e, 'enroulement');
     if (cu && !e.m.hurtOnce) e.block += cu.n;
     e.m.hurtOnce = true;

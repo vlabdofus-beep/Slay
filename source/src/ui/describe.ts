@@ -194,7 +194,7 @@ export function powerInfo(p: import('../core/types.ts').MonsterPower): { name: s
   switch (p.kind) {
     case 'carapace': return { name: 'Carapace', n: p.n, help: `Gagne ${p.n} armure à la fin de chacun de ses tours.` };
     case 'epines': return { name: 'Épines', n: p.n, help: `Chaque coup qu'il reçoit te renvoie ${p.n} dégâts.` };
-    case 'colere': return { name: 'Colère', n: p.n, help: `Gagne ${p.n} puissance chaque fois qu'il perd des PV.` };
+    case 'colere': return { name: 'Colère', n: p.n, help: `Toutes les ${p.every} attaques que tu joues, il gagne ${p.n} puissance.` };
     case 'enroulement': return { name: 'Enroulement', n: p.n, help: `La première fois qu'il perd des PV, il gagne ${p.n} armure.` };
     case 'rituel': return { name: 'Rituel', n: p.n, help: `Gagne ${p.n} puissance à la fin de chacun de ses tours, à partir du deuxième.` };
     case 'spores': return { name: 'Spores', n: p.n, help: `En mourant, t'applique ${p.n} vulnérabilité.` };
@@ -206,7 +206,7 @@ export function powerInfo(p: import('../core/types.ts').MonsterPower): { name: s
     case 'regeneration': return { name: 'Régénération', n: p.n, help: `Se soigne de ${p.n} PV à la fin de chacun de ses tours.` };
     case 'esquive': return { name: 'Agilité', n: p.n, help: `Commence le combat avec ${p.n} esquive : ses premiers coups reçus sont annulés.` };
     case 'cameleon': return { name: 'Peau de roche', help: 'Résiste à l\'élément du dernier coup qu\'il a reçu : varie les éléments.' };
-    case 'rage': return { name: 'Rage', n: p.n, help: `Gagne ${p.n} puissance chaque fois que tu joues une compétence.` };
+    case 'rage': return { name: 'Rage', n: p.n, help: `Toutes les ${p.every} cartes que tu joues, il gagne ${p.n} puissance.` };
     case 'sommeil': return { name: 'Sommeil', n: p.turns, help: `Dort ${p.turns} tours en gagnant ${p.block} armure par tour. Se réveille plus tôt s'il perd des PV.` };
     case 'plafond': return { name: 'Invulnérable', n: p.n, help: `Ne perd jamais plus de ${p.n} PV par tour.` };
     case 'artefact': return { name: 'Artefact', n: p.n, help: `Annule les ${p.n} prochains malus qu'on lui applique.` };

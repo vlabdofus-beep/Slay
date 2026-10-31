@@ -6,7 +6,7 @@
 // Les valeurs sont « brutes » : chaque rencontre est ensuite mise à l'échelle par acte et par salle (TIER_SCALE).
 import type { Effect, Element, MonsterDef, MonsterMove, MonsterPower, MovePattern } from '../core/types.ts';
 import type { Act, EncounterTier } from './monsters.ts';
-import { monster, monsterImage, weakResist } from './dofus.ts';
+import { monster, monsterImage } from './dofus.ts';
 
 const hit = (amount: number, element: Element, hits?: number): Effect =>
   hits ? { type: 'damage', amount, element, hits } : { type: 'damage', amount, element };
@@ -26,8 +26,7 @@ const random = (weights: Record<string, number>, maxRepeat = 2): MovePattern => 
 function m(id: string, dofusId: number, hp: [number, number], moves: Record<string, MonsterMove>, pattern: MovePattern,
   powers?: MonsterPower[], extra: Partial<MonsterDef> = {}): MonsterDef {
   const d = monster(dofusId);
-  const { weak, resist } = weakResist(d.res);
-  return { id, name: d.n, hp, weak, resist, moves, pattern, dofusId, image: monsterImage(d.gfx), level: d.l, powers, ...extra };
+  return { id, name: d.n, hp, res: { ...d.res }, moves, pattern, dofusId, image: monsterImage(d.gfx), level: d.l, powers, ...extra };
 }
 
 /** Petite version d'un monstre qui se divise (même illustration, pas de division). */
@@ -71,9 +70,9 @@ export const ACT1_EXTRA: MonsterDef[] = [
   m('chafer_furtif', 4047, [16, 20], { dague: mv('Dague', hit(4, 'air', 2)) }, cycle('dague'), [{ kind: 'esquive', n: 1 }]),
   m('chafer_debutant', 4046, [14, 18], { coup: mv('Coup d\'os', hit(6, 'neutre')), garde: mv('Garde', block(5)) }, random({ coup: 65, garde: 35 })),
   m('boufton_blanc', 134, [22, 26], { morsure: mv('Morsure', hit(6, 'terre')), belement: mv('Bêlement', block(5)) },
-    random({ morsure: 65, belement: 35 }), [{ kind: 'colere', n: 1 }]),
+    random({ morsure: 65, belement: 35 }), [{ kind: 'colere', n: 1, every: 3 }]),
   m('milimulou', 159, [24, 28], { griffes: mv('Griffes', hit(7, 'neutre')), hurle: mv('Petit hurlement', buff(2)) },
-    cycle('griffes', 'hurle', 'griffes'), [{ kind: 'colere', n: 1 }]),
+    cycle('griffes', 'hurle', 'griffes'), [{ kind: 'colere', n: 1, every: 3 }]),
   m('scelerat_strubien', 465, [24, 28], { vol: mv('Vol à la tire', hit(5, 'air')), esquive: mv('Esquive', block(8)) },
     cycle('vol', 'vol', 'esquive'), [{ kind: 'voleur', n: 8, turns: 4 }]),
   m('milirat_strubien', 475, [20, 24], { morsure: mv('Morsure infectée', hit(4, 'eau'), deb('poison', 2)) }, cycle('morsure')),
@@ -161,12 +160,12 @@ export const ACT2_EXTRA: MonsterDef[] = [
   m('black_wabbit', 65, [38, 42], { carottes: mv('Carottes noires', hit(5, 'air', 3)), bond: mv('Bond', block(8), buff(1)) },
     random({ carottes: 60, bond: 40 })),
   m('wabbit_squelette', 179, [40, 44], { os: mv('Lancer d\'os', hit(13, 'terre')), cliquetis: mv('Cliquetis', deb('faiblesse', 2)) },
-    cycle('os', 'cliquetis', 'os'), [{ kind: 'colere', n: 1 }]),
+    cycle('os', 'cliquetis', 'os'), [{ kind: 'colere', n: 1, every: 3 }]),
   m('tiwabbit', 96, [24, 28], { carotte: mv('Carotte', hit(6, 'terre')) }, cycle('carotte'), [{ kind: 'voleur', n: 10, turns: 3 }, { kind: 'esquive', n: 1 }]),
   m('bandit_roublard', 155, [40, 44], { surin: mv('Coup de surin', hit(9, 'neutre')), fumigene: mv('Fumigène', block(12)) },
     cycle('surin', 'surin', 'fumigene'), [{ kind: 'voleur', n: 12, turns: 4 }]),
   m('bwork_archer', 74, [34, 38], { volee: mv('Volée de flèches', hit(4, 'air', 3)) }, cycle('volee')),
-  m('cochon_de_lait', 123, [40, 44], { charge: mv('Charge', hit(11, 'air')) }, cycle('charge'), [{ kind: 'colere', n: 2 }]),
+  m('cochon_de_lait', 123, [40, 44], { charge: mv('Charge', hit(11, 'air')) }, cycle('charge'), [{ kind: 'colere', n: 2, every: 3 }]),
   m('dragoeuf_ardoise', 88, [48, 52], { souffle: mv('Souffle d\'ardoise', hit(14, 'eau')), coquille: mv('Coquille', block(12)) },
     cycle('coquille', 'souffle'), [{ kind: 'carapace', n: 3 }]),
   m('dragoeuf_calcaire', 76, [48, 52], { souffle: mv('Souffle de calcaire', hit(14, 'terre')), coquille: mv('Coquille', block(12)) },
@@ -181,7 +180,7 @@ export const ACT2_EXTRA: MonsterDef[] = [
     appel: mv('Appel du marais', summon('crocodaille')),
     machoires: mv('Mâchoires d\'acier', hit(18, 'eau')),
     vase: mv('Vase', deb('vulnerabilite', 2), block(14)),
-  }, cycle('appel', 'machoires', 'vase', 'machoires'), [{ kind: 'rage', n: 1 }]),
+  }, cycle('appel', 'machoires', 'vase', 'machoires'), [{ kind: 'rage', n: 1, every: 4 }]),
   m('chafer_elite', 292, [150, 158], {
     rituel: mv('Rituel des os', buff(3)),
     taille: mv('Taille', hit(8, 'feu', 2)),
@@ -214,7 +213,7 @@ export const ACT3_EXTRA: MonsterDef[] = [
   m('corbac_dresse', 4580, [46, 50], { plongeon: mv('Plongeon', hit(16, 'air')) }, cycle('plongeon'), [{ kind: 'esquive', n: 1 }]),
   m('koalak_coco', 752, [58, 62], { griffes: mv('Griffes', hit(9, 'air', 2)), cri: mv('Cri', buff(2)) }, cycle('griffes', 'griffes', 'cri')),
   m('koalak_griotte', 753, [58, 62], { morsure: mv('Morsure', hit(18, 'feu')), cri: mv('Cri', block(14)) }, cycle('morsure', 'cri')),
-  m('warko_marron', 746, [60, 66], { charge: mv('Charge', hit(17, 'air')) }, cycle('charge'), [{ kind: 'colere', n: 2 }]),
+  m('warko_marron', 746, [60, 66], { charge: mv('Charge', hit(17, 'air')) }, cycle('charge'), [{ kind: 'colere', n: 2, every: 3 }]),
   m('mama_koalak', 755, [70, 76], { appel: mv('Appel des petits', summon('koalak_coco')), gifle: mv('Gifle', hit(16, 'terre')) },
     cycle('gifle', 'appel', 'gifle', 'gifle'), [{ kind: 'gardien' }]),
   m('koalak_forestier', 785, [60, 66], { hache: mv('Hache', hit(19, 'eau')), bois: mv('Fagot', block(16)) }, cycle('hache', 'bois')),
@@ -226,11 +225,11 @@ export const ACT3_EXTRA: MonsterDef[] = [
     cycle('ventre', 'sieste'), [{ kind: 'carapace', n: 5 }]),
   m('fricochere', 2846, [56, 60], { bec: mv('Bec gelé', hit(7, 'eau', 3)) }, cycle('bec'), [{ kind: 'esquive', n: 1 }]),
   m('kaniglou', 2847, [62, 66], { crocs: mv('Crocs', hit(10, 'air', 2)), hurle: mv('Hurlement', deb('vulnerabilite', 2)) },
-    cycle('crocs', 'hurle', 'crocs'), [{ kind: 'colere', n: 2 }]),
+    cycle('crocs', 'hurle', 'crocs'), [{ kind: 'colere', n: 2, every: 3 }]),
   m('yokai_givrefoux', 2888, [60, 64], { feux: mv('Feux follets', hit(7, 'air', 3)), voile: mv('Voile', block(14)) },
     cycle('feux', 'voile'), [{ kind: 'esquive', n: 2 }, { kind: 'artefact', n: 1 }]),
   m('boufcoul', 672, [72, 78], { charge: mv('Charge', hit(19, 'feu')), beugle: mv('Beuglement', buff(3)) },
-    cycle('beugle', 'charge', 'charge'), [{ kind: 'colere', n: 1 }]),
+    cycle('beugle', 'charge', 'charge'), [{ kind: 'colere', n: 1, every: 3 }]),
   m('muloubard', 4866, [64, 70], { griffes: mv('Griffes', hit(20, 'eau')), blessure: mv('Lacération', hit(10, 'eau'), card('blessure', 1)) },
     cycle('griffes', 'blessure')),
   m('bitouf_sombre', 1041, [64, 70], { ailes: mv('Ailes sombres', hit(9, 'air', 2), deb('faiblesse', 1)) }, cycle('ailes'), [{ kind: 'regeneration', n: 5 }]),
@@ -246,7 +245,7 @@ export const ACT3_EXTRA: MonsterDef[] = [
     rage: mv('Rage du Dok', buff(3)),
     griffes: mv('Griffes', hit(12, 'air', 2)),
     massacre: mv('Massacre', hit(32, 'air')),
-  }, cycle('rage', 'griffes', 'massacre'), [{ kind: 'rage', n: 3 }]),
+  }, cycle('rage', 'griffes', 'massacre'), [{ kind: 'rage', n: 3, every: 4 }]),
   m('gardienne_egouts', 450, [190, 200], {
     appel: mv('Appel des égouts', summon('rat_egoutant', 2)),
     peste: mv('Peste', deb('poison', 8), deb('faiblesse', 1)),
@@ -258,7 +257,7 @@ export const ACT3_EXTRA: MonsterDef[] = [
     griffes: mv('Griffes', hit(14, 'eau', 2)),
     hurlement: mv('Hurlement lunaire', buff(4), deb('vulnerabilite', 2)),
     devore: mv('Dévorer', drain(28, 'eau')),
-  }, cycle('meute', 'griffes', 'hurlement', 'devore'), [{ kind: 'colere', n: 1 }],
+  }, cycle('meute', 'griffes', 'hurlement', 'devore'), [{ kind: 'colere', n: 1, every: 3 }],
   { boss: true, phase2: { at: 0.5, puissance: 4, name: 'Pleine lune', pattern: cycle('griffes', 'devore', 'griffes', 'meute') } }),
   m('tofu_royal', 382, [430, 450], {
     nuee: mv('Nuée de Tofus', summon('tofu', 2)),

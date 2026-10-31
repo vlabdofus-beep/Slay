@@ -197,10 +197,11 @@ test('les cartes reprennent nom, élément et coût (via les PA) de leur sort Do
   }
 });
 
-test('faiblesses / résistances dérivées des résistances Dofus', async () => {
-  const { weakResist } = await import('../data/dofus.ts');
-  assert.deepEqual(weakResist({ neutre: 5, terre: 15, feu: -10, eau: -5, air: 20 }), { weak: ['feu'], resist: ['air'] });
-  assert.deepEqual(weakResist({ neutre: 14, terre: 14, feu: 14, eau: 14, air: 14 }), { weak: [], resist: [] });
+test('les monstres portent les résistances réelles de Dofus', async () => {
+  const { monster } = await import('../data/dofus.ts');
+  const { LIBRARY } = await import('../data/library.ts');
+  const tofu = LIBRARY.monsters.tofu;
+  assert.deepEqual(tofu.res, monster(tofu.dofusId!).res);
 });
 
 test('limite par objet : 3 déclenchements par tour (1 pour la pioche), sans plafond de pile ; deux objets se cumulent', () => {
@@ -232,7 +233,7 @@ test('division : une Gelée à moitié de ses PV se change en deux Petites Gelé
   assert.ok(kids.every((k) => k.def.id === 'gelee_bleuet_petite' && k.hp === 40 - 24));
 });
 
-test('voleur : vole des kamas et s\'enfuit avec ; enroulement ; épines ; rage sur les compétences', () => {
+test('voleur : vole des kamas et s\'enfuit avec ; enroulement ; épines ; rage toutes les 4 cartes', () => {
   const c = combatWith(['ecurouille'], []);
   const e = c.enemies[0];
   e.status = {};
@@ -248,7 +249,11 @@ test('voleur : vole des kamas et s\'enfuit avec ; enroulement ; épines ; rage s
   const hp = t.player.hp;
   t.playCard(0, 0);
   assert.equal(t.player.hp, hp - 1);
-  const n = combatWith(['chef_guerre_bouftou'], ['iop_vitalite']);
+  // Rage : +2 puissance toutes les 4 cartes jouées, pas avant
+  const n = combatWith(['chef_guerre_bouftou'], ['iop_vitalite', 'iop_vitalite', 'iop_vitalite', 'iop_vitalite']);
+  n.player.energy = 9;
+  for (let i = 0; i < 3; i++) n.playCard(0);
+  assert.equal(n.enemies[0].status.puissance ?? 0, 0);
   n.playCard(0);
   assert.equal(n.enemies[0].status.puissance, 2);
 });
@@ -280,4 +285,15 @@ test('sommeil, explosion, plafond, artefact, invocation et cartes de statut', ()
   const all = [...r.hand, ...r.drawPile, ...r.discardPile];
   assert.ok(all.some((i) => i.id === 'statut_toile'));
   assert.ok(r.legalActions().every((a2) => a2.type === 'end' || r.cardDef(r.hand[a2.handIndex]).id !== 'statut_toile'));
+});
+
+test('colère : +n puissance toutes les x attaques jouées, les compétences ne comptent pas', () => {
+  const c = combatWith(['sanglier'], ['iop_vitalite', 'iop_coup_epee', 'iop_coup_epee', 'iop_coup_epee']);
+  c.player.energy = 9;
+  c.enemies[0].hp = 999;
+  c.playCard(0);
+  c.playCard(0, c.enemies[0].uid); c.playCard(0, c.enemies[0].uid);
+  assert.equal(c.enemies[0].status.puissance ?? 0, 0);
+  c.playCard(0, c.enemies[0].uid);
+  assert.equal(c.enemies[0].status.puissance, 1);
 });

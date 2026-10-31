@@ -11,7 +11,7 @@ function combatWith(classe: ClassId | undefined, hand: string[], extra: Partial<
   c.hand = hand.map((id) => newCard(id));
   c.player.energy = 9;
   const e = c.enemies[0];
-  e.block = 0; e.hp = 500; e.maxHp = 500; e.def = { ...e.def, weak: [], resist: [], powers: [] };
+  e.block = 0; e.hp = 500; e.maxHp = 500; e.def = { ...e.def, res: { neutre: 0, terre: 0, feu: 0, eau: 0, air: 0 }, powers: [] };
   e.status = {};
   return c;
 }
@@ -201,7 +201,7 @@ test('poison : propagation et détonation', () => {
   const c = new Combat(LIBRARY, starterDeck('cra'), { hp: 50, maxHp: 80, classe: 'cra' }, ['bouftou', 'bouftou', 'bouftou'], 5);
   c.player.energy = 9;
   c.hand = [newCard('cra_fleche_contagieuse'), newCard('cra_fleche_necrotique')];
-  for (const e of c.enemies) { e.hp = 200; e.maxHp = 200; e.block = 0; e.status = {}; e.def = { ...e.def, weak: [], resist: [], powers: [] }; }
+  for (const e of c.enemies) { e.hp = 200; e.maxHp = 200; e.block = 0; e.status = {}; e.def = { ...e.def, res: { neutre: 0, terre: 0, feu: 0, eau: 0, air: 0 }, powers: [] }; }
   const [a, b, d] = c.enemies;
   a.status.poison = 5;
   c.playCard(0, a.uid);

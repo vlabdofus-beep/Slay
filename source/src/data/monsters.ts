@@ -1,10 +1,10 @@
 import type { MonsterScale } from '../core/combat.ts';
 import type { Effect, Element, MonsterDef, MonsterMove, MovePattern } from '../core/types.ts';
-import { monster, monsterImage, weakResist } from './dofus.ts';
+import { monster, monsterImage } from './dofus.ts';
 import { ACT1_EXTRA, ACT2_EXTRA, ACT3_EXTRA, EXTRA_ENCOUNTERS } from './bestiary.ts';
 
 // Monstres reliés aux vrais monstres Dofus (src/data/dofus.json) : NOM, NIVEAU, IMAGE et
-// FAIBLESSES / RÉSISTANCES (dérivées des résistances Dofus, voir weakResist) viennent de Dofus.
+// RÉSISTANCES : les pourcentages réels de Dofus, élément par élément (négatif = faiblesse).
 // PV et attaques sont les nôtres, calés sur l'acte 1 de StS2 (docs/BALANCE.md) :
 //   rencontre faible ≈ 30-45 PV, normale ≈ 50-75, élite ≈ 75-85, boss ≈ 200.
 
@@ -17,11 +17,19 @@ export const ACT1_SCALE: MonsterScale = { hp: 1, damage: 1 };
  * PV de rencontre visés — acte 1 : faible 42, normale 74, élite 82, boss 231 ;
  * acte 2 : 83 / 128 / 145 / 379 ; acte 3 : 96 / 150 / 276 / 556. Coups visés : voir le même tableau.
  */
-export const TIER_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> = {
+const BASE_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> = {
   1: { faible: { hp: 1.15, damage: 1.1 }, normal: { hp: 1.2, damage: 1.1 }, elite: { hp: 1, damage: 1 }, boss: { hp: 1.15, damage: 1 } },
   2: { faible: { hp: 1.3, damage: 1.3 }, normal: { hp: 1.3, damage: 1.15 }, elite: { hp: 1.07, damage: 1.05 }, boss: { hp: 1.17, damage: 1 } },
   3: { faible: { hp: 0.88, damage: 0.95 }, normal: { hp: 1, damage: 1 }, elite: { hp: 1.15, damage: 1 }, boss: { hp: 1.16, damage: 1 } },
 };
+/** Les vraies résistances de Dofus (≈ 18 % en neutre, 10 à 13 % par élément en moyenne) rendent les monstres
+ *  plus solides qu'avec l'ancien tout-ou-rien : leurs PV baissent d'autant pour garder la même durée de combat. */
+export const RES_HP = 0.88;
+export const TIER_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> = Object.fromEntries(
+  Object.entries(BASE_SCALE).map(([act, tiers]) => [act, Object.fromEntries(
+    Object.entries(tiers).map(([t, sc]) => [t, { hp: Math.round(sc.hp * RES_HP * 1000) / 1000, damage: sc.damage }]),
+  )]),
+) as Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>>;
 
 const hit = (amount: number, element: Element, hits?: number): Effect =>
   hits ? { type: 'damage', amount, element, hits } : { type: 'damage', amount, element };
@@ -34,8 +42,7 @@ const drain = (amount: number, element: Element): Effect => ({ type: 'drain', am
 
 function fromDofus(id: string, dofusId: number, hp: [number, number], moves: Record<string, MonsterMove>, pattern: MovePattern): MonsterDef {
   const m = monster(dofusId);
-  const { weak, resist } = weakResist(m.res);
-  return { id, name: m.n, hp, weak, resist, moves, pattern, dofusId, image: monsterImage(m.gfx), level: m.l };
+  return { id, name: m.n, hp, res: { ...m.res }, moves, pattern, dofusId, image: monsterImage(m.gfx), level: m.l };
 }
 
 const cycle = (...order: string[]): MovePattern => ({ kind: 'cycle', order });
@@ -271,9 +278,9 @@ const PATCH: Record<string, (m: MonsterDef) => void> = {
   champ_champ: (m) => { m.powers = [{ kind: 'spores', n: 1 }]; },
   arakne: (m) => { m.moves.toile.effects.push({ type: 'addCard', card: 'statut_toile', count: 1, pile: 'draw' }); },
   prespic: (m) => { m.powers = [{ kind: 'epines', n: 1 }]; },
-  sanglier: (m) => { m.powers = [{ kind: 'colere', n: 1 }]; },
+  sanglier: (m) => { m.powers = [{ kind: 'colere', n: 1, every: 3 }]; },
   chef_guerre_bouftou: (m) => {
-    m.powers = [{ kind: 'rage', n: 2 }];
+    m.powers = [{ kind: 'rage', n: 2, every: 4 }];
     m.moves.renforts = { name: 'Renforts', effects: [{ type: 'summon', monster: 'boufton_noir' }, block(6)] };
     m.pattern = cycle('renforts', 'balayage', 'cri', 'masse');
   },
@@ -285,7 +292,7 @@ const PATCH: Record<string, (m: MonsterDef) => void> = {
   },
   abraknyde: (m) => { m.powers = [{ kind: 'carapace', n: 2 }]; },
   craqueleur: (m) => { m.powers = [{ kind: 'carapace', n: 3 }]; },
-  bwork: (m) => { m.powers = [{ kind: 'colere', n: 1 }]; },
+  bwork: (m) => { m.powers = [{ kind: 'colere', n: 1, every: 3 }]; },
   kwak_flamme: (m) => { m.moves.flamme.effects.push({ type: 'addCard', card: 'statut_braise', count: 1, pile: 'discard' }); },
   kwak_glace: (m) => { m.powers = [{ kind: 'esquive', n: 1 }]; },
   abraknyde_sombre: (m) => { m.powers = [{ kind: 'sommeil', turns: 3, block: 10 }]; },
@@ -296,7 +303,7 @@ const PATCH: Record<string, (m: MonsterDef) => void> = {
     m.pattern = cycle('garde', 'carottes', 'ordre', 'coup');
   },
   bworkette: (m) => {
-    m.powers = [{ kind: 'colere', n: 1 }];
+    m.powers = [{ kind: 'colere', n: 1, every: 3 }];
     m.moves.fouet.effects.push({ type: 'addCard', card: 'statut_braise', count: 1, pile: 'discard' });
   },
   abraknyde_ancestral: (m) => {
@@ -306,14 +313,14 @@ const PATCH: Record<string, (m: MonsterDef) => void> = {
   },
   kaskargo: (m) => { m.powers = [{ kind: 'carapace', n: 4 }]; },
   corbac: (m) => { m.powers = [{ kind: 'esquive', n: 1 }]; },
-  mulou: (m) => { m.powers = [{ kind: 'colere', n: 1 }]; },
+  mulou: (m) => { m.powers = [{ kind: 'colere', n: 1, every: 3 }]; },
   poolay: (m) => { m.powers = [{ kind: 'regeneration', n: 4 }]; },
   maitre_corbac: (m) => {
     m.powers = [{ kind: 'rituel', n: 2 }];
     m.moves.nuee = { name: 'Nuée', effects: [{ type: 'summon', monster: 'corbac' }, hit(8, 'air', 2)] };
   },
   dragon_cochon: (m) => {
-    m.powers = [{ kind: 'colere', n: 2 }];
+    m.powers = [{ kind: 'colere', n: 2, every: 3 }];
     m.moves.souffle.effects.push({ type: 'addCard', card: 'statut_braise', count: 2, pile: 'discard' });
   },
   koulosse: (m) => { m.powers = [{ kind: 'plafond', n: 45 }, { kind: 'carapace', n: 6 }]; },

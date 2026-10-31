@@ -1152,3 +1152,18 @@ body[data-screen="title"] { background: #4e8a2c; }
 .brandbar .brand-name { font: 400 2rem/1.1 var(--title); letter-spacing: 0; color: #fff3d6; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; }
 .brandbar .brand-name::before, .brandbar .brand-name::after { display: none; }
 .brandbar .brand-sub { font: italic 400 .95rem var(--font); }
+
+/* ───────── résistances (survol d'un monstre, infobulles de la carte, bestiaire) ───────── */
+.res-grid { display: grid; grid-template-columns: repeat(5, auto); gap: .25rem .5rem; margin: .35rem 0 .2rem; }
+.res { display: inline-flex; align-items: center; gap: 3px; font-size: .86rem; color: var(--muted); white-space: nowrap; }
+.res b { font-weight: 700; color: #fff3d6; }
+.res.weak b { color: #9be07a; }      /* le monstre prend plus de dégâts */
+.res.strong b { color: #ff9e87; }    /* il en encaisse une bonne partie */
+.res.immune b { color: #ff6b57; text-decoration: underline; }
+.res-grid.compact { grid-column: 2; margin: .1rem 0 0; }
+.res-grid.compact .res { font-size: .78rem; }
+.enemy > .res-tip { width: 270px; text-align: left; z-index: 30; }
+.enemy:has(.fxb:hover, .fxb:focus) > .res-tip { display: none; }
+.bx-aff.weak b { color: #9be07a; }
+.bx-aff.strong b { color: #ff9e87; }
+.bx-affs { gap: .4rem 1rem; }

@@ -171,8 +171,7 @@ function viewMonsters(h: BxHelpers): string {
 function monsterDetail(e: MonsterEntry, h: BxHelpers): string {
   const d = e.def;
   const hp = scaledHp(e);
-  const aff = (els: Element[], label: string, help: string) => els.length
-    ? `<span class="bx-aff" title="${help}">${label} ${els.map((el) => `${h.elIcon(el, 'el-mini')}${ELEMENT_NAMES[el]}`).join(' ')}</span>` : '';
+
   const powers = (d.powers ?? []).map((p) => {
     const info = powerInfo(p);
     return `<li><img src="${h.powerIcon(p.kind)}" alt="" class="bx-pow-ico"><span><b>${esc(info.name)}</b> ${esc(info.help)}</span></li>`;
@@ -193,7 +192,7 @@ function monsterDetail(e: MonsterEntry, h: BxHelpers): string {
       <div><dt>Points de vie</dt><dd>${hp[0] === hp[1] ? hp[0] : `${hp[0]} à ${hp[1]}`}</dd></div>
       ${d.boss ? '<div><dt>Étourdi</dt><dd>2 cumuls pour lui faire sauter une action</dd></div>' : ''}
     </dl>
-    ${aff(d.weak, 'Faible', '+50 % de dégâts') || aff(d.resist, 'Résiste', '−50 % de dégâts') ? `<p class="bx-affs">${aff(d.weak, 'Faible', '+50 % de dégâts')}${aff(d.resist, 'Résiste', '−50 % de dégâts')}</p>` : ''}
+    <h3>Résistances</h3><p class="bx-affs">${(['neutre', ...ELEMENTS] as Element[]).map((el) => { const v = d.res[el] ?? 0; return `<span class="bx-aff${v < 0 ? ' weak' : v >= 25 ? ' strong' : ''}">${h.elIcon(el, 'el-mini')}${ELEMENT_NAMES[el]} <b>${v < 0 ? '−' : ''}${Math.abs(v)} %</b></span>`; }).join('')}</p>
     ${powers ? `<h3>Mécaniques</h3><ul class="bx-pow">${powers}</ul>` : ''}
     ${d.splitInto ? `<p class="bx-note">À la moitié de ses PV, se divise en deux ${esc(monsterName(d.splitInto))}.</p>` : ''}
     <h3>Actions</h3><ul class="bx-moves">${moves}</ul>

@@ -152,6 +152,12 @@ function powerBadges(e: Enemy, c: NonNullable<Run['combat']>): string {
     }
     if (p.kind === 'voleur' && e.m.stolen) extra += ` Il a déjà volé ${e.m.stolen} kamas.`;
     if (p.kind === 'artefact') { n = e.m.artefact; extra = ` Encore ${e.m.artefact}.`; }
+    if (p.kind === 'rage' || p.kind === 'colere') {
+      const left = p.every - e.m.count;
+      n = left;
+      const what = p.kind === 'rage' ? (left > 1 ? 'cartes' : 'carte') : (left > 1 ? 'attaques' : 'attaque');
+      extra = ` Encore ${left} ${what} avant son prochain gain.`;
+    }
     if (p.kind === 'sommeil') { n = e.m.asleep; extra = e.m.asleep ? ` Encore ${e.m.asleep} tour${e.m.asleep > 1 ? 's' : ''} de sommeil.` : ' Réveillé.'; }
     if ((p.kind === 'division' && e.m.split) || (p.kind === 'artefact' && !e.m.artefact) || (p.kind === 'sommeil' && !e.m.asleep)) return '';
     return `<span class="fxb st power" tabindex="0" aria-label="${esc(`${info.name} : ${info.help}${extra}`)}">
@@ -492,11 +498,9 @@ function nodeTip(run: Run, n: MapNode): string {
       <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * ZAAP_HEAL)} PV</li><li>améliorer une carte</li></ul>`;
   } else {
     const mobs = encounterGroups(run.encounters[n.id]).map(({ def, count }) => {
-      const weak = def.weak.map((el) => elIcon(el, 'el-mini')).join('');
-      const resist = def.resist.map((el) => elIcon(el, 'el-mini')).join('');
       return `<li>${pic(def.image, def.name, 'tip-pic')}
         <span class="tip-mob"><b>${esc(def.name)}${count > 1 ? ` ×${count}` : ''}</b><span>${hpRange(def.hp)} PV${def.level ? `, niveau ${def.level[0]}` : ''}</span></span>
-        <span class="tip-aff">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}${!weak && !resist ? '<span>Aucune faiblesse</span>' : ''}</span>
+        ${resGrid(def.res, true)}
       </li>`;
     }).join('');
     const reward = n.type === 'boss' ? (run.act < 3 ? 'Le vaincre termine l\'acte et te laisse choisir un Dofus.' : 'Le vaincre termine la run.')
@@ -598,15 +602,25 @@ function floatsHtml(uid: number): string {
     `<span class="num n-${f.el}" style="--i:${i}">${f.text ?? (f.el === 'soin' ? `+${f.n}` : `−${f.n}`)}</span>`).join('')}</span>`;
 }
 
+/** Résistances d'un monstre, comme dans Dofus : les cinq éléments (neutre compris) et leur pourcentage. */
+const RES_ORDER: Element[] = ['neutre', ...ELEMENTS];
+function resGrid(res: Record<Element, number>, compact = false): string {
+  return `<span class="res-grid${compact ? ' compact' : ''}">${RES_ORDER.map((el) => {
+    const v = res[el] ?? 0;
+    const cls = v >= 100 ? 'immune' : v < 0 ? 'weak' : v >= 25 ? 'strong' : '';
+    return `<span class="res ${cls}" title="${ELEMENT_NAMES[el]} : ${v} %">${elIcon(el, 'el-mini')}<b>${v > 0 ? '' : v < 0 ? '−' : ''}${Math.abs(v)} %</b></span>`;
+  }).join('')}</span>`;
+}
+
 function enemyHtml(e: Enemy, targeting: boolean): string {
   const c = ui.run!.combat!;
   const it = intentSummary(c, e);
   const v = shown.get(e.uid);
   const hp = v?.hp ?? e.hp, block = v?.block ?? e.block, dead = v?.dead ?? e.dead;
-  const weak = e.def.weak.map((el) => elIcon(el, 'el-mini')).join('');
-  const resist = e.def.resist.map((el) => elIcon(el, 'el-mini')).join('');
   const can = targeting && !e.dead;
-  return `<button class="enemy${dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
+  const res = c.resOf(e);
+  const cam = e.def.powers?.some((p) => p.kind === 'cameleon') && e.m.lastEl;
+  return `<button class="enemy hastip${dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
     ${dead || e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e, c)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
     ${pic(e.def.image, e.def.name, 'enemy-pic')}
     ${floatsHtml(e.uid)}
@@ -615,8 +629,9 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
       ${e.def.powers?.length ? `<span class="chips powers">${powerBadges(e, c)}</span>` : ''}
       ${hpBar(hp, e.maxHp, block, `e${e.uid}`)}
       <span class="chips">${statusChips(e.status)}</span>
-      <span class="affinity">${weak ? `<span title="Faible : +50 % de dégâts">Faible ${weak}</span>` : ''}${resist ? `<span title="Résiste : −50 % de dégâts">Résiste ${resist}</span>` : ''}</span>
     </span>
+    ${dead || e.dead ? '' : `<span class="fxtip res-tip" role="tooltip"><b class="fxt">Résistances</b>${resGrid(res)}
+      <span class="fx-when">Chaque point réduit d'autant les dégâts de cet élément ; une valeur négative les augmente.${cam ? ` Peau de roche : +50 % en ${ELEMENT_NAMES[e.m.lastEl as Element]} (dernier coup reçu).` : ''}</span></span>`}
   </button>`;
 }
 
