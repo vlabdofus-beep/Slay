@@ -38,7 +38,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 |---|---|---|---|
 | 1. Combat à plusieurs héros : tours simultanés, les monstres jouent une fois et frappent tous les héros, héros hors combat à 0 PV | `src/core/combat.ts`, `src/core/party.test.ts` | Claude | fait |
 | 2. Run à plusieurs : carte votée à la majorité, récompenses, objets, marchand et kamas à chacun, retour à 1 PV après un combat gagné, dieux et événements | `src/game/run.ts`, `src/game/save.ts` | Claude | à faire |
-| 3. Brancher `scaleForParty` sur les combats à plusieurs, bot à plusieurs, mesurer (les monstres frappent maintenant tout le monde) | `src/sim/`, `src/data/monsters.ts`, `docs/BALANCE.md` | | à faire |
+| 3. Échelle mesurée (PV ×2,5 / ×3,6 / ×5,5, dégâts ×1). La passer au combat quand la run à plusieurs existera | `src/data/monsters.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | mesure faite |
 | 4. Salon en ligne : Worker et Durable Object Cloudflare, WebSockets, journal d'actions ordonné par le serveur, reconnexion, minuteur | `worker/`, `wrangler.jsonc` | | à faire |
 | 5. Interface : créer ou rejoindre un salon, plusieurs héros sur la scène, « Prêt », minuteur, vote de la carte | `src/ui/` | | à faire |
 | 6. Cartes à plusieurs, obtenables seulement en multijoueur (plus tard) | `src/data/cards.ts` | | à décider |
@@ -68,6 +68,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Grok — échelle recalée sur le draft (les monstres frappent tout le monde). PV ×2,5 / ×3,6 / ×5,5 pour 2, 3 et 4 joueurs. Dégâts inchangés. L'ancienne échelle rendait les élites d'acte 2 trop faciles.
 - 31/10/2026 : Claude — multijoueur, étape 1 : le combat accepte plusieurs héros (tours simultanés, monstres qui frappent tout le monde, héros hors combat). Le solo ne change pas (mêmes résultats au bot, graine par graine).
 - 31/10/2026 : Grok — correction de l'échelle à plusieurs. Les joueurs jouent en même temps : les monstres ne gagnent pas une action par joueur, et leurs dégâts restent ×1. Les PV restent ×1,85 / ×2,7 / ×3,55.
 - 31/10/2026 : Grok — accueil : l'herbe n'est plus un papier peint, les noms sont sur une plaque, le choix (pitch, passif, bouton) est sur une dalle sombre.

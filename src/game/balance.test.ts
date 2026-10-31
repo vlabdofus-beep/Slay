@@ -97,7 +97,7 @@ test('échelle joueurs : le fichier fait foi, un joueur seul ne change pas la sa
   assert.equal(seul.hp, Math.round(room.hp * 1000) / 1000);
   assert.equal(seul.damage, room.damage);
   const quatre = scaleForParty(room, 4);
-  assert.equal(quatre.hp, Math.round(room.hp * 3.55 * 1000) / 1000);
+  assert.equal(quatre.hp, Math.round(room.hp * 5.5 * 1000) / 1000);
   assert.equal(quatre.damage, room.damage, 'les dégâts ne montent pas avec le nombre de joueurs');
   assert.equal(scaleForParty(room, 9).hp, quatre.hp, 'au-delà de 4, on reste à 4');
   const b = file();
@@ -107,7 +107,7 @@ test('échelle joueurs : le fichier fait foi, un joueur seul ne change pas la sa
   const w = applyBalance(b, BALANCE_TARGETS);
   try {
     assert.equal(PARTY_SCALE[4].damage, 9);
-    assert.equal(PARTY_SCALE[2].hp, 1.85, 'valeur invalide : l\'ancienne reste');
+    assert.equal(PARTY_SCALE[2].hp, 2.5, 'valeur invalide : l\'ancienne reste');
     assert.equal(scaleForParty(room, 4).damage, Math.round(room.damage * 9 * 1000) / 1000);
     assert.ok(w.some((x) => x.includes('echelle_joueurs.2.pv')));
     assert.ok(w.some((x) => x.includes('5')));
@@ -115,5 +115,5 @@ test('échelle joueurs : le fichier fait foi, un joueur seul ne change pas la sa
     applyBalance(file(), BALANCE_TARGETS);
   }
   assert.equal(PARTY_SCALE[4].damage, 1);
-  assert.equal(PARTY_SCALE[2].hp, 1.85);
+  assert.equal(PARTY_SCALE[2].hp, 2.5);
 });

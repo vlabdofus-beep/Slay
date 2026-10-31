@@ -56,9 +56,9 @@
   },
   "echelle_joueurs": {
     "1": {"pv": 1, "degats": 1},
-    "2": {"pv": 1.85, "degats": 1},
-    "3": {"pv": 2.7, "degats": 1},
-    "4": {"pv": 3.55, "degats": 1}
+    "2": {"pv": 2.5, "degats": 1},
+    "3": {"pv": 3.6, "degats": 1},
+    "4": {"pv": 5.5, "degats": 1}
   },
   "dieux": {
     "iop": {
