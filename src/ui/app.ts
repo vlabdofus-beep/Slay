@@ -560,8 +560,7 @@ function viewTitle(): string {
     const on = id === pick;
     return `<button class="hero-pick h-${id}${on ? ' on' : ''}" style="--hue:${HERO_HUE[id]}" role="radio" aria-checked="${on}" data-act="pick-class" data-classe="${id}" aria-label="${esc(b.n)}, ${CLASS_START_HP[id]} PV">
       <span class="hero-stage"><span class="hero-ring" aria-hidden="true"></span><canvas class="hero-canvas" data-preview="${id}" width="600" height="600" aria-hidden="true"></canvas></span>
-      <span class="hero-name">${esc(b.n)}</span>
-      <span class="hero-hp">${CLASS_START_HP[id]} PV</span>
+      <span class="hero-plate"><span class="hero-name">${esc(b.n)}</span><span class="hero-hp">${CLASS_START_HP[id]} PV</span></span>
     </button>`;
   };
   const p = PASSIVES[pick]!;
@@ -575,7 +574,7 @@ function viewTitle(): string {
       <p class="logo-sub">Un deckbuilder dans le Monde des Douze, d'Amakna aux landes de Brâkmar.</p>
     </header>
     <div class="heroes" role="radiogroup" aria-label="Choisis ta classe">${HEROES.map(hero).join('')}</div>
-    <section class="pick-info" aria-live="polite">
+    <section class="pick-dock" aria-live="polite">
       <p class="pick-pitch">${CLASS_INFO[pick].pitch}</p>
       <p class="pick-passive">${passiveBadge(pick)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
       ${resumeHtml()}
@@ -589,13 +588,13 @@ function viewTitle(): string {
         <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
         ${colorRow(pick, g)}
       </div>` : ''}
+      <footer class="title-foot">
+        ${soundButton('link')}
+        <button class="link" data-act="bestiary">Bestiaire</button>
+        <span class="legal">Fan game non officiel. Données DofusDB, animations et décors de Dofus 3, univers © Ankama.</span>
+        <a class="link" href="#styleguide">Guide de style</a>
+      </footer>
     </section>
-    <footer class="title-foot">
-      ${soundButton('link')}
-      <button class="link" data-act="bestiary">Bestiaire</button>
-      <span>Fan game non officiel. Données DofusDB, animations et décors de Dofus 3, univers © Ankama.</span>
-      <a class="link" href="#styleguide">Guide de style</a>
-    </footer>
   </main>`;
 }
 
