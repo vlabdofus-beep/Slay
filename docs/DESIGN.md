@@ -97,6 +97,7 @@ Chaque classe a un passif permanent, l'équivalent de la relique de départ de S
 
 - **Iop, Courroux** : à la fin du tour, s'il a joué au moins 3 attaques, il gagne 1 puissance pour le combat. Le deck Iop pousse à enchaîner les attaques bon marché.
 - **Crâ, Visée** : toutes les 5 attaques, l'attaque inflige le double de dégâts. Des cartes « Visée +n » rapprochent le tir doublé sans le déclencher.
+- **Xélor, Téléfrag** (31/10/2026) : certains sorts posent un Téléfrag sur leur cible ; une attaque qui touche un ennemi Téléfrag le consomme, et la première fois de chaque tour le Xélor pioche 1 carte. Voir « Le Xélor » plus bas.
 
 52 cartes ajoutées : 24 Iop, 23 Crâ (tous les sorts Dofus de ces classes encore libres) et 5 armes neutres proposées aux deux classes. Nouvelles mécaniques de carte :
 
@@ -180,3 +181,14 @@ La run en cours est sauvegardée dans le navigateur (`localStorage`, clé `slay.
 - **Poison et brûlure** ne tombent plus au même moment : le poison agit au début du tour de celui qui le porte (un monstre peut en mourir avant d'agir), la brûlure à la fin de son tour (son armure du tour l'absorbe). Pour le joueur : poison quand son tour commence, brûlure quand il le finit.
 - **Résistances des monstres plafonnées à 50 %** (`RES_CAP`), Peau de roche comprise. Les valeurs au-dessus ont été ramenées à 50 dans `equilibrage.json`.
 - **Objets lisibles sans survol** : la tuile écrit le déclencheur sous un pictogramme (carte jouée, début de tour, fin de tour, début du combat, ennemi vaincu, PV perdus, armure gagnée, combat gagné), puis chaque récompense avec son icône, puis la limite (« 3 fois par tour au plus »). Même chose dans la fiche du personnage. En combat, le pictogramme du déclencheur est posé en coin de chaque badge d'objet.
+
+## Le Xélor, troisième classe (31/10/2026, lot 1)
+
+Proposition complète et historique des choix : `docs/CLASSE_XELOR.md`. Le lot 1 met la classe en jeu avec 50 cartes (37 sorts du Xélor de Dofus 3, le Coup de baguette, 12 sorts inventés) ; le lot 2 ajoutera 8 cartes à effets différés et à rembobinage, pour 58 comme le Crâ.
+
+- **Téléfrag** (statut ennemi, présent ou non) : posé par les sorts qui « peuvent générer un Téléfrag » dans Dofus. Une attaque du joueur qui touche un ennemi Téléfrag le consomme, après la résolution de la carte (le bonus « si Téléfrag » s'applique d'abord). Seules les marques posées avant la carte sont consommées par elle. Passif : pioche 1, une fois par tour (`equilibrage.json`, `passifs.telefrag` ; `marques` permet en plus de marquer des ennemis au début du tour, 0 par défaut).
+- **Ralenti** (retrait de PA) : la prochaine action du monstre inflige N dégâts de moins au total, retirés coup après coup ; il disparaît à la fin du tour du monstre. Il ne s'additionne pas : le plus fort l'emporte (pas de plafond chiffré, conformément aux décisions sur les piles).
+- **Échéance** : à la fin de son prochain tour, le monstre subit N dégâts Feu (l'armure absorbe), puis elle disparaît. Elle s'additionne.
+- **Coûts** : ceux des PA réels de Dofus 3 (sorts importés dans `dofus.json`). Une vingtaine de cartes à 0 PA. Conservation, la défense de départ, garde son coût de sort (0 PA, 3 armure) : avec des cartes de départ toutes à 1 PA, la pioche du passif ne servait à rien.
+- **Gain de PA** : jamais sur le passif. Seuls Dessèchement (rare, si Téléfrag) et Dernière Seconde (rare, PV bas) en donnent ; Pétrification réduit le coût de la carte suivante.
+- **Pouvoirs** « quand tu consommes un Téléfrag » : déclencheur `telefrag_consomme`, jamais tiré sur un objet (`noRoll`). Synchro et Instabilité ne se déclenchent qu'une fois par tour.

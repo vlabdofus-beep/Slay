@@ -10,7 +10,7 @@ export const PASSIVE_VALUES = {
   visee: { attaques: 5, multiplicateur: 2 },
   /** Xélor : Téléfrag posés sur des ennemis au hasard au début de chaque tour ; cartes piochées quand une attaque
    *  consomme un Téléfrag, et nombre de fois par tour. */
-  telefrag: { marques: 1, pioche: 1, parTour: 1 },
+  telefrag: { marques: 0, pioche: 1, parTour: 1 },
 };
 
 export interface ClassPassive { id: string; name: string; readonly text: string }

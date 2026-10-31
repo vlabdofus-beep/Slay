@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Combat } from './combat.ts';
 import { PASSIVE_VALUES } from './classes.ts';
-import { RALENTI_CAP, type ClassId, type MonsterDef } from './types.ts';
+import { type ClassId, type MonsterDef } from './types.ts';
 import { LIBRARY, newCard, rewardPool, starterDeck } from '../data/library.ts';
 import { XELOR_CARDS, XELOR_INVENTED, IOP_CARDS, IOP_INVENTED } from '../data/cards.ts';
 
@@ -23,8 +23,9 @@ function combatWith(hand: string[], classe: ClassId = 'xelor', foes = 1) {
 }
 const idx = (c: Combat, id: string) => c.hand.findIndex((i) => i.id === id);
 
-test('Xélor : 58 cartes comme le Crâ, un deck de départ de 10 cartes, des récompenses à lui', () => {
-  assert.equal(XELOR_CARDS.length + XELOR_INVENTED.length, 58);
+test('Xélor (lot 1) : 50 cartes, un deck de départ de 10 cartes, des récompenses à lui', () => {
+  // Lot 2 (effets différés, rembobinage) : 8 cartes de plus, pour 58 comme le Crâ.
+  assert.equal(XELOR_CARDS.length + XELOR_INVENTED.length, 50);
   assert.equal(starterDeck('xelor').length, 10);
   const pool = rewardPool('xelor');
   assert.ok(pool.includes('xelor_horloge') && !pool.includes('iop_colere') && !pool.includes('xelor_seconde'));
@@ -79,27 +80,35 @@ test('Ralenti : retiré du total de la prochaine action, coup après coup, puis 
   const c = combatWith(['xelor_ralentissement']);
   const e = c.enemies[0];
   c.playCard(0, e.uid);
-  assert.equal(e.status.ralenti, 2);
-  assert.equal(c.intent(e).damage, 10);
+  assert.equal(e.status.ralenti, 3);
+  assert.equal(c.intent(e).damage, 9);
   const hp = c.player.hp;
   c.player.block = 0;
   c.endTurn();
-  assert.equal(hp - c.player.hp, 10);
+  assert.equal(hp - c.player.hp, 9);
   assert.equal(e.status.ralenti ?? 0, 0);
 });
 
-test(`Ralenti : plafonné à ${RALENTI_CAP}, même doublé par Paradoxe`, () => {
-  const c = combatWith(['xelor_flou_temporel', 'xelor_paradoxe', 'xelor_arret_temps']);
-  const e = c.enemies[0];
-  c.playCard(idx(c, 'xelor_flou_temporel'));
-  c.playCard(idx(c, 'xelor_paradoxe'), e.uid);
-  assert.equal(e.status.ralenti, 4);
+test('Ralenti : ne s\'additionne pas (le plus fort l\'emporte) ; Paradoxe le recopie sur les autres', () => {
+  const c = combatWith(['xelor_ralentissement', 'xelor_ralentissement', 'xelor_paradoxe', 'xelor_arret_temps', 'xelor_flou_temporel'], 'xelor', 2);
+  const [a, b] = c.enemies;
+  c.playCard(idx(c, 'xelor_ralentissement'), a.uid);
+  c.playCard(idx(c, 'xelor_ralentissement'), a.uid);
+  assert.equal(a.status.ralenti, 3);
+  c.playCard(idx(c, 'xelor_paradoxe'), a.uid);
+  assert.equal(b.status.ralenti, 3);
   c.playCard(idx(c, 'xelor_arret_temps'));
-  assert.equal(e.status.ralenti, RALENTI_CAP);
-  assert.equal(c.intent(e).damage, 2);
+  assert.deepEqual([a.status.ralenti, b.status.ralenti], [10, 10]);
+  c.playCard(idx(c, 'xelor_flou_temporel'));
+  assert.equal(a.status.ralenti, 10);
+  assert.equal(c.intent(a).damage, 2);
 });
 
-test('Téléfrag : au début de chaque tour, un ennemi sans marque en reçoit une (Xélor seulement)', () => {
+test('Téléfrag : réglable pour marquer un ennemi au début du tour (0 par défaut, Xélor seulement)', () => {
+  const none = combatWith([], 'xelor', 2);
+  none.endTurn();
+  assert.deepEqual(none.enemies.map((e) => e.status.telefrag ?? 0), [0, 0]);
+  PASSIVE_VALUES.telefrag.marques = 1;
   const c = combatWith([], 'xelor', 2);
   c.enemies[0].status.telefrag = 1;
   c.endTurn();
@@ -107,6 +116,15 @@ test('Téléfrag : au début de chaque tour, un ennemi sans marque en reçoit un
   const other = combatWith([], 'cra', 2);
   other.endTurn();
   assert.deepEqual(other.enemies.map((e) => e.status.telefrag ?? 0), [0, 0]);
+  PASSIVE_VALUES.telefrag.marques = 0;
+});
+
+test('Pétrification : si la cible est Téléfrag, ta prochaine carte coûte 1 PA de moins', () => {
+  const c = combatWith(['xelor_frappe', 'xelor_petrification', 'xelor_horloge']);
+  const e = c.enemies[0];
+  c.playCard(idx(c, 'xelor_frappe'), e.uid);
+  c.playCard(idx(c, 'xelor_petrification'), e.uid);
+  assert.equal(c.costOf(c.hand[idx(c, 'xelor_horloge')]), 1);
 });
 
 test('Échéance : tombe à la fin du tour du monstre, puis disparaît', () => {

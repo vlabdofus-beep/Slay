@@ -2,7 +2,7 @@
   "_aide": [
     "Fichier d'équilibrage de Dofus Slay. Modifie les nombres puis enregistre : le jeu en ligne relit ce fichier à chaque démarrage.",
     "Garde la forme JSON : guillemets doubles, virgules entre les éléments, pas de virgule après le dernier. En cas d'erreur, le jeu garde ses valeurs par défaut et l'écrit dans la console du navigateur.",
-    "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop et Visée du Crâ.",
+    "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop, Visée du Crâ et Téléfrag du Xélor (marques : ennemis marqués au début du tour, pioche : cartes piochées, parTour : fois par tour).",
     "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
     "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
     "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 50 au plus), mecaniques, actions et rythme.",
@@ -19,15 +19,20 @@
     "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type (+ protection: true = seulement celles qui donnent de l'armure ou du bouclier), pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
     "reliques : les 18 reliques d'événement. Même forme qu'une bénédiction (nom, effets, stats, avantages, immediat). Pas d'emplacement d'équipement.",
     "evenements : un événement, puis ses choix dans l'ordre. operations = effets immédiats (prix, gains, chances), même forme que immediat. suite.choix = la scène suivante. Les textes restent dans le code.",
-    "Déclencheurs : carte_terre, premiere_terre, deuxieme_terre, ouverture_terre, acheve_terre, carte_feu, premiere_feu, deuxieme_feu, ouverture_feu, acheve_feu, carte_eau, premiere_eau, deuxieme_eau, ouverture_eau, acheve_eau, carte_air, premiere_air, deuxieme_air, ouverture_air, acheve_air, debut_tour, debut_combat, premier_tour, tous_3_tours, tous_4_tours, pv_bas, fin_pa, fin_armure, fin_main, ennemi_meurt, pv_perdus, armure_gagnee, toutes_3_cartes, attaque, competence, gratuite, chere, premiere_carte, dernier_pa, trois_elements, zone, cible_brule, cible_empoisonnee, cible_vulnerable, victoire, victoire_intacte.",
-    "Récompenses : puissance, armure, bouclier, soin, pioche, pa, reduction, esquive, renvoi, brulure, poison, vulnerabilite, faiblesse, erosion, etourdi, brulure_zone, poison_zone, degats, degats_zone, perte_pv, visee, prospection, prospection_run.",
+    "Déclencheurs : carte_terre, premiere_terre, deuxieme_terre, ouverture_terre, acheve_terre, carte_feu, premiere_feu, deuxieme_feu, ouverture_feu, acheve_feu, carte_eau, premiere_eau, deuxieme_eau, ouverture_eau, acheve_eau, carte_air, premiere_air, deuxieme_air, ouverture_air, acheve_air, debut_tour, debut_combat, premier_tour, tous_3_tours, tous_4_tours, pv_bas, fin_pa, fin_armure, fin_main, ennemi_meurt, pv_perdus, armure_gagnee, toutes_3_cartes, attaque, competence, gratuite, chere, premiere_carte, dernier_pa, trois_elements, zone, cible_brule, cible_empoisonnee, cible_vulnerable, telefrag_consomme, victoire, victoire_intacte.",
+    "Récompenses : puissance, armure, bouclier, soin, pioche, pa, reduction, esquive, renvoi, brulure, poison, vulnerabilite, faiblesse, erosion, etourdi, brulure_zone, poison_zone, degats, degats_zone, perte_pv, visee, telefrag, ralenti_zone, prospection, prospection_run.",
     "Règles : brulure_tenace, poison_tenace, premiere_gratuite, eau_vampire, armure_persistante, pa_plus, main_gardee, contagion, ricochet, puissance_armure, air_perce, vulne_forte, brule_empoisonne, etourdi_fragile, renvoi_moitie, triple_element, soin_bouclier, double_premier, faiblesse_forte, prospecteur, armure_offensive, braises, ivoire, pioche_plus, resurrection, ocre, cauchemar, critique, sablier, retenue, sang, poison_affaiblit, premier_double, pioche_vide, brulure_double, epines_armure, colosse."
   ],
   "classes": {
     "iop": {"pv": 80, "deck_depart": {"iop_coup_epee": 5, "iop_vitalite": 4, "iop_pression": 1}},
-    "cra": {"pv": 70, "deck_depart": {"cra_coup_arc": 5, "cra_tir_repli": 4, "cra_fleche_glacee": 1}}
+    "cra": {"pv": 70, "deck_depart": {"cra_coup_arc": 5, "cra_tir_repli": 4, "cra_fleche_glacee": 1}},
+    "xelor": {"pv": 70, "deck_depart": {"xelor_coup_baguette": 5, "xelor_conservation": 4, "xelor_frappe": 1}}
   },
-  "passifs": {"courroux": {"attaques": 3, "puissance": 1}, "visee": {"attaques": 5, "multiplicateur": 2}},
+  "passifs": {
+    "courroux": {"attaques": 3, "puissance": 1},
+    "visee": {"attaques": 5, "multiplicateur": 2},
+    "telefrag": {"marques": 0, "pioche": 1, "parTour": 1}
+  },
   "echelle_monstres": {
     "1": {
       "faible": {"pv": 1.11, "degats": 1.1},
@@ -192,10 +197,7 @@
       "phrase": "Personne ne tombe tant que je veille. Tiens-toi derrière mon bouclier.",
       "benedictions": {
         "fec_glyphe": {"nom": "Glyphe de garde", "effets": [{"regle": "armure_persistante"}]},
-        "fec_bouclier": {
-          "nom": "Bouclier Féca",
-          "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 6}]
-        },
+        "fec_bouclier": {"nom": "Bouclier Féca", "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 6}]},
         "fec_epines": {"nom": "Armure d'épines", "effets": [{"regle": "epines_armure"}]},
         "fec_armure": {"nom": "Armure terrestre", "stats": {"armure": 2}},
         "fec_treve": {"nom": "Trêve", "effets": [{"regle": "puissance_armure"}]},
@@ -2507,6 +2509,787 @@
           {
             "type": "grant",
             "fx": [{"kind": "roll", "parts": [{"trigger": "competence", "reward": "visee", "amount": 1}]}]
+          }
+        ]
+      }
+    },
+    "xelor_coup_baguette": {
+      "nom": "Coup de baguette",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [{"type": "damage", "amount": 6, "element": "neutre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "neutre"}]}
+    },
+    "xelor_conservation": {
+      "nom": "Conservation",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "base",
+      "effets": [{"type": "block", "amount": 3}],
+      "amelioration": {"effets": [{"type": "block", "amount": 5}]}
+    },
+    "xelor_frappe": {
+      "nom": "Frappe de Xélor",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "terre"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "terre"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_ralentissement": {
+      "nom": "Ralentissement",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 4, "element": "eau"},
+        {"type": "status", "status": "ralenti", "amount": 3, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 6, "element": "eau"},
+          {"type": "status", "status": "ralenti", "amount": 4, "on": "target"}
+        ]
+      }
+    },
+    "xelor_gelure": {
+      "nom": "Gelure",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 4, "element": "eau"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 6, "element": "eau"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_compte_goutte": {
+      "nom": "Compte-goutte",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "eau"},
+        {"type": "block", "amount": 4},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "eau"},
+          {"type": "block", "amount": 5},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_petrification": {
+      "nom": "Pétrification",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 11, "element": "eau"},
+        {"type": "status", "status": "ralenti", "amount": 4, "on": "target"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "discount", "amount": 1}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 15, "element": "eau"},
+          {"type": "status", "status": "ralenti", "amount": 5, "on": "target"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "discount", "amount": 1}]}
+        ]
+      }
+    },
+    "xelor_permutation": {
+      "nom": "Permutation",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "drain", "amount": 11, "element": "eau"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "drain", "amount": 15, "element": "eau"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_flou_temporel": {
+      "nom": "Flou Temporel",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "ralenti", "amount": 3, "on": "all_enemies"}],
+      "amelioration": {"effets": [{"type": "status", "status": "ralenti", "amount": 4, "on": "all_enemies"}]}
+    },
+    "xelor_sablier": {
+      "nom": "Sablier de Xélor",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 3, "element": "feu"},
+        {"type": "status", "status": "echeance", "amount": 5, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 4, "element": "feu"},
+          {"type": "status", "status": "echeance", "amount": 7, "on": "target"}
+        ]
+      }
+    },
+    "xelor_refraction": {
+      "nom": "Réfraction",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 4, "element": "feu"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "spread", "status": "telefrag"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 6, "element": "feu"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "spread", "status": "telefrag"}]}
+        ]
+      }
+    },
+    "xelor_perturbation": {
+      "nom": "Perturbation",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "drain", "amount": 6, "element": "feu"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "drain", "amount": 9, "element": "feu"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_sables": {
+      "nom": "Sables du Temps",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "feu", "hits": 2},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "feu", "hits": 2},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_poussiere": {
+      "nom": "Poussière",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 10, "element": "feu"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 14, "element": "feu"}]}
+    },
+    "xelor_rayon_obscur": {
+      "nom": "Rayon Obscur",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 8, "element": "feu", "bonus": {"per": "telefrag", "n": 5}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 11, "element": "feu", "bonus": {"per": "telefrag", "n": 7}}]}
+    },
+    "xelor_aiguille": {
+      "nom": "Aiguille",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "status", "status": "poison", "amount": 3, "on": "target"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 5, "element": "terre"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "poison", "amount": 4, "on": "target"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 7, "element": "terre"}]}
+        ]
+      }
+    },
+    "xelor_engrenage": {
+      "nom": "Engrenage",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 5, "element": "terre"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 7, "element": "terre"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "all_enemies"}
+        ]
+      }
+    },
+    "xelor_horloge": {
+      "nom": "Horloge",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 10, "element": "terre"},
+        {"type": "status", "status": "ralenti", "amount": 3, "on": "target"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 6, "element": "terre"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 13, "element": "terre"},
+          {"type": "status", "status": "ralenti", "amount": 4, "on": "target"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 8, "element": "terre"}]}
+        ]
+      }
+    },
+    "xelor_rouage": {
+      "nom": "Rouage",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "drain", "amount": 8, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "drain", "amount": 11, "element": "terre"}]}
+    },
+    "xelor_glas": {
+      "nom": "Glas",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 4, "element": "terre", "bonus": {"per": "telefrag_tour", "n": 4}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 5, "element": "terre", "bonus": {"per": "telefrag_tour", "n": 5}}]}
+    },
+    "xelor_souvenir": {
+      "nom": "Souvenir",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "drain", "amount": 3, "element": "air"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "drain", "amount": 5, "element": "air"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_gousset": {
+      "nom": "Gousset",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 3, "element": "air"},
+        {"type": "status", "status": "ralenti", "amount": 2, "on": "target"},
+        {
+          "type": "if",
+          "cond": "cible_telefrag",
+          "then": [{"type": "status", "status": "echeance", "amount": 6, "on": "target"}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 4, "element": "air"},
+          {"type": "status", "status": "ralenti", "amount": 2, "on": "target"},
+          {
+            "type": "if",
+            "cond": "cible_telefrag",
+            "then": [{"type": "status", "status": "echeance", "amount": 8, "on": "target"}]
+          }
+        ]
+      }
+    },
+    "xelor_fletrissement": {
+      "nom": "Flétrissement",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "air"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 6, "element": "air"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "air"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 8, "element": "air"}]}
+        ]
+      }
+    },
+    "xelor_dessechement": {
+      "nom": "Dessèchement",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 9, "element": "air"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "energy", "amount": 1}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 12, "element": "air"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "energy", "amount": 1}]}
+        ]
+      }
+    },
+    "xelor_distorsion": {
+      "nom": "Distorsion",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 11, "element": "air"},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 15, "element": "air"},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "all_enemies"}
+        ]
+      }
+    },
+    "xelor_pendule": {
+      "nom": "Pendule",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 12, "element": "air"},
+        {"type": "block", "amount": 4},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 16, "element": "air"},
+          {"type": "block", "amount": 6},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_teleportation": {
+      "nom": "Téléportation",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "block", "amount": 3}, {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}],
+      "amelioration": {"effets": [{"type": "block", "amount": 5}, {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}]}
+    },
+    "xelor_astrolabe": {
+      "nom": "Astrolabe",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "telefrag", "amount": 1, "on": "target"}, {"type": "draw", "amount": 1}],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"},
+          {"type": "draw", "amount": 1},
+          {"type": "block", "amount": 3}
+        ]
+      }
+    },
+    "xelor_espace_temps": {
+      "nom": "Espace-temps",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"},
+        {"type": "status", "status": "renvoi", "amount": 3, "on": "self"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"},
+          {"type": "status", "status": "renvoi", "amount": 5, "on": "self"}
+        ]
+      }
+    },
+    "xelor_paradoxe": {
+      "nom": "Paradoxe",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "spread", "status": "ralenti"}],
+      "amelioration": {
+        "effets": [{"type": "status", "status": "ralenti", "amount": 2, "on": "target"}, {"type": "spread", "status": "ralenti"}]
+      }
+    },
+    "xelor_desynchronisation": {
+      "nom": "Désynchronisation",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "telefrag", "amount": 1, "on": "all_enemies"}],
+      "amelioration": {
+        "effets": [{"type": "status", "status": "telefrag", "amount": 1, "on": "all_enemies"}, {"type": "draw", "amount": 1}]
+      },
+      "epuisee": true
+    },
+    "xelor_remanence": {
+      "nom": "Rémanence",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "xelor_vingt_cinquieme_heure": {
+      "nom": "Vingt-cinquième Heure",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "consume", "then": [{"type": "status", "status": "etourdi", "amount": 1, "on": "target"}]}],
+      "amelioration": {
+        "cout": 0,
+        "effets": [{"type": "consume", "then": [{"type": "status", "status": "etourdi", "amount": 1, "on": "target"}]}]
+      },
+      "epuisee": true
+    },
+    "xelor_momification": {
+      "nom": "Momification",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "esquive", "amount": 1, "on": "self"}],
+      "amelioration": {"effets": [{"type": "status", "status": "esquive", "amount": 1, "on": "self"}, {"type": "draw", "amount": 1}]},
+      "epuisee": true
+    },
+    "xelor_complice": {
+      "nom": "Complice",
+      "classe": "xelor",
+      "type": "pouvoir",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "debut_tour", "reward": "renvoi", "amount": 2}]}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "debut_tour", "reward": "renvoi", "amount": 3}]}]
+          }
+        ]
+      }
+    },
+    "xelor_cadran": {
+      "nom": "Cadran de Xélor",
+      "classe": "xelor",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "debut_tour", "reward": "telefrag", "amount": 1}]}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [
+              {
+                "kind": "roll",
+                "parts": [
+                  {"trigger": "debut_tour", "reward": "telefrag", "amount": 1},
+                  {"trigger": "debut_tour", "reward": "armure", "amount": 3}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "xelor_synchro": {
+      "nom": "Synchro",
+      "classe": "xelor",
+      "type": "pouvoir",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [
+            {
+              "kind": "roll",
+              "parts": [{"trigger": "telefrag_consomme", "reward": "degats_zone", "amount": 4, "limit": 1}]
+            }
+          ]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [
+              {
+                "kind": "roll",
+                "parts": [{"trigger": "telefrag_consomme", "reward": "degats_zone", "amount": 6, "limit": 1}]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "xelor_instabilite": {
+      "nom": "Instabilité",
+      "classe": "xelor",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [
+            {
+              "kind": "roll",
+              "parts": [{"trigger": "telefrag_consomme", "reward": "ralenti_zone", "amount": 2, "limit": 1}]
+            }
+          ]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [
+              {
+                "kind": "roll",
+                "parts": [{"trigger": "telefrag_consomme", "reward": "ralenti_zone", "amount": 3, "limit": 1}]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "xelor_tic_tac": {
+      "nom": "Tic-Tac",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "addCard", "card": "xelor_seconde", "count": 2, "pile": "hand"}],
+      "amelioration": {"effets": [{"type": "addCard", "card": "xelor_seconde", "count": 3, "pile": "hand"}]}
+    },
+    "xelor_aiguille_heures": {
+      "nom": "Aiguille des Heures",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 8, "element": "terre"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 8, "element": "terre"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "terre"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "damage", "amount": 10, "element": "terre"}]}
+        ]
+      }
+    },
+    "xelor_aiguille_minutes": {
+      "nom": "Aiguille des Minutes",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 3, "element": "air", "hits": 2},
+        {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 4, "element": "air", "hits": 2},
+          {"type": "status", "status": "telefrag", "amount": 1, "on": "target"}
+        ]
+      }
+    },
+    "xelor_contretemps": {
+      "nom": "Contretemps",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "eau"},
+        {"type": "if", "cond": "cible_ralentie", "then": [{"type": "draw", "amount": 1}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "eau"},
+          {"type": "if", "cond": "cible_ralentie", "then": [{"type": "draw", "amount": 1}]}
+        ]
+      }
+    },
+    "xelor_rouille": {
+      "nom": "Rouille",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "status", "status": "erosion", "amount": 2, "on": "target"},
+        {"type": "status", "status": "ralenti", "amount": 3, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "erosion", "amount": 3, "on": "target"},
+          {"type": "status", "status": "ralenti", "amount": 4, "on": "target"}
+        ]
+      }
+    },
+    "xelor_instant_suspendu": {
+      "nom": "Instant Suspendu",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "block", "amount": 8}],
+      "amelioration": {"effets": [{"type": "block", "amount": 11}]},
+      "conservee": true
+    },
+    "xelor_sablier_brise": {
+      "nom": "Sablier Brisé",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 5, "element": "feu"}, {"type": "detonate", "status": "echeance"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "feu"}, {"type": "detonate", "status": "echeance"}]}
+    },
+    "xelor_arret_temps": {
+      "nom": "Arrêt du Temps",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "ralenti", "amount": 10, "on": "all_enemies"}],
+      "amelioration": {"effets": [{"type": "status", "status": "ralenti", "amount": 14, "on": "all_enemies"}]},
+      "epuisee": true
+    },
+    "xelor_derniere_seconde": {
+      "nom": "Dernière Seconde",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "draw", "amount": 1}, {"type": "if", "cond": "pv_bas", "then": [{"type": "energy", "amount": 2}]}],
+      "amelioration": {
+        "effets": [{"type": "draw", "amount": 2}, {"type": "if", "cond": "pv_bas", "then": [{"type": "energy", "amount": 2}]}]
+      },
+      "epuisee": true
+    },
+    "xelor_horloge_interne": {
+      "nom": "Horloge Interne",
+      "classe": "xelor",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "telefrag_consomme", "reward": "armure", "amount": 3}]}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "telefrag_consomme", "reward": "armure", "amount": 4}]}]
+          }
+        ]
+      }
+    },
+    "xelor_boucle_temporelle": {
+      "nom": "Boucle Temporelle",
+      "classe": "xelor",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "toutes_3_cartes", "reward": "pioche", "amount": 1}]}]
+        }
+      ],
+      "amelioration": {
+        "cout": 0,
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "toutes_3_cartes", "reward": "pioche", "amount": 1}]}]
           }
         ]
       }

@@ -2,7 +2,7 @@
 import type { ClassId } from '../core/types.ts';
 
 // Crâ : 70 → 75 quand il était derrière le Iop, puis retour à 70 avec les vrais sorts. Voir docs/BALANCE.md.
-export const CLASS_START_HP: Partial<Record<ClassId, number>> = { iop: 80, cra: 70, xelor: 75 };
+export const CLASS_START_HP: Partial<Record<ClassId, number>> = { iop: 80, cra: 70, xelor: 70 };
 
 export const STARTERS: Partial<Record<ClassId, Record<string, number>>> = {
   iop: { iop_coup_epee: 5, iop_vitalite: 4, iop_pression: 1 },

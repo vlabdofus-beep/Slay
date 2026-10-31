@@ -322,3 +322,11 @@ Règles trop fortes, laissées telles quelles parce qu'elles sont aussi des effe
 Les 18 reliques et les 45 événements sont dans `equilibrage.json` (sections `reliques` et `evenements`), même forme que les bénédictions pour les effets, et `operations` pour les prix, gains et chances. Les textes des événements restent dans le code.
 
 
+
+## Le Xélor (31/10/2026, 1000 runs, lot 1)
+
+Mesure avec le bot (graines 1 à 1000, objets, boss 1 / boss 2 / victoire, étage moyen) : Iop 39 / 9 / 3 % (14,8), Crâ 35 / 13 / 3 % (14,8), Xélor 39 / 12 / 2 % (15,2). Le Xélor se place entre les deux.
+
+Le bot pose le Téléfrag avant d'attaquer (la marque vaut plus quand une attaque reste en main) : sur 200 combats de départ contre deux Bouftous, le passif pioche 0,59 fois par tour, presque chaque fois que la Frappe de Xélor est en main.
+
+Premier essai avec Conservation à 1 PA et 5 armure (comme la défense du Iop et du Crâ) : Xélor 11 / 3 / 0 % (8,3 étages). Toutes les cartes de départ coûtaient 1 PA : avec 3 PA et 5 cartes en main, la carte piochée par le passif ne se jouait jamais. Conservation reprend le coût de son sort (2 PA dans Dofus, donc 0) avec 3 armure (5 améliorée).

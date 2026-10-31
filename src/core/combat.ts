@@ -2,7 +2,7 @@ import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EffectPart, type EventId, ty
 import { Rng } from './rng.ts';
 import { PASSIVE_VALUES } from './classes.ts';
 const VISEE = () => PASSIVE_VALUES.visee.attaques;
-import { RALENTI_CAP, capRes } from './types.ts';
+import { capRes } from './types.ts';
 import type {
   CardDef,
   ClassId,
@@ -706,9 +706,10 @@ export class Combat {
       this.log.push(`${e.def.name} annule l'effet (artefact)`);
       return;
     }
-    this.addStatus(e, id, n);
-    if (id === 'telefrag') e.status.telefrag = 1;
-    if (id === 'ralenti') e.status.ralenti = Math.min(RALENTI_CAP, e.status.ralenti ?? 0);
+    // Ralenti : ne s'additionne pas, le plus fort l'emporte. Téléfrag : présent ou non.
+    if (id === 'ralenti') e.status.ralenti = Math.max(e.status.ralenti ?? 0, n);
+    else if (id === 'telefrag') e.status.telefrag = 1;
+    else this.addStatus(e, id, n);
     if (id === 'brulure' && this.rules.has('brule_empoisonne')) this.addStatus(e, 'poison', n);
   }
 
@@ -1027,7 +1028,7 @@ export class Combat {
         case 'multiply':
           for (const e of targets) {
             const cur = e.status[fx.status] ?? 0;
-            if (cur > 0 && !e.dead) e.status[fx.status] = fx.status === 'ralenti' ? Math.min(RALENTI_CAP, cur * fx.factor) : cur * fx.factor;
+            if (cur > 0 && !e.dead) e.status[fx.status] = cur * fx.factor;
           }
           break;
         case 'grant': {
@@ -1066,6 +1067,9 @@ export class Combat {
           break;
         case 'echo':
           this.echo += fx.count;
+          break;
+        case 'discount':
+          this.fxDiscount(fx.amount);
           break;
         case 'spread':
           for (const e of targets) {

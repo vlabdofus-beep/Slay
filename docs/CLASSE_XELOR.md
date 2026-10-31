@@ -1,7 +1,8 @@
 # Proposition : le Xélor, troisième classe
 
-Statut : **proposition révisée** (v2, après relecture de Grok), à valider par le propriétaire avant intégration.
-Rien ici n'est encore dans le code.
+Statut : **lot 1 intégré** (31/10/2026, branche `ia-claude/classe-xelor`) : 50 cartes jouables. Lot 2 à faire.
+Écarts avec la v2 : Conservation coûte 0 PA et donne 3 armure (5 améliorée), mesuré au bot (voir `docs/BALANCE.md`) ;
+Complice et Synchro coûtent 0 (2 PA dans Dofus) ; les dégâts de Synchro sont neutres.
 
 ## L'idée en une phrase
 Le Iop frappe fort, le Crâ prépare ses tirs ; le Xélor **dérègle le temps** : il marque ses ennemis d'un Téléfrag,
@@ -48,7 +49,7 @@ route) : deux Ralentissement à 2 font un ralenti 2, pas 4.
 | Carte | Nb | Coût | Effet (amélioré) |
 |---|---|---|---|
 | Coup de baguette | 5 | 1 | 6 dégâts (9) |
-| Conservation | 4 | 1 | 5 armure (8) |
+| Conservation | 4 | 0 | 3 armure (5) |
 | Frappe de Xélor (signature Terre) | 1 | 1 | 6 Terre, pose un Téléfrag (8) |
 
 ## Livraison en deux lots
@@ -123,9 +124,9 @@ est Téléfrag ; ② = lot 2. Valeurs de départ, à régler au bot.
 ### Pouvoirs
 | Carte | Coût | Rareté | Effet | Amélioré |
 |---|---|---|---|---|
-| Complice | 1 | commune | au début de ton tour, 2 renvoi | 3 renvoi |
+| Complice | 0 | commune | au début de ton tour, 2 renvoi | 3 renvoi |
 | Cadran de Xélor | 1 | rare | au début de ton tour, pose un Téléfrag sur un ennemi au hasard | et 3 armure |
-| Synchro | 1 | rare | la première fois de chaque tour que tu consommes un Téléfrag : 4 Air à tous les ennemis | 6 |
+| Synchro | 0 | rare | la première fois de chaque tour que tu consommes un Téléfrag : 4 dégâts neutres à tous les ennemis | 6 |
 | Instabilité | 1 | rare | la première fois de chaque tour que tu consommes un Téléfrag : ralenti 2 à tous les ennemis | ralenti 3 |
 
 ### Sorts inventés (13)

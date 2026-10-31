@@ -1,6 +1,6 @@
 // Texte lisible des cartes, effets, intentions et stats. Une seule source pour toute l'interface.
 import type { Combat, Enemy } from '../core/combat.ts';
-import { RALENTI_CAP, type CardDef, type CardTarget, type CondId, type Effect, type Element, type ScaleId, type StatusId, type Stats } from '../core/types.ts';
+import { type CardDef, type CardTarget, type CondId, type Effect, type Element, type ScaleId, type StatusId, type Stats } from '../core/types.ts';
 import { LIBRARY } from '../data/library.ts';
 import { PASSIVE_VALUES } from '../core/classes.ts';
 import { effectText as itemEffectText, ruleText, type ItemEffect, type RuleId } from '../core/effects.ts';
@@ -51,7 +51,7 @@ export const STATUS_INFO: Record<StatusId, { name: string; help: string }> = {
   esquive: { name: 'Esquive', help: 'Chaque point annule entièrement un coup reçu.' },
   etourdi: { name: 'Étourdi', help: 'Saute sa prochaine action. Un boss doit en cumuler 2.' },
   telefrag: { name: 'Téléfrag', help: 'Marqué par le Xélor. La prochaine attaque qui le touche consomme la marque et déclenche les effets de Téléfrag.' },
-  ralenti: { name: 'Ralenti', help: `Sa prochaine action inflige autant de dégâts en moins au total, puis le ralenti disparaît à la fin de son tour. ${RALENTI_CAP} au plus.` },
+  ralenti: { name: 'Ralenti', help: `Sa prochaine action inflige autant de dégâts en moins au total, puis le ralenti disparaît à la fin de son tour. Ne s\'additionne pas : le plus fort l\'emporte.` },
   echeance: { name: 'Échéance', help: 'À la fin de son prochain tour, perd autant de PV (l\'armure absorbe), puis l\'échéance disparaît.' },
 };
 
@@ -107,7 +107,11 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
     case 'spread':
       return `Copie le ${STATUS_INFO[fx.status].name.toLowerCase()} de la cible sur tous les autres ennemis.`;
     case 'detonate':
-      return `La cible perd tout de suite autant de PV que son ${STATUS_INFO[fx.status].name.toLowerCase()}, sans qu'il diminue.`;
+      return fx.status === 'poison'
+        ? `La cible perd tout de suite autant de PV que son ${STATUS_INFO[fx.status].name.toLowerCase()}, sans qu'il diminue.`
+        : `La cible subit tout de suite les dégâts de son ${STATUS_INFO[fx.status].name.toLowerCase()}, et le statut reste en place.`;
+    case 'discount':
+      return `Ta prochaine carte coûte <b>${fx.amount}</b> PA de moins.`;
     case 'exhaustHand':
       return 'Épuise les autres cartes de ta main.';
     case 'addCard': {

@@ -20,7 +20,8 @@ export type ClassId = 'iop' | 'cra' | 'eniripsa' | 'xelor' | 'osamodas';
  *  - esquive : chaque charge annule entièrement un coup reçu
  *  - etourdi : saute sa prochaine action (les boss doivent en cumuler 2)
  *  - telefrag : marque du Xélor (0 ou 1) ; consommée quand une attaque du joueur touche l'ennemi
- *  - ralenti : retrait de PA ; la prochaine action du monstre inflige N dégâts de moins au total (plafond RALENTI_CAP),
+ *  - ralenti : retrait de PA ; la prochaine action du monstre inflige N dégâts de moins au total (ne s'additionne pas :
+ *    le plus fort l'emporte),
  *    puis le ralenti disparaît à la fin de son tour
  *  - echeance : à la fin de son prochain tour, le monstre subit N dégâts Feu (l'armure absorbe), puis l'échéance disparaît */
 export type StatusId =
@@ -81,6 +82,8 @@ export type Effect =
   | { type: 'detonate'; status: StatusId }
   /** Épuise toutes les autres cartes de la main. */
   | { type: 'exhaustHand' }
+  /** Ta prochaine carte coûte n PA de moins (ce tour). */
+  | { type: 'discount'; amount: number }
   /** Xélor : consomme le Téléfrag de chaque cible qui en porte un, et lui applique `then`. */
   | { type: 'consume'; then: Effect[] };
 
@@ -226,6 +229,4 @@ export interface ItemDef {
 
 /** Résistance maximale d'un monstre, en % (même avec Peau de roche). */
 export const RES_CAP = 50;
-/** Ralenti maximal sur un monstre (il ne se cumule pas sans fin). */
-export const RALENTI_CAP = 10;
 export const capRes = (r: number) => Math.max(-100, Math.min(RES_CAP, r));

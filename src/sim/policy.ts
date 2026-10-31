@@ -102,6 +102,9 @@ function value(c: Combat, a: Move): number {
       case 'echo':
         v += w * 7;
         break;
+      case 'discount':
+        v += w * 2.5 * fx.amount;
+        break;
       case 'spread':
         for (const e of targets) v += w * 0.8 * (e.status[fx.status] ?? 0) * Math.max(0, c.living().length - 1);
         break;
