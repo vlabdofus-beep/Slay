@@ -109,6 +109,8 @@ Chaque classe a un passif permanent, l'équivalent de la relique de départ de S
 
 Écran `#bestiaire` (`src/ui/bestiary.ts`), ouvert depuis l'accueil, la carte et la barre du combat ; Échap ou « Reprendre la partie » ramène où l'on était. Cinq onglets avec recherche par nom : monstres (fiche complète : PV et dégâts tels qu'en jeu, faiblesses, mécaniques, actions et leur rythme, seconde phase, rencontres où on le croise), cartes (filtres classe, type, rareté, élément, version améliorée), objets (en partie, avec l'effet tiré pour la run), Dofus, effets et statuts (statuts, passifs, déclencheurs, récompenses, règles légendaires et des Dofus).
 
+**Recherche** (31/10/2026) : un champ en tête du bestiaire (raccourcis « / » ou Ctrl+F, Échap pour vider). Elle lit les noms et les textes (actions et mécaniques des monstres, effets des sorts, stats des objets, effets des Dofus, statuts et règles), sans accents ni casse, mot par mot (« feu crâ » = les deux mots). La première lettre ouvre l'onglet « Tout » : résultats groupés par catégorie, mots trouvés surlignés, les correspondances de nom en premier, un extrait qui dit pourquoi un monstre sort ; chaque onglet affiche son nombre de résultats et reste filtré par la recherche. Cliquer un monstre ouvre sa fiche.
+
 Pour l'instant tout est visible. `known()` dans `bestiary.ts` est l'endroit où brancher plus tard un bestiaire qui se remplit au fil des rencontres. Les monstres qu'aucune rencontre ne fait apparaître (Tortue Bleue, Branche Invocatrice) n'y figurent pas.
 
 ## Sorts inventés (31/10/2026)
@@ -139,7 +141,7 @@ L'accueil et la carte sont les premières images du jeu : ils se posent désorma
 
 - **Typographie** : Berkshire Swash (calligraphie de conte, un peu farceuse comme l'univers d'Ankama) pour le logo, les titres, les noms ; Alegreya Sans (humaniste, chaleureuse, bons accents français) pour le texte. Polices libres (OFL), servies depuis `public/assets/fonts`.
 - **Palette** : laine de Bouftou `#fff3d6` (texte), encre des contours `#10201a`, tournesol d'Astrub `#f0b739`, sous-bois `#14231d` / mousse `#1b2e26` pour les fonds ; rouge Iop `#e5483b` et vert Crâ `#7dbb2e` pour ce qui appartient à chaque classe.
-- **Signature** : les éléments forts portent un contour d'encre épais et une ombre franche décalée, comme des autocollants de carnet d'aventurier (logo, plateau de la carte, cases, boutons « Jouer »). Le reste reste sobre.
+- **Signature** : le pays peint porte tout. Les personnages se tiennent dans la scène (anneau au sol à la couleur de la classe pour le choix), le logo est une dorure sans contour, une seule pilule dorée « Jouer » par écran. Pas de contours d’encre ni d’ombres dures : la carte est un plateau aux bords doux, la personnalisation est rangée derrière « Apparence ».
 - **Accueil** : paysage peint avec les pièces du pack « champs d'Astrub » (ciel, collines en perspective aérienne, décors en rangs) ; les deux héros se tiennent dans le décor, une plaque sombre sous chacun.
 - **Carte** : plateau peint au sol du lieu de l'acte (champs d'Astrub, jungle, landes), semé de ses décors hors des cases et des chemins ; route prise et prochains pas en sentier de terre, le reste en pointillés ; cases en médaillons crème cerclés d'encre.
 - Code : `src/ui/scene/paint.ts` (peintures), `viewTitle`, `viewMap`, `mountLand`, `mountBoard` dans `src/ui/app.ts`.

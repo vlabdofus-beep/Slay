@@ -13,7 +13,7 @@ import { BALANCE_TARGETS, CLASS_START_HP, LIBRARY, balanceWarnings } from '../da
 import { applyBalance } from '../data/balance.ts';
 import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
 import { EGG_BY_ID, eggImage } from '../data/eggs.ts';
-import { bestiaryAct, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
+import { bestiaryAct, bestiarySearch, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
   cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
@@ -48,6 +48,9 @@ const ui = {
   /** Monstres qui viennent d'attaquer (petit élan vers le joueur). */
   lunge: new Set<number>(),
   gender: loadGender(),
+  /** Accueil : classe choisie (gardée d'une visite à l'autre) et panneau d'apparence ouvert. */
+  pick: ((): 'iop' | 'cra' => { try { return localStorage.getItem('slay.pick') === 'cra' ? 'cra' : 'iop'; } catch { return 'iop'; } })(),
+  lookOpen: false,
   /** Couleurs choisies à l'accueil, par classe et sexe (5 emplacements, null = d'origine). */
   colors: loadColors(),
 };
@@ -360,36 +363,43 @@ function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
 const HERO_HUE: Record<'iop' | 'cra', string> = { iop: '#e5483b', cra: '#7dbb2e' };
 
 function viewTitle(): string {
+  const pick = ui.pick;
   const hero = (id: 'iop' | 'cra') => {
     const b = DOFUS.breeds[id];
-    const g = ui.gender[id];
-    const radio = (v: 'm' | 'f', label: string) =>
-      `<button role="radio" aria-checked="${g === v}" class="${g === v ? 'on' : ''}" data-act="gender" data-classe="${id}" data-g="${v}">${label}</button>`;
-    const p = PASSIVES[id]!;
-    return `<section class="hero-pick h-${id}" style="--hue:${HERO_HUE[id]}" aria-labelledby="hero-${id}">
-      <div class="hero-stage"><canvas class="hero-canvas" data-preview="${id}" width="600" height="600" aria-hidden="true"></canvas></div>
-      <div class="hero-plate">
-        <h2 class="hero-name" id="hero-${id}">${esc(b.n)}<span class="hero-hp">${CLASS_START_HP[id]} PV</span></h2>
-        <p class="hero-pitch">${CLASS_INFO[id].pitch}</p>
-        <p class="hero-passive">${passiveBadge(id)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
-        <div class="hero-look">
-          <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
-          ${colorRow(id, g)}
-        </div>
-        <button class="play" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? 'le Iop' : 'le Crâ'}</button>
-      </div>
-    </section>`;
+    const on = id === pick;
+    return `<button class="hero-pick h-${id}${on ? ' on' : ''}" style="--hue:${HERO_HUE[id]}" role="radio" aria-checked="${on}" data-act="pick-class" data-classe="${id}" aria-label="${esc(b.n)}, ${CLASS_START_HP[id]} PV">
+      <span class="hero-stage"><span class="hero-ring" aria-hidden="true"></span><canvas class="hero-canvas" data-preview="${id}" width="600" height="600" aria-hidden="true"></canvas></span>
+      <span class="hero-name">${esc(b.n)}</span>
+      <span class="hero-hp">${CLASS_START_HP[id]} PV</span>
+    </button>`;
   };
-  return `<main class="title">
+  const p = PASSIVES[pick]!;
+  const g = ui.gender[pick];
+  const radio = (v: 'm' | 'f', label: string) =>
+    `<button role="radio" aria-checked="${g === v}" class="${g === v ? 'on' : ''}" data-act="gender" data-classe="${pick}" data-g="${v}">${label}</button>`;
+  return `<main class="title" style="--hue:${HERO_HUE[pick]}">
     <div class="land" data-land aria-hidden="true"></div>
     <header class="logo">
-      <h1 class="logo-word" aria-label="Dofus Slay"><span aria-hidden="true">Dofus</span><span aria-hidden="true">Slay</span></h1>
-      <p class="logo-sub">Un deckbuilder dans le Monde des Douze. Trois actes, d'Amakna aux landes de Brâkmar.</p>
+      <h1 class="logo-word">Dofus Slay</h1>
+      <p class="logo-sub">Un deckbuilder dans le Monde des Douze, d'Amakna aux landes de Brâkmar.</p>
     </header>
-    <div class="heroes">${hero('iop')}${hero('cra')}</div>
+    <div class="heroes" role="radiogroup" aria-label="Choisis ta classe">${hero('iop')}${hero('cra')}</div>
+    <section class="pick-info" aria-live="polite">
+      <p class="pick-pitch">${CLASS_INFO[pick].pitch}</p>
+      <p class="pick-passive">${passiveBadge(pick)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
+      <div class="pick-actions">
+        <button class="play" data-act="new-run" data-classe="${pick}">Jouer ${pick === 'iop' ? 'le Iop' : 'le Crâ'}</button>
+        <button class="look-toggle" data-act="look-toggle" aria-expanded="${ui.lookOpen}">Apparence</button>
+      </div>
+      ${ui.lookOpen ? `<div class="look-panel">
+        <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
+        ${colorRow(pick, g)}
+      </div>` : ''}
+    </section>
     <footer class="title-foot">
-      <button class="ghost" data-act="bestiary">Ouvrir le bestiaire</button>
-      <p class="fine">Fan game non officiel. Données issues de DofusDB, animations et décors de Dofus 3, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
+      <button class="link" data-act="bestiary">Bestiaire</button>
+      <span>Fan game non officiel. Données DofusDB, animations et décors de Dofus 3, univers © Ankama.</span>
+      <a class="link" href="#styleguide">Guide de style</a>
     </footer>
   </main>`;
 }
@@ -986,10 +996,12 @@ function render(): void {
       bx.scroll = false;
       if (window.innerWidth <= 1000) root.querySelector('.bx-detail')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
-    if (q !== null) {
+    if (q !== null || bx.focus) {
+      bx.focus = false;
       const input = root.querySelector('[data-bx-q]') as HTMLInputElement | null;
       input?.focus();
-      input?.setSelectionRange(q, q);
+      const at = q ?? input?.value.length ?? 0;
+      input?.setSelectionRange(at, at);
     }
     return;
   }
@@ -1379,6 +1391,13 @@ function handle(act: string, d: DOMStringMap): void {
       delete ui.colors[`${d.classe}${d.g}`];
       saveColors();
       break;
+    case 'pick-class':
+      ui.pick = d.classe === 'cra' ? 'cra' : 'iop';
+      try { localStorage.setItem('slay.pick', ui.pick); } catch { /* stockage indisponible */ }
+      break;
+    case 'look-toggle':
+      ui.lookOpen = !ui.lookOpen;
+      break;
     case 'gender':
       ui.gender[d.classe as 'iop' | 'cra'] = d.g === 'f' ? 'f' : 'm';
       try { localStorage.setItem('slay.gender', JSON.stringify(ui.gender)); } catch { /* stockage indisponible */ }
@@ -1603,11 +1622,27 @@ document.addEventListener('change', (ev) => {
 document.addEventListener('input', (ev) => {
   const el = ev.target as HTMLInputElement;
   if (!el.matches?.('[data-bx-q]')) return;
-  bx.q = el.value;
+  bestiarySearch(el.value);
   render();
 });
 
 document.addEventListener('keydown', (ev) => {
+  if (location.hash === '#bestiaire') {
+    const inField = (ev.target as HTMLElement)?.matches?.('[data-bx-q]');
+    // « / » ou Ctrl+F : aller à la recherche. Échap dans le champ : vider la recherche avant de quitter.
+    if (!inField && (ev.key === '/' || ((ev.ctrlKey || ev.metaKey) && ev.key === 'f'))) {
+      ev.preventDefault();
+      (root.querySelector('[data-bx-q]') as HTMLInputElement | null)?.focus();
+      return;
+    }
+    if (ev.key === 'Escape' && inField && bx.q) {
+      ev.preventDefault();
+      bestiarySearch('');
+      bx.focus = true;
+      render();
+      return;
+    }
+  }
   if (ev.key === 'Escape' && location.hash === '#bestiaire') {
     history.replaceState(null, '', location.pathname + location.search);
     render();

@@ -11,7 +11,7 @@ import { ITEMS } from '../data/items.ts';
 import { LIBRARY } from '../data/library.ts';
 import { ACTS, ENCOUNTERS, TIER_SCALE, type EncounterTier } from '../data/monsters.ts';
 import { STATUS_CARDS } from '../data/statusCards.ts';
-import { ELEMENT_NAMES, STATUS_INFO, esc, powerInfo } from './describe.ts';
+import { ELEMENT_NAMES, STATUS_INFO, cardText, esc, powerInfo, statsText } from './describe.ts';
 
 /** Outils de rendu partagés avec app.ts (cartes, objets, badges). */
 export interface BxHelpers {
@@ -31,21 +31,45 @@ export interface BxHelpers {
   rarityName: (r: string) => string;
 }
 
-type Tab = 'monstres' | 'cartes' | 'objets' | 'dofus' | 'effets';
+type Tab = 'tout' | 'monstres' | 'cartes' | 'objets' | 'dofus' | 'effets';
 export const bx = {
   tab: 'monstres' as Tab,
+  /** Onglet ouvert avant de lancer une recherche : on y revient quand la recherche est vidée. */
+  back: 'monstres' as Tab,
   act: 0, rank: '', q: '', pick: '',
   classe: '', type: '', rarity: '', el: '', up: false,
   slot: '', irar: '',
   /** Après un choix de monstre : amener la fiche à l'écran (petits écrans). */
   scroll: false,
+  /** Redonner le focus au champ de recherche au prochain rendu. */
+  focus: false,
 };
+
+/** Une frappe dans la recherche : la première lettre ouvre la vue « Tout ». */
+export function bestiarySearch(q: string): void {
+  const was = terms().length > 0;
+  bx.q = q;
+  const now = terms().length > 0;
+  if (now && !was && bx.tab !== 'tout') { bx.back = bx.tab; bx.tab = 'tout'; }
+}
 
 /** Ce que le joueur a déjà rencontré. Tout est accessible pour l'instant. */
 const known = (_kind: 'monstre' | 'carte' | 'objet' | 'dofus', _id: string) => true;
 
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const match = (name: string) => !bx.q || norm(name).includes(norm(bx.q));
+// ───────────── recherche ─────────────
+// Sans accents ni casse, mot par mot : « feu crâ » trouve les sorts Crâ qui parlent de feu.
+// On cherche dans le nom ET dans les textes (actions, mécaniques, effets des sorts, stats des objets).
+const norm = (s: string) => s.replace(/<[^>]*>/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const terms = () => norm(bx.q).split(/[\s,;:]+/).filter(Boolean);
+/** Mot court (3 lettres ou moins) : seulement en début de mot, pour que « cra » ne trouve pas « écrasement ». */
+const wordStart = (w: string) => new RegExp(`(^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+const has = (h: string, w: string) => (w.length > 3 ? h.includes(w) : wordStart(w).test(h));
+const hit = (hay: string) => { const t = terms(); if (!t.length) return true; const h = norm(hay); return t.every((w) => has(h, w)); };
+const match = hit;
+/** Le nom contient-il toute la recherche ? Sert à classer ces résultats en premier. */
+const named = (name: string) => { const t = terms(); const n = norm(name); return t.every((w) => has(n, w)); };
+const byName = <T>(list: T[], name: (x: T) => string) => [...list].sort((a, b) => Number(named(name(b))) - Number(named(name(a))));
+
 
 // ───────────── index des monstres ─────────────
 
@@ -135,6 +159,74 @@ function patternText(def: MonsterDef, p = def.pattern): string {
   return `Au hasard : ${parts}. Jamais plus de ${p.maxRepeat} fois de suite la même action.`;
 }
 
+const RANK_WORDS: Record<string, string> = { boss: 'boss', escorte: 'escorte boss', elite: 'élite', normal: 'normal', faible: 'faible', invocation: 'invocation invoqué' };
+const hayCache = new Map<string, string>();
+function monsterHay(e: MonsterEntry): string {
+  const k = 'm:' + e.def.id;
+  let h = hayCache.get(k);
+  if (h === undefined) {
+    const d = e.def;
+    h = [d.name, RANK_WORDS[e.rank], `acte ${e.act}`, ACTS[e.act - 1].name,
+      ...(d.powers ?? []).map((p) => { const i = powerInfo(p); return `${i.name} ${i.help}`; }),
+      ...Object.values(d.moves).map((mv) => `${mv.name} ${moveText(mv, e)}`),
+      d.phase2?.name ?? '', d.splitInto ? `division ${monsterName(d.splitInto)}` : ''].join(' ');
+    hayCache.set(k, h);
+  }
+  return h;
+}
+const CLASS_WORDS: Record<string, string> = { iop: 'iop', cra: 'crâ cra', neutre: 'arme armes neutre' };
+function cardHay(c: CardDef): string {
+  const k = 'c:' + c.id + (bx.up ? '+' : '');
+  let h = hayCache.get(k);
+  if (h === undefined) {
+    const def = bx.up && c.upgrade ? resolveCard(LIBRARY, { uid: 0, id: c.id, upgraded: true }) : c;
+    h = [def.name, c.status ? 'statut' : CLASS_WORDS[c.classe ?? ''] ?? '', TYPE_NAMES[c.type] ?? c.type, c.element ? ELEMENT_NAMES[c.element] : '', cardText(def)].join(' ');
+    hayCache.set(k, h);
+  }
+  return h;
+}
+const itemHay = (it: ItemDef, h: BxHelpers) => [it.name, h.slotName(it.slot), h.rarityName(it.rarity), ...statsText(it.stats)].join(' ');
+const eggHay = (e: (typeof EGGS)[number]) => [e.name, ...e.effects.map(effectLine)].join(' ');
+
+/** Ce que la recherche trouve dans chaque onglet. */
+function counts(h: BxHelpers): Record<Exclude<Tab, 'tout'>, number> {
+  return {
+    monstres: index().filter((e) => hit(monsterHay(e))).length,
+    cartes: [...ALL_CARDS, ...STATUS_CARDS].filter((c) => hit(cardHay(c))).length,
+    objets: Object.values(ITEMS.items).filter((it) => hit(itemHay(it, h))).length,
+    dofus: EGGS.filter((e) => hit(eggHay(e))).length,
+    effets: effectLines(h).filter((l) => hit(l.text)).length,
+  };
+}
+
+interface EffectLine { group: string; html: string; text: string }
+function effectLines(h: BxHelpers): EffectLine[] {
+  const out: EffectLine[] = [];
+  for (const [id, s] of Object.entries(STATUS_INFO)) out.push({ group: 'Statuts', text: `${s.name} ${s.help}`, html: `<img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span>` });
+  for (const cl of Object.keys(PASSIVES) as ClassId[]) { const p = PASSIVES[cl]!; out.push({ group: 'Passifs de classe', text: `${p.name} ${cl === 'iop' ? 'Iop' : 'Crâ'} ${p.text}`, html: `${h.passiveBadge(cl)}<span><b>${esc(p.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(p.text)}</span>` }); }
+  for (const t of TRIGGERS) out.push({ group: "Déclencheurs d'objets", text: t.text, html: esc(t.text) });
+  for (const r of Object.values(RULES)) out.push({ group: 'Règles légendaires', text: r, html: esc(r) });
+  for (const r of Object.values(DOFUS_RULES)) out.push({ group: 'Règles des Dofus', text: r, html: esc(r) });
+  return out;
+}
+
+/** Mettre en évidence les mots cherchés dans un texte déjà échappé (hors balises). */
+function mark(html: string): string {
+  const t = terms();
+  if (!t.length) return html;
+  return html.replace(/(<[^>]*>)|([^<]+)/g, (all, tag: string | undefined, text: string | undefined) => {
+    if (tag || !text) return all;
+    const plain = norm(text);
+    const spans: [number, number][] = [];
+    for (const w of t) for (let i = plain.indexOf(w); i >= 0; i = plain.indexOf(w, i + w.length)) if (w.length > 3 || i === 0 || !/[a-z0-9]/.test(plain[i - 1])) spans.push([i, i + w.length]);
+    if (!spans.length) return text;
+    spans.sort((a, b) => a[0] - b[0]);
+    let res = '', at = 0;
+    for (const [a, b] of spans) { if (a < at) continue; res += text.slice(at, a) + `<mark>${text.slice(a, b)}</mark>`; at = b; }
+    return res + text.slice(at);
+  });
+}
+
 // ───────────── vues ─────────────
 
 function chips(key: keyof typeof bx, options: [string | number, string][]): string {
@@ -145,7 +237,7 @@ function chips(key: keyof typeof bx, options: [string | number, string][]): stri
 }
 
 function viewMonsters(h: BxHelpers): string {
-  const list = index().filter((e) => known('monstre', e.def.id) && (!bx.act || e.act === bx.act) && (!bx.rank || e.rank === bx.rank) && match(e.def.name));
+  const list = index().filter((e) => known('monstre', e.def.id) && (!bx.act || e.act === bx.act) && (!bx.rank || e.rank === bx.rank) && hit(monsterHay(e)));
   const pick = list.find((e) => e.def.id === bx.pick) ?? list[0];
   const filters = `<div class="bx-filters">
     ${chips('act', [[0, 'Tous les actes'], ...ACTS.map((a): [number, string] => [a.act, `Acte ${a.act}`])])}
@@ -209,7 +301,7 @@ function viewCards(h: BxHelpers): string {
   const all = [...ALL_CARDS, ...STATUS_CARDS];
   const list = all.filter((c) => known('carte', c.id)
     && (!bx.classe || (bx.classe === 'statut' ? !!c.status : c.classe === bx.classe && !c.status))
-    && (!bx.type || c.type === bx.type) && (!bx.rarity || c.rarity === bx.rarity) && (!bx.el || c.element === bx.el) && match(c.name));
+    && (!bx.type || c.type === bx.type) && (!bx.rarity || c.rarity === bx.rarity) && (!bx.el || c.element === bx.el) && hit(cardHay(c)));
   const filters = `<div class="bx-filters">
     ${chips('classe', [['', 'Toutes'], ['iop', 'Iop'], ['cra', 'Crâ'], ['neutre', 'Armes'], ['statut', 'Statut']])}
     ${chips('type', [['', 'Tous types'], ...Object.entries(TYPE_NAMES)])}
@@ -236,7 +328,7 @@ function cardOf(c: CardDef, h: BxHelpers): string {
 }
 
 function viewItems(h: BxHelpers): string {
-  const items = Object.values(ITEMS.items).filter((it) => known('objet', it.id) && (!bx.slot || it.slot === bx.slot) && (!bx.irar || it.rarity === bx.irar) && match(it.name));
+  const items = Object.values(ITEMS.items).filter((it) => known('objet', it.id) && (!bx.slot || it.slot === bx.slot) && (!bx.irar || it.rarity === bx.irar) && hit(itemHay(it, h)));
   const size = poolSize();
   const filters = `<div class="bx-filters">
     ${chips('slot', [['', 'Tous emplacements'], ...SLOTS.map((s): [string, string] => [s, h.slotName(s)])])}
@@ -254,7 +346,7 @@ function viewItems(h: BxHelpers): string {
 }
 
 function viewEggs(h: BxHelpers): string {
-  const eggs = EGGS.filter((e) => known('dofus', e.id) && match(e.name));
+  const eggs = EGGS.filter((e) => known('dofus', e.id) && hit(eggHay(e)));
   return `<p class="bx-lead">Après les boss des actes 1 et 2, tu choisis un Dofus parmi trois. Ses effets durent toute la run.</p>
     <div class="bx-eggs">${eggs.map((e) => `<div class="bx-egg">${h.eggIcon(e.id, 'bx-egg-ico')}<div><b>${esc(e.name)}</b>${h.eggBadges(e.id)}
       <span class="bx-eggtxt">${e.effects.map(effectLine).map((t) => `<span>${esc(t)}</span>`).join('')}</span></div></div>`).join('')}</div>`;
@@ -267,8 +359,8 @@ function effectLine(fx: ItemEffect): string {
 }
 
 function viewEffects(h: BxHelpers): string {
-  const statuses = Object.entries(STATUS_INFO).map(([id, s]) => `<li><img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span></li>`).join('');
-  const passives = (Object.keys(PASSIVES) as ClassId[]).map((cl) => `<li>${h.passiveBadge(cl)}<span><b>${esc(PASSIVES[cl]!.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(PASSIVES[cl]!.text)}</span></li>`).join('');
+  const statuses = Object.entries(STATUS_INFO).filter(([, s]) => hit(`${s.name} ${s.help}`)).map(([id, s]) => `<li><img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span></li>`).join('');
+  const passives = (Object.keys(PASSIVES) as ClassId[]).filter((cl) => hit(`${PASSIVES[cl]!.name} ${cl} ${PASSIVES[cl]!.text}`)).map((cl) => `<li>${h.passiveBadge(cl)}<span><b>${esc(PASSIVES[cl]!.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(PASSIVES[cl]!.text)}</span></li>`).join('');
   const triggers = TRIGGERS.filter((t) => match(t.text)).map((t) => `<li>${esc(t.text)}${t.el ? '' : ''}</li>`).join('');
   const rewards = REWARDS.filter((r) => r.id !== 'visee').map((r) => {
     const t = TRIGGERS.find((x) => x.kind === 'card') ?? TRIGGERS[0];
@@ -288,7 +380,7 @@ function viewEffects(h: BxHelpers): string {
   </div>`;
 }
 
-const TABS: [Tab, string, () => number][] = [
+const TABS: [Exclude<Tab, 'tout'>, string, () => number][] = [
   ['monstres', 'Monstres', () => index().length],
   ['cartes', 'Cartes', () => ALL_CARDS.length + STATUS_CARDS.length],
   ['objets', 'Objets', () => Object.keys(ITEMS.items).length],
@@ -296,17 +388,94 @@ const TABS: [Tab, string, () => number][] = [
   ['effets', 'Effets et statuts', () => 0],
 ];
 
+/** Combien de résultats montrer par catégorie dans la vue « Tout » avant de renvoyer vers l'onglet. */
+const PREVIEW = { monstres: 12, cartes: 8, objets: 9, dofus: 6, effets: 10 };
+
+function more(tab: Exclude<Tab, 'tout'>, shown: number, total: number, label: string): string {
+  return `<h3 class="bx-group bx-hit-head">${label} <span class="muted">${total}</span>
+    ${total > shown ? `<button class="bx-more" data-act="bx-tab" data-tab="${tab}">Voir les ${total}</button>` : `<button class="bx-more" data-act="bx-tab" data-tab="${tab}">Ouvrir l'onglet</button>`}</h3>`;
+}
+
+function viewAll(h: BxHelpers, n: ReturnType<typeof counts>): string {
+  const total = Object.values(n).reduce((a, b) => a + b, 0);
+  if (!total) return `<div class="bx-empty"><p>Rien ne correspond à « ${esc(bx.q)} ».</p>
+    <p class="muted">La recherche lit les noms et les textes : essaie un élément (« feu »), un statut (« poison »), une mécanique (« invoque ») ou une partie de nom.</p></div>`;
+  let out = `<p class="bx-lead bx-found">${total} résultat${total > 1 ? 's' : ''} pour « ${esc(bx.q)} ».</p>`;
+  if (n.monstres) {
+    const list = byName(index().filter((e) => hit(monsterHay(e))), (e) => e.def.name);
+    out += more('monstres', Math.min(list.length, PREVIEW.monstres), list.length, 'Monstres');
+    out += `<div class="bx-mgrid">${list.slice(0, PREVIEW.monstres).map((e) => {
+      const hp = scaledHp(e);
+      const why = named(e.def.name) ? '' : `<span class="bx-why">${snippet(monsterHay(e))}</span>`;
+      return `<button class="bx-mtile r-${e.rank}" data-act="bx-goto" data-id="${e.def.id}">
+        ${h.pic(e.def.image, e.def.name, 'bx-mpic')}
+        <span class="bx-mname">${mark(esc(e.def.name))}</span>
+        <span class="bx-mmeta"><span class="bx-rank">${RANK_NAME[e.rank]}</span>${hp[0] === hp[1] ? hp[0] : `${hp[0]}–${hp[1]}`} PV</span>${why}
+      </button>`;
+    }).join('')}</div>`;
+  }
+  if (n.cartes) {
+    const list = byName([...ALL_CARDS, ...STATUS_CARDS].filter((c) => hit(cardHay(c))), (c) => c.name);
+    out += more('cartes', Math.min(list.length, PREVIEW.cartes), list.length, 'Cartes');
+    out += `<div class="bx-cgrid">${list.slice(0, PREVIEW.cartes).map((c) => cardOf(c, h)).join('')}</div>`;
+  }
+  if (n.objets) {
+    const list = byName(Object.values(ITEMS.items).filter((it) => hit(itemHay(it, h))), (it) => it.name);
+    out += more('objets', Math.min(list.length, PREVIEW.objets), list.length, 'Objets');
+    out += `<div class="bx-igrid">${list.slice(0, PREVIEW.objets).map((it) => h.itemTile(it)).join('')}</div>`;
+  }
+  if (n.dofus) {
+    const list = EGGS.filter((e) => hit(eggHay(e)));
+    out += more('dofus', list.length, list.length, 'Dofus');
+    out += `<div class="bx-eggs">${list.map((e) => `<div class="bx-egg">${h.eggIcon(e.id, 'bx-egg-ico')}<div><b>${mark(esc(e.name))}</b>${h.eggBadges(e.id)}
+      <span class="bx-eggtxt">${e.effects.map(effectLine).map((t) => `<span>${mark(esc(t))}</span>`).join('')}</span></div></div>`).join('')}</div>`;
+  }
+  if (n.effets) {
+    const list = effectLines(h).filter((l) => hit(l.text));
+    out += more('effets', Math.min(list.length, PREVIEW.effets), list.length, 'Effets et règles');
+    out += `<ul class="bx-st bx-hits">${list.slice(0, PREVIEW.effets).map((l) => `<li>${l.html.includes('<span>') ? mark(l.html) : `<span><span class="bx-tag">${esc(l.group)}</span> ${mark(l.html)}</span>`}</li>`).join('')}</ul>`;
+  }
+  return out;
+}
+
+/** Extrait du texte autour du premier mot trouvé, pour dire pourquoi un résultat sort. */
+function snippet(hay: string): string {
+  const plain = hay.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ');
+  const n = norm(plain);
+  const w = terms().find((t) => has(n, t));
+  if (!w) return '';
+  const m = w.length > 3 ? null : wordStart(w).exec(n);
+  const i = m ? m.index + m[1].length : n.indexOf(w);
+  const a = Math.max(0, plain.lastIndexOf(' ', Math.max(0, i - 28)));
+  const b = plain.indexOf(' ', Math.min(plain.length, i + w.length + 34));
+  return mark(esc(`${a > 0 ? '… ' : ''}${plain.slice(a, b < 0 ? undefined : b).trim()}${b > 0 ? ' …' : ''}`));
+}
+
 export function viewBestiary(h: BxHelpers, inRun: boolean): string {
-  const body = bx.tab === 'monstres' ? viewMonsters(h) : bx.tab === 'cartes' ? viewCards(h) : bx.tab === 'objets' ? viewItems(h)
+  const searching = terms().length > 0;
+  if (!searching && bx.tab === 'tout') bx.tab = bx.back;
+  const n = searching ? counts(h) : null;
+  const body = bx.tab === 'tout' && n ? viewAll(h, n) : bx.tab === 'monstres' ? viewMonsters(h) : bx.tab === 'cartes' ? viewCards(h) : bx.tab === 'objets' ? viewItems(h)
     : bx.tab === 'dofus' ? viewEggs(h) : viewEffects(h);
+  const total = n ? Object.values(n).reduce((a, b) => a + b, 0) : 0;
   return `<main class="bestiary">
     <header class="bx-head">
       <div><h1 class="brand-name">Bestiaire</h1><p class="brand-sub">Monstres, sorts et reliques du Monde des Douze</p></div>
       <button class="ghost" data-act="bx-close">${inRun ? 'Reprendre la partie' : "Retour à l'accueil"}</button>
     </header>
-    <nav class="bx-tabs" role="tablist">${TABS.map(([id, label, n]) =>
-      `<button role="tab" aria-selected="${bx.tab === id}" class="bx-tab${bx.tab === id ? ' on' : ''}" data-act="bx-tab" data-tab="${id}">${label}${n() ? ` <span>${n()}</span>` : ''}</button>`).join('')}
-      <label class="bx-search"><span class="sr-only">Rechercher</span><input type="search" data-bx-q placeholder="Rechercher un nom" value="${esc(bx.q)}" autocomplete="off"></label>
+    <form class="bx-search" role="search" onsubmit="return false">
+      <label for="bx-q" class="sr-only">Rechercher dans le bestiaire</label>
+      <svg class="bx-search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      <input id="bx-q" type="search" data-bx-q placeholder="Chercher un monstre, un sort, un objet, un effet… (ex. « poison », « feu crâ »)" value="${esc(bx.q)}" autocomplete="off" spellcheck="false" aria-describedby="bx-q-help">
+      ${searching ? '<button type="button" class="bx-clear" data-act="bx-clear" aria-label="Effacer la recherche">Effacer</button>' : '<kbd class="bx-kbd" aria-hidden="true">/</kbd>'}
+      <span id="bx-q-help" class="sr-only">Cherche dans les noms et les descriptions. Échap efface la recherche.</span>
+    </form>
+    <nav class="bx-tabs" role="tablist">
+      ${searching ? `<button role="tab" aria-selected="${bx.tab === 'tout'}" class="bx-tab${bx.tab === 'tout' ? ' on' : ''}" data-act="bx-tab" data-tab="tout">Tout <span>${total}</span></button>` : ''}
+      ${TABS.map(([id, label, count]) => {
+        const c = n ? n[id] : count();
+        return `<button role="tab" aria-selected="${bx.tab === id}" class="bx-tab${bx.tab === id ? ' on' : ''}${n && !c ? ' none' : ''}" data-act="bx-tab" data-tab="${id}">${label}${c || n ? ` <span>${c}</span>` : ''}</button>`;
+      }).join('')}
     </nav>
     ${body}
   </main>`;
@@ -315,9 +484,11 @@ export function viewBestiary(h: BxHelpers, inRun: boolean): string {
 /** Clics du bestiaire. Renvoie true si l'action le concernait. */
 export function bestiaryAct(act: string, d: DOMStringMap): boolean {
   switch (act) {
-    case 'bx-tab': bx.tab = d.tab as Tab; return true;
+    case 'bx-tab': bx.tab = d.tab as Tab; if (bx.tab !== 'tout') bx.back = bx.tab; return true;
+    case 'bx-goto': bx.tab = 'monstres'; bx.back = 'monstres'; bx.pick = d.id ?? ''; bx.act = 0; bx.rank = ''; bx.q = ''; bx.scroll = true; return true;
+    case 'bx-clear': bx.q = ''; bx.focus = true; return true;
     case 'bx-pick': bx.pick = d.id ?? ''; bx.scroll = true; return true;
-    case 'bx-up': bx.up = !bx.up; return true;
+    case 'bx-up': bx.up = !bx.up; hayCache.clear(); return true;
     case 'bx-set': {
       const k = d.k as keyof typeof bx;
       const v = d.v ?? '';
