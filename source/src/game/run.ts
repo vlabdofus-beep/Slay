@@ -9,7 +9,7 @@ import { Rng } from '../core/rng.ts';
 import type { CardInstance, ClassId, ItemRarity } from '../core/types.ts';
 import { EGGS, EGG_BY_ID } from '../data/eggs.ts';
 import { ITEMS, ITEM_LIST } from '../data/items.ts';
-import { CLASS_START_HP, LIBRARY, newCard, rewardPool, starterDeck } from '../data/library.ts';
+import { CLASS_START_HP, LIBRARY, rewardPool, starterDeck } from '../data/library.ts';
 import { TIER_SCALE, ENCOUNTERS, encountersOfTier, type Act, type EncounterTier } from '../data/monsters.ts';
 import { GODS, BOON_BY_ID, type GodId } from '../data/gods.ts';
 import { RELICS, RELIC_BY_ID } from '../data/relics.ts';
@@ -94,6 +94,9 @@ export class Run {
   private queue: RunOp[] = [];
   /** Combat lancé par un événement : sa prime, donnée à la victoire. */
   private eventPrize: RunOp[] | null = null;
+  /** Identifiants des cartes du deck, propres à la run : une run rejouée retrouve les mêmes (sauvegarde). */
+  private nextUid = 1;
+  private card(id: string, upgraded = false): CardInstance { return { uid: this.nextUid++, id, upgraded }; }
   /** Désactive les dieux (tests ciblés). */
   readonly gods: boolean;
   shop: Shop | null = null;
@@ -134,7 +137,7 @@ export class Run {
     this.seed = seed;
     this.rng = new Rng(seed);
     this.map = generateMap(Run.mapSeed(seed, 1));
-    this.deck = starterDeck(classe);
+    this.deck = starterDeck(classe).map((c) => this.card(c.id));
     this.baseMaxHp = CLASS_START_HP[classe] as number;
     this.hp = this.baseMaxHp;
     this.assignEncounters(new Rng(seed ^ 0x2c1b3c6d));
@@ -336,7 +339,7 @@ export class Run {
     const r = this.reward;
     if (this.phase !== 'reward' || !r || r.cardTaken) throw new Error('Aucune carte à prendre');
     if (!r.cards.includes(id)) throw new Error(`Carte ${id} non proposée`);
-    this.deck.push(newCard(id));
+    this.deck.push(this.card(id));
     r.cardTaken = id;
   }
 
@@ -428,7 +431,7 @@ export class Run {
     if (!e) throw new Error('Carte indisponible');
     this.pay(e.price);
     e.sold = true;
-    this.deck.push(newCard(id));
+    this.deck.push(this.card(id));
   }
 
   buyItem(id: string): void {
@@ -615,7 +618,7 @@ export class Run {
         this.pending = { kind: 'card', options: this.cardOffer(o.rarity === 'rare' ? 1 : o.rarity === 'commune' ? 0 : 0.35, 3, o.neutral) };
         break;
       case 'curse':
-        this.deck.push(newCard(o.id));
+        this.deck.push(this.card(o.id));
         this.note(`Malédiction : ${LIBRARY.cards[o.id].name}`);
         break;
       case 'itemChoice': {
@@ -668,11 +671,11 @@ export class Run {
     const name = LIBRARY.cards[card.id].name;
     if (p.what === 'remove') { this.deck.splice(this.deck.indexOf(card), 1); this.note(`Retirée : ${name}`); }
     if (p.what === 'upgrade') { card.upgraded = true; this.note(`Améliorée : ${name}`); }
-    if (p.what === 'duplicate') { this.deck.push({ ...newCard(card.id), upgraded: card.upgraded }); this.note(`Copiée : ${name}`); }
+    if (p.what === 'duplicate') { this.deck.push({ ...this.card(card.id), upgraded: card.upgraded }); this.note(`Copiée : ${name}`); }
     if (p.what === 'transform') {
       const pool = rewardPool(this.classe).filter((id) => id !== card.id);
       const id = this.rng.pick(pool);
-      this.deck.splice(this.deck.indexOf(card), 1, newCard(id));
+      this.deck.splice(this.deck.indexOf(card), 1, this.card(id));
       this.note(`${name} devient ${LIBRARY.cards[id].name}`);
     }
     p.left--;
@@ -686,7 +689,7 @@ export class Run {
     if (!p || p.kind !== 'card') throw new Error('Aucun choix de carte en attente');
     if (id) {
       if (!p.options.includes(id)) throw new Error('Carte non proposée');
-      this.deck.push(newCard(id));
+      this.deck.push(this.card(id));
       this.note(`Carte : ${LIBRARY.cards[id].name}`);
     }
     this.pending = null;

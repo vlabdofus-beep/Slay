@@ -16,6 +16,7 @@ import { EGG_BY_ID, eggImage } from '../data/eggs.ts';
 import { bestiaryAct, bestiarySearch, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import { boonLines, opText, type Boon } from '../game/boons.ts';
+import { record, replay, type SaveFile } from '../game/save.ts';
 import { GOD_BY_ID, BOON_BY_ID } from '../data/gods.ts';
 import { RELIC_BY_ID } from '../data/relics.ts';
 import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
@@ -59,6 +60,8 @@ const ui = {
   colors: loadColors(),
   /** Le passif de classe vient de se déclencher (la jauge flashe). */
   passiveFlash: false,
+  /** Sauvegarde illisible : message affiché sur l'accueil. */
+  saveError: '',
   /** Choix en attente sur l'écran de récompense : rien n'est pris avant « Reprendre la route ». */
   pickCard: null as string | null,
   pickItem: null as string | null,
@@ -397,8 +400,56 @@ function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
 
 const HERO_HUE: Record<'iop' | 'cra', string> = { iop: '#e5483b', cra: '#7dbb2e' };
 
+// ───────────── sauvegarde automatique ─────────────
+// La run en cours est gardée dans le navigateur (localStorage) après chaque action : graine + actions jouées,
+// rejouées au retour (voir src/game/save.ts). Une run finie (victoire ou défaite) efface la sauvegarde.
+const SAVE_KEY = 'slay.save';
+function readSave(): SaveFile | null {
+  try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) as SaveFile : null; } catch { return null; }
+}
+function writeSave(sv: SaveFile): void {
+  try {
+    if (sv.meta.phase === 'victory' || sv.meta.phase === 'defeat') localStorage.removeItem(SAVE_KEY);
+    else localStorage.setItem(SAVE_KEY, JSON.stringify(sv));
+  } catch { /* stockage plein ou interdit (navigation privée) : on joue sans sauvegarde */ }
+}
+/** Lance (ou reprend) une run et branche la sauvegarde dessus. */
+function startRun(run: Run, actions: SaveFile['actions'] = []): void {
+  ui.run = run;
+  ui.modal = null;
+  ui.selecting = null;
+  record(run, writeSave, actions);
+  if (!actions.length) writeSave({ v: 1, classe: run.classe, seed: run.seed, gender: run.gender, actions, meta: { act: run.act, floor: 0, hp: run.hp, maxHp: run.maxHp, kamas: run.kamas, phase: run.phase, deck: run.deck.length, at: Date.now() } });
+}
+async function continueRun(): Promise<void> {
+  const sv = readSave();
+  if (!sv) return;
+  await Promise.race([balanceReady, new Promise((r) => setTimeout(r, 2500))]);
+  const out = replay(sv);
+  if (!out) {
+    ui.saveError = 'Cette sauvegarde ne peut plus être reprise : les règles du jeu ont changé depuis. Elle a été effacée.';
+    try { localStorage.removeItem(SAVE_KEY); } catch { /* rien */ }
+  } else {
+    if (out.drift) console.warn('Sauvegarde reprise, mais l\'état diffère un peu de celui enregistré (équilibrage modifié depuis ?)');
+    startRun(out.run, sv.actions);
+  }
+  render();
+}
+
+function resumeHtml(): string {
+  const sv = readSave();
+  if (ui.saveError) return `<p class="resume-error" role="alert">${esc(ui.saveError)}</p>`;
+  if (!sv?.meta) return '';
+  const m = sv.meta;
+  const who = sv.classe === 'iop' ? 'Le Iop' : 'Le Crâ';
+  const where = m.floor ? `acte ${m.act}, étage ${m.floor}` : `début de l'acte ${m.act}`;
+  return `<div class="resume"><button class="play" data-act="continue-run">Continuer</button>
+    <span class="resume-meta"><img src="${asset(`classes/${DOFUS.breeds[sv.classe].id}.png`)}" alt="">${who}, ${where}, ${m.hp} PV sur ${m.maxHp}, ${m.kamas} kamas</span></div>`;
+}
+
 function viewTitle(): string {
   const pick = ui.pick;
+  const saved = !!readSave()?.meta;
   const hero = (id: 'iop' | 'cra') => {
     const b = DOFUS.breeds[id];
     const on = id === pick;
@@ -422,10 +473,13 @@ function viewTitle(): string {
     <section class="pick-info" aria-live="polite">
       <p class="pick-pitch">${CLASS_INFO[pick].pitch}</p>
       <p class="pick-passive">${passiveBadge(pick)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
+      ${resumeHtml()}
       <div class="pick-actions">
-        <button class="play" data-act="new-run" data-classe="${pick}">Jouer ${pick === 'iop' ? 'le Iop' : 'le Crâ'}</button>
+        ${saved ? `<button class="look-toggle new-run" data-act="new-run" data-classe="${pick}" aria-describedby="new-run-note">Nouvelle partie avec ${pick === 'iop' ? 'le Iop' : 'le Crâ'}</button>`
+          : `<button class="play" data-act="new-run" data-classe="${pick}">Jouer ${pick === 'iop' ? 'le Iop' : 'le Crâ'}</button>`}
         <button class="look-toggle" data-act="look-toggle" aria-expanded="${ui.lookOpen}">Apparence</button>
       </div>
+      ${saved ? '<p id="new-run-note" class="resume-note">Une nouvelle partie remplace celle en cours.</p>' : ''}
       ${ui.lookOpen ? `<div class="look-panel">
         <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
         ${colorRow(pick, g)}
@@ -1635,10 +1689,13 @@ function handle(act: string, d: DOMStringMap): void {
       break;
     case 'new-run': {
       const classe = d.classe as 'iop' | 'cra';
-      ui.run = new Run(classe, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, ui.gender[classe]);
-      ui.modal = null;
+      ui.saveError = '';
+      startRun(new Run(classe, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, ui.gender[classe]));
       break;
     }
+    case 'continue-run':
+      void continueRun();
+      break;
     case 'color-reset':
       delete ui.colors[`${d.classe}${d.g}`];
       saveColors();
@@ -1939,7 +1996,7 @@ document.addEventListener('keydown', (ev) => {
 // Fichier d'équilibrage : le jeu relit equilibrage.json au démarrage (une modification faite sur GitHub s'applique
 // sans reconstruire). En cas d'erreur, les valeurs intégrées restent en place et la console dit pourquoi.
 if (balanceWarnings.length) console.warn('equilibrage.json (intégré) :', balanceWarnings);
-void fetch('equilibrage.json', { cache: 'no-cache' })
+const balanceReady: Promise<unknown> = fetch('equilibrage.json', { cache: 'no-cache' })
   .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
   .then((b) => {
     const w = applyBalance(b, BALANCE_TARGETS);
@@ -1947,11 +2004,13 @@ void fetch('equilibrage.json', { cache: 'no-cache' })
     if (!drag && !ui.busy) render();
   })
   .catch((e) => console.warn("equilibrage.json non relu, valeurs intégrées utilisées :", e));
+void balanceReady;
 
 // Accès de débogage / tests automatisés (Playwright).
 (window as unknown as { __game: unknown }).__game = {
   get run() { return ui.run; },
-  newRun(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') { ui.run = new Run(classe, seed, gender); ui.modal = null; ui.selecting = null; render(); },
+  newRun(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm') { startRun(new Run(classe, seed, gender)); render(); },
+  continueRun, readSave,
   playCard, endTurn, stage, drawAnim, items: ITEMS,
   get busy() { return ui.busy; },
   render,
