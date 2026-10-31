@@ -40,7 +40,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 |---|---|---|---|
 | 1. Combat à plusieurs héros : tours simultanés, les monstres jouent une fois et frappent tous les héros, héros hors combat à 0 PV | `src/core/combat.ts`, `src/core/party.test.ts` | Claude | fait |
 | 2. Run à plusieurs : carte votée à la majorité, récompenses, objets, marchand et kamas à chacun, retour à 1 PV après un combat gagné, dieux et événements | `src/game/run.ts`, `src/game/party.ts`, `src/sim/party.ts` | Claude | fait |
-| 3. Échelle mesurée (PV ×2,5 / ×3,6 / ×5,5, dégâts ×1). La passer au combat quand la run à plusieurs existera | `src/data/monsters.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | mesure faite |
+| 3. Échelle mesurée sur des parties complètes (PV ×2,5 / ×4,1 / ×6, dégâts ×1) | `src/data/monsters.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | fait |
 | 4. Salon en ligne : Worker et Durable Object Cloudflare, WebSockets, journal d'actions ordonné par le serveur, reconnexion, minuteur | `worker/`, `wrangler.jsonc` | Claude | fait |
 | 5. Interface : créer ou rejoindre un salon, plusieurs héros sur la scène, « Prêt », minuteur, vote de la carte | `src/ui/` | Claude | fait (minuteur à faire) |
 | 6. Cartes à plusieurs, obtenables seulement en multijoueur (plus tard) | `src/data/cards.ts` | | à décider |
@@ -70,6 +70,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Grok — échelle à plusieurs mesurée sur des parties complètes. Le bot vote ensemble, se soigne et achète. PV ×2,5 / ×4,1 / ×6 (dégâts ×1). 100 parties : 33/13/2 (14,1), 39/9/0 (14,2), 41/9/3 (15,1). Un héros qui meurt pendant son tour ne bloque plus la table.
 - 31/10/2026 : le jeu s'appelle désormais **La Main des Douze** (accueil, onglet, documentation). Dépôt et Worker gardent leur nom technique.
 - 31/10/2026 : Claude — multijoueur, étape 5 : on joue à plusieurs dans le jeu. Salon depuis l'accueil (« Jouer à plusieurs », code ou lien), votes sur la carte, alliés et bouton « Prêt » en combat, reprise après coupure. `npm run preview` fait tourner les salons en local (deux onglets pour jouer à deux).
 - 31/10/2026 : Claude — multijoueur, étape 4 : le salon en ligne (`worker/`) : un Durable Object Cloudflare par code de salon, WebSockets, journal d'actions numéroté, retour d'un joueur avec tout le journal, effacement après une journée.

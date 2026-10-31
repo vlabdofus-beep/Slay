@@ -19,6 +19,23 @@ function party(classes: ClassId[], effects: Effect[] = [{ type: 'damage', amount
 }
 const hp = (c: Combat) => c.seats.map((s) => s.player.hp);
 
+test('Table : un héros qui tombe pendant son tour ne bloque pas ceux qui sont déjà prêts', () => {
+  const c = party(['iop', 'cra']);
+  c.useSeat(0);
+  c.endTurn();
+  assert.equal(c.seats[0].ready, true);
+  c.useSeat(1);
+  c.seats[1].hand[0] = newCard('iop_pression');
+  c.seats[1].player.hp = 6;
+  c.enemies[0].def = { ...c.enemies[0].def, powers: [{ kind: 'epines', n: 20 }] };
+  const turn = c.turn;
+  c.playCard(0, c.enemies[0].uid);
+  assert.ok(c.seats[1].player.hp <= 0);
+  assert.equal(c.outcome, 'ongoing');
+  assert.ok(c.turn > turn, 'la phase des monstres a eu lieu');
+  assert.equal(c.seats[0].ready, false);
+});
+
 test('Table : chaque héros a sa main, ses PA et sa pioche', () => {
   const c = party(['iop', 'cra', 'xelor']);
   assert.equal(c.partySize, 3);

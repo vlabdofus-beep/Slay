@@ -713,6 +713,8 @@ export class Combat {
       this.drawCards(2);
     }
     this.checkEnd();
+    // Tombé pendant son tour (renvoi, épines, sang) : les héros déjà prêts ne doivent pas attendre un mort.
+    if (this.outcome === 'ongoing' && this.isDown(this.cur) && this.seats.every((s, i) => s.ready || this.isDown(i))) this.resolveRound();
   }
 
   /**
