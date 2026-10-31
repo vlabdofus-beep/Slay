@@ -190,6 +190,19 @@ async function rtSprites(P,sp){
 /* ───── fin du code d'origine ───── */
 
 const BASE_ANIMS = ['idle', 'hit', 'death', 'cast', 'strike'];
+
+/* Xélor : la tête de trois quarts n'a gardé que le bord du chapeau (le reste n'a pas été extrait), et le chapeau
+   complet n'existe que de face. On retire le chapeau de toutes les têtes : les morceaux teints par les couleurs 3 à 5
+   (bleu du chapeau, étoile, bande). La tête bandée et les cheveux restent. */
+const HATLESS = { 5: new Set([3, 4, 5]) };
+function withoutHat(breed, look) {
+  const drop = HATLESS[breed]; if (!drop) return look;
+  const geo = {};
+  for (const [n, chs] of Object.entries(look.geo)) {
+    geo[n] = /^Tete/.test(n) ? chs.filter((ch) => !ch.v.some((v) => drop.has(v[2]))) : chs;
+  }
+  return { ...look, geo };
+}
 const built = {};
 const spells = {};
 
@@ -235,7 +248,7 @@ export function buildCharacter(breed, gender, app) {
     const [look, base] = await Promise.all([rtLoad(`look_${breed}${gender}`), rtLoad('base')]);
     if (!look || !base) return null;
     const accs = (await Promise.all(((app && app.accs) || []).map((s) => rtLoad(`acc_${s}`)))).filter(Boolean);
-    const P = await rtPrepare(look, accs, charCols(look, app && app.cols));
+    const P = await rtPrepare(withoutHat(breed, look), accs, charCols(look, app && app.cols));
     const PB = await rtSprites(P, base);
     const opt = { only: BASE_ANIMS, dirs: ['1'], tween: true };
     const meta = live() ? rtMeta(PB, base, opt) : await rtBake(PB, base, opt);
