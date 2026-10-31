@@ -177,6 +177,7 @@ export const GODS: GodDef[] = [
 ];
 
 export const GOD_BY_ID: Record<GodId, GodDef> = Object.fromEntries(GODS.map((g) => [g.id, g])) as Record<GodId, GodDef>;
+/** Les mêmes objets que dans GODS (le fichier d'équilibrage les modifie en place). */
 export const BOON_BY_ID: Record<string, Boon & { god: GodId }> = Object.fromEntries(
-  GODS.flatMap((g) => g.boons.map((b) => [b.id, { ...b, god: g.id }])),
+  GODS.flatMap((g) => g.boons.map((b) => [b.id, Object.assign(b, { god: g.id })])),
 );

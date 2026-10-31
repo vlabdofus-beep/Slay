@@ -35,3 +35,29 @@ test('une modification du fichier change le jeu ; une valeur invalide est ignor�
   assert.deepEqual(LIBRARY.monsters.bouftou.hp, before.mon);
   assert.equal(PASSIVE_VALUES.visee.attaques, before.vis);
 });
+
+test('dieux : le fichier règle les bénédictions ; aller-retour sans perte ; erreur ignorée et signalée', async () => {
+  const { GODS, BOON_BY_ID } = await import('../data/gods.ts');
+  const { exportGods } = await import('../data/balance.ts');
+  // Aller-retour : ce que le jeu exporte est exactement ce que le fichier contient
+  assert.deepEqual(JSON.parse(JSON.stringify(exportGods(GODS))), file().dieux);
+  const b = file();
+  b.dieux.iop.benedictions.iop_colere.effets[0].quantite = 5;
+  b.dieux.eniripsa.benedictions.eni_source.immediat[0].n = 30;
+  b.dieux.enutrof.benedictions.enu_marchand.avantages.remise_marchand = 0.5;
+  b.dieux.sram.benedictions.sram_venin.effets = [{ regle: 'poison_qui_nexiste_pas' }];
+  b.dieux.feca.titre = 'déesse du Bouclier';
+  const w = applyBalance(b, BALANCE_TARGETS);
+  try {
+    const fx = BOON_BY_ID.iop_colere.effects![0];
+    assert.equal(fx.kind === 'roll' && fx.parts[0].amount, 5);
+    assert.deepEqual(BOON_BY_ID.eni_source.now, [{ op: 'maxHp', n: 30 }]);
+    assert.equal(BOON_BY_ID.enu_marchand.perks!.shopDiscount, 0.5);
+    assert.equal(GODS.find((g) => g.id === 'feca')!.title, 'déesse du Bouclier');
+    assert.deepEqual(BOON_BY_ID.sram_venin.effects, [{ kind: 'rule', rule: 'poison_tenace' }], 'règle inconnue : ancienne valeur gardée');
+    assert.ok(w.some((x) => x.includes('sram_venin') && x.includes('poison_qui_nexiste_pas')));
+  } finally {
+    applyBalance(file(), BALANCE_TARGETS);
+  }
+  assert.equal(GODS.find((g) => g.id === 'feca')!.title, 'déesse de la Protection');
+});

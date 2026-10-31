@@ -12,7 +12,14 @@
     "Effets — if : effets (then) joués seulement si la condition (cond) est vraie : cible_morte, cible_blessee, cible_vulnerable, cible_empoisonnee, cible_brule, pv_bas, apres_attaque, apres_competence, premiere_carte, main_vide.",
     "Effets — grant : pouvoir (déclencheur → récompense, comme les objets). multiply, spread, detonate : poison et statuts. echo : prochaine attaque lancée deux fois. addCard : ajoute des cartes. summon : invocation (monstres).",
     "Mécaniques de monstres — carapace n, epines n, colere n every (puissance toutes les « every » attaques jouées), rage n every (toutes les « every » cartes), enroulement n, rituel n, spores n, explosion turns dmg, division, voleur n turns, gardien, regeneration n, esquive n, cameleon, sommeil turns block, plafond n, artefact n.",
-    "Rythme — cycle : order = actions jouées dans l'ordre, en boucle. random : weights = poids de chaque action, maxRepeat = répétitions de suite au plus."
+    "Rythme — cycle : order = actions jouées dans l'ordre, en boucle. random : weights = poids de chaque action, maxRepeat = répétitions de suite au plus.",
+    "dieux : les douze dieux (nom, titre, phrase d'accueil) et leurs six bénédictions. Chaque bénédiction peut avoir des effets de combat, des stats, des avantages de run et des effets immédiats.",
+    "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
+    "dieux — avantages : kamas (0.35 = +35 % après chaque combat), remise_marchand (0.25 = −25 %), cartes_en_plus (aux récompenses), resurrection (nombre), soin_zaap (0.2 = +20 % de PV au Zaap).",
+    "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type, pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
+    "Déclencheurs : carte_terre, premiere_terre, deuxieme_terre, ouverture_terre, acheve_terre, carte_feu, premiere_feu, deuxieme_feu, ouverture_feu, acheve_feu, carte_eau, premiere_eau, deuxieme_eau, ouverture_eau, acheve_eau, carte_air, premiere_air, deuxieme_air, ouverture_air, acheve_air, debut_tour, debut_combat, premier_tour, tous_3_tours, pv_bas, fin_pa, fin_armure, fin_main, ennemi_meurt, pv_perdus, armure_gagnee, toutes_3_cartes, attaque, competence, gratuite, chere, premiere_carte, dernier_pa, trois_elements, zone, cible_brule, cible_empoisonnee, cible_vulnerable, victoire, victoire_intacte.",
+    "Récompenses : puissance, armure, bouclier, soin, pioche, pa, reduction, esquive, renvoi, brulure, poison, vulnerabilite, faiblesse, erosion, etourdi, brulure_zone, poison_zone, degats, degats_zone, perte_pv, visee, prospection, prospection_run.",
+    "Règles : brulure_tenace, poison_tenace, premiere_gratuite, eau_vampire, armure_persistante, pa_plus, main_gardee, contagion, ricochet, puissance_armure, air_perce, vulne_forte, brule_empoisonne, etourdi_fragile, renvoi_moitie, triple_element, soin_bouclier, double_premier, faiblesse_forte, prospecteur, armure_offensive, braises, ivoire, pioche_plus, resurrection, ocre, cauchemar, critique, sablier, retenue, sang, poison_affaiblit, premier_double, pioche_vide, brulure_double, epines_armure, colosse."
   ],
   "classes": {
     "iop": {"pv": 80, "deck_depart": {"iop_coup_epee": 5, "iop_vitalite": 4, "iop_pression": 1}},
@@ -37,6 +44,206 @@
       "normal": {"pv": 0.88, "degats": 1.1},
       "elite": {"pv": 1.012, "degats": 1.1},
       "boss": {"pv": 1.021, "degats": 1.1}
+    }
+  },
+  "dieux": {
+    "iop": {
+      "nom": "Iop",
+      "titre": "dieu de la Force",
+      "phrase": "Réfléchir, c'est perdre du temps. Prends ma force et cogne.",
+      "benedictions": {
+        "iop_colere": {
+          "nom": "Colère de Iop",
+          "effets": [{"declencheur": "debut_combat", "recompense": "puissance", "quantite": 2}]
+        },
+        "iop_epee": {"nom": "Épée céleste", "immediat": [{"op": "cardChoice", "rarity": "rare"}]},
+        "iop_bond": {"nom": "Bond", "effets": [{"regle": "premier_double"}]},
+        "iop_terre": {"nom": "Poigne tellurique", "stats": {"degats": {"terre": 3}}},
+        "iop_fracas": {"nom": "Fracas", "effets": [{"regle": "vulne_forte"}]},
+        "iop_tete": {"nom": "Tête brûlée", "effets": [{"regle": "colosse"}]}
+      }
+    },
+    "cra": {
+      "nom": "Crâ",
+      "titre": "déesse de l'Arc",
+      "phrase": "Un seul trait, au bon endroit. Le reste n'est que du bruit.",
+      "benedictions": {
+        "cra_oeil": {
+          "nom": "Œil de Crâ",
+          "effets": [{"declencheur": "premiere_carte", "recompense": "vulnerabilite", "quantite": 1}]
+        },
+        "cra_fleche": {"nom": "Dernière flèche", "effets": [{"declencheur": "dernier_pa", "recompense": "degats", "quantite": 5}]},
+        "cra_vent": {"nom": "Vent d'est", "stats": {"degats": {"air": 3}}},
+        "cra_ricochet": {"nom": "Ricochet", "effets": [{"regle": "ricochet"}]},
+        "cra_perce": {"nom": "Flèche perçante", "effets": [{"regle": "air_perce"}]},
+        "cra_carquois": {"nom": "Carquois sans fond", "immediat": [{"op": "pick", "what": "duplicate", "n": 1}]}
+      }
+    },
+    "eniripsa": {
+      "nom": "Eniripsa",
+      "titre": "déesse des Soins",
+      "phrase": "Les mots soignent, mon enfant. Écoute bien les miens.",
+      "benedictions": {
+        "eni_mot": {"nom": "Mot de régénération", "effets": [{"declencheur": "debut_tour", "recompense": "soin", "quantite": 2}]},
+        "eni_vampire": {"nom": "Mot vampirique", "effets": [{"regle": "eau_vampire"}]},
+        "eni_reconstituant": {"nom": "Mot reconstituant", "effets": [{"regle": "soin_bouclier"}], "stats": {"pv": 6}},
+        "eni_source": {"nom": "Source de vie", "immediat": [{"op": "maxHp", "n": 12}]},
+        "eni_onde": {"nom": "Onde", "stats": {"degats": {"eau": 3}}},
+        "eni_purification": {"nom": "Purification", "immediat": [{"op": "healPct", "pct": 1}, {"op": "pick", "what": "remove", "n": 1}]}
+      }
+    },
+    "ecaflip": {
+      "nom": "Écaflip",
+      "titre": "dieu de la Chance",
+      "phrase": "Pile, tu gagnes. Face… on verra bien. Allez, tente ta chance !",
+      "benedictions": {
+        "eca_pile": {
+          "nom": "Pile ou face",
+          "immediat": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "kamas", "n": 250}],
+              "lose": [{"op": "kamas", "n": 40}],
+              "winText": "Pile ! La bourse déborde.",
+              "loseText": "Face. Une petite pièce de consolation."
+            }
+          ]
+        },
+        "eca_critique": {"nom": "Coup critique", "effets": [{"regle": "critique"}]},
+        "eca_vies": {"nom": "Neuf vies", "avantages": {"resurrection": 1}},
+        "eca_tirage": {"nom": "Tirage chanceux", "avantages": {"cartes_en_plus": 1}},
+        "eca_des": {
+          "nom": "Lancer de dés",
+          "effets": [{"declencheur": "toutes_3_cartes", "recompense": "degats_zone", "quantite": 4}]
+        },
+        "eca_roue": {"nom": "Roue de la fortune", "immediat": [{"op": "upgrade", "n": 3}]}
+      }
+    },
+    "enutrof": {
+      "nom": "Enutrof",
+      "titre": "dieu de l'Argent",
+      "phrase": "Hé hé… Tout trésor a un prix, petit. Mais pour toi, je fais une ristourne.",
+      "benedictions": {
+        "enu_pelle": {"nom": "Pelle du prospecteur", "stats": {"prospection": 40}},
+        "enu_bourse": {"nom": "Bourse sans fond", "avantages": {"kamas": 0.35}, "immediat": [{"op": "kamas", "n": 60}]},
+        "enu_tresor": {"nom": "Trésor enfoui", "immediat": [{"op": "itemChoice", "rarity": "mythique"}]},
+        "enu_marchand": {"nom": "Ami des marchands", "avantages": {"remise_marchand": 0.25}},
+        "enu_lenteur": {"nom": "Lenteur", "effets": [{"declencheur": "debut_tour", "recompense": "faiblesse", "quantite": 1}]},
+        "enu_coffre": {"nom": "Coffre d'Enutrof", "effets": [{"regle": "prospecteur"}]}
+      }
+    },
+    "sram": {
+      "nom": "Sram",
+      "titre": "dieu des Ombres",
+      "phrase": "Tu ne m'as pas vu arriver. C'est bien. Eux non plus ne te verront pas.",
+      "benedictions": {
+        "sram_venin": {"nom": "Venin tenace", "effets": [{"regle": "poison_tenace"}]},
+        "sram_langueur": {"nom": "Langueur", "effets": [{"regle": "poison_affaiblit"}]},
+        "sram_piege": {
+          "nom": "Piège sournois",
+          "effets": [{"declencheur": "debut_combat", "recompense": "poison_zone", "quantite": 4}]
+        },
+        "sram_invisible": {"nom": "Invisibilité", "effets": [{"declencheur": "premier_tour", "recompense": "esquive", "quantite": 2}]},
+        "sram_larcin": {"nom": "Larcin", "avantages": {"kamas": 0.2}, "immediat": [{"op": "kamas", "n": 40}]},
+        "sram_fourbe": {"nom": "Fourberie", "effets": [{"declencheur": "cible_empoisonnee", "recompense": "degats", "quantite": 3}]}
+      }
+    },
+    "xelor": {
+      "nom": "Xélor",
+      "titre": "dieu du Temps",
+      "phrase": "Tic. Tac. J'ai tout le temps du monde. Toi, un peu moins. Prends-en un peu.",
+      "benedictions": {
+        "xel_sablier": {"nom": "Sablier", "effets": [{"regle": "sablier"}]},
+        "xel_retenue": {"nom": "Instant figé", "effets": [{"regle": "retenue"}]},
+        "xel_ralenti": {"nom": "Ralentissement", "effets": [{"declencheur": "tous_3_tours", "recompense": "etourdi", "quantite": 1}]},
+        "xel_horloge": {
+          "nom": "Horloge",
+          "effets": [
+            {"declencheur": "premier_tour", "recompense": "pa", "quantite": 1},
+            {"declencheur": "premier_tour", "recompense": "pioche", "quantite": 2}
+          ]
+        },
+        "xel_frappe": {"nom": "Frappe de Xélor", "effets": [{"regle": "premiere_gratuite"}]},
+        "xel_rembobinage": {"nom": "Rembobinage", "effets": [{"regle": "pioche_vide"}]}
+      }
+    },
+    "sacrieur": {
+      "nom": "Sacrieur",
+      "titre": "déesse du Sang",
+      "phrase": "Saigne, et deviens plus fort. La douleur est un cadeau.",
+      "benedictions": {
+        "sac_sang": {"nom": "Sang bouillant", "effets": [{"regle": "sang"}]},
+        "sac_douleur": {"nom": "Douleur partagée", "effets": [{"regle": "renvoi_moitie"}]},
+        "sac_punition": {
+          "nom": "Punition",
+          "effets": [{"declencheur": "pv_perdus", "recompense": "puissance", "quantite": 1, "par_tour": 1}]
+        },
+        "sac_sacrifice": {"nom": "Sacrifice", "immediat": [{"op": "maxHp", "n": -8}, {"op": "upgradeAll", "type": "attaque"}]},
+        "sac_transfert": {"nom": "Transfert de vie", "effets": [{"declencheur": "ennemi_meurt", "recompense": "soin", "quantite": 5}]},
+        "sac_folie": {"nom": "Folie sanguinaire", "effets": [{"declencheur": "pv_bas", "recompense": "pa", "quantite": 1}]}
+      }
+    },
+    "feca": {
+      "nom": "Féca",
+      "titre": "déesse de la Protection",
+      "phrase": "Personne ne tombe tant que je veille. Tiens-toi derrière mon bouclier.",
+      "benedictions": {
+        "fec_glyphe": {"nom": "Glyphe de garde", "effets": [{"regle": "armure_persistante"}]},
+        "fec_bouclier": {
+          "nom": "Bouclier Féca",
+          "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 10}]
+        },
+        "fec_epines": {"nom": "Armure d'épines", "effets": [{"regle": "epines_armure"}]},
+        "fec_armure": {"nom": "Armure terrestre", "stats": {"armure": 2}},
+        "fec_treve": {"nom": "Trêve", "effets": [{"regle": "puissance_armure"}]},
+        "fec_rempart": {"nom": "Rempart", "immediat": [{"op": "upgradeAll", "type": "competence"}]}
+      }
+    },
+    "osamodas": {
+      "nom": "Osamodas",
+      "titre": "dieu des Bêtes",
+      "phrase": "Les bêtes savent qui est le maître. Elles te suivront, si tu sais tenir le fouet.",
+      "benedictions": {
+        "osa_fouet": {"nom": "Fouet", "effets": [{"regle": "faiblesse_forte"}]},
+        "osa_bouftou": {"nom": "Bouftou fidèle", "effets": [{"declencheur": "debut_tour", "recompense": "degats", "quantite": 4}]},
+        "osa_dragonnet": {"nom": "Dragonnet", "effets": [{"declencheur": "debut_tour", "recompense": "brulure", "quantite": 1}]},
+        "osa_tofu": {"nom": "Tofu messager", "effets": [{"declencheur": "tous_3_tours", "recompense": "pioche", "quantite": 2}]},
+        "osa_crapaud": {"nom": "Crapaud", "effets": [{"declencheur": "fin_armure", "recompense": "soin", "quantite": 2}]},
+        "osa_meute": {
+          "nom": "Appel de la meute",
+          "immediat": [{"op": "cardChoice", "rarity": "toute"}, {"op": "cardChoice", "rarity": "toute"}]
+        }
+      }
+    },
+    "sadida": {
+      "nom": "Sadida",
+      "titre": "dieu de la Nature",
+      "phrase": "La forêt t'a vu passer. Elle a décidé de t'aider. N'abîme pas ses arbres.",
+      "benedictions": {
+        "sad_ronces": {"nom": "Ronces", "effets": [{"declencheur": "debut_combat", "recompense": "renvoi", "quantite": 4}]},
+        "sad_contagion": {"nom": "Peste verte", "effets": [{"regle": "contagion"}]},
+        "sad_poupee": {
+          "nom": "Poupée sacrifiée",
+          "effets": [{"declencheur": "pv_perdus", "recompense": "bouclier", "quantite": 3, "par_tour": 1}]
+        },
+        "sad_arbre": {"nom": "Arbre de vie", "effets": [{"declencheur": "victoire", "recompense": "soin", "quantite": 8}]},
+        "sad_racines": {"nom": "Racines profondes", "stats": {"pv": 6, "degats": {"terre": 2}}},
+        "sad_seve": {"nom": "Sève vénéneuse", "effets": [{"declencheur": "carte_terre", "recompense": "poison", "quantite": 1}]}
+      }
+    },
+    "pandawa": {
+      "nom": "Pandawa",
+      "titre": "dieu de l'Ivresse",
+      "phrase": "Hips ! Un petit verre de lait de bambou avant d'y aller ? Ça donne du courage !",
+      "benedictions": {
+        "pan_ivresse": {"nom": "Ivresse", "effets": [{"regle": "etourdi_fragile"}]},
+        "pan_lait": {"nom": "Lait de bambou", "stats": {"pv": 5}, "immediat": [{"op": "healPct", "pct": 1}]},
+        "pan_karcham": {"nom": "Karcham", "effets": [{"declencheur": "chere", "recompense": "etourdi", "quantite": 1, "par_tour": 1}]},
+        "pan_souffle": {"nom": "Souffle alcoolisé", "effets": [{"regle": "brulure_double"}]},
+        "pan_flamme": {"nom": "Flamme du bambou", "stats": {"degats": {"feu": 3}}},
+        "pan_vapeurs": {"nom": "Vapeurs", "effets": [{"declencheur": "zone", "recompense": "vulnerabilite", "quantite": 1}]}
+      }
     }
   },
   "cartes": {
