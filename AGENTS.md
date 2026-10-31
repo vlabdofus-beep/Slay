@@ -23,12 +23,17 @@ Node 22.18 ou plus (les fichiers .ts s'exécutent directement, sans compilation)
 1. **Jamais de push direct sur `main`.** Travaille sur une branche à ton nom et au nom de la tâche
    (`ia-<nom>/<tâche>`, par exemple `ia-gpt/illustrations-cartes`), puis ouvre une demande de fusion (pull request)
    avec un résumé en français de ce qui change et de comment c'est vérifié.
-2. **Prends une tâche dans `docs/FEUILLE_DE_ROUTE.md`**, inscris-toi dessus (colonne « Qui ») dans ta branche,
+2. **Fusionne toi-même ta demande quand les tests passent** (coche verte « tests » de GitHub, décision du propriétaire
+   du 31/10/2026), puis préviens le propriétaire en une ou deux phrases : ce qui est en ligne et le lien de la demande.
+   Ne fusionne pas si un test échoue, s'il reste un conflit, ou si la demande touche le travail d'une autre IA en cours :
+   dans ce cas, laisse-la ouverte et signale-le. L'échec « Workers Builds » sur une branche ne compte pas
+   (seul le build de `main` publie le site).
+3. **Prends une tâche dans `docs/FEUILLE_DE_ROUTE.md`**, inscris-toi dessus (colonne « Qui ») dans ta branche,
    et mets son statut à jour en terminant. Ne prends pas une tâche déjà attribuée.
-3. **Reste dans ton périmètre.** Les tâches de la feuille de route disent quels fichiers elles touchent. Si tu dois
+4. **Reste dans ton périmètre.** Les tâches de la feuille de route disent quels fichiers elles touchent. Si tu dois
    modifier un fichier hors de ton périmètre (moteur de combat, déroulé de la run, sauvegarde), dis-le dans la demande de fusion.
-4. **Récupère `main` avant de commencer et avant d'ouvrir ta demande** (`git pull --rebase origin main`).
-5. **Documente** : une règle de jeu qui change va dans `docs/DESIGN.md` ; une mesure d'équilibrage dans `docs/BALANCE.md`.
+5. **Récupère `main` avant de commencer et avant d'ouvrir ta demande** (`git pull --rebase origin main`).
+6. **Documente** : une règle de jeu qui change va dans `docs/DESIGN.md` ; une mesure d'équilibrage dans `docs/BALANCE.md`.
 
 ## Règles du projet (à respecter partout)
 - **Tout est en français** : textes du jeu, commentaires, documentation, messages de commit.
