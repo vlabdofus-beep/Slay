@@ -977,13 +977,18 @@ function boonBadge(src: string, o: { flash?: boolean; down?: boolean } = {}): st
       <span class="fx-what">${boonLines(b).map((l) => `<span>${esc(l)}</span>`).join('')}</span>${b.lore ? `<span class="tip-lore">${esc(b.lore)}</span>` : ''}</span></span>`;
 }
 
+/** Cadrage de chaque illustration dans l'œuf : la tête du dieu doit rester visible. */
+const EGG_FOCUS: Record<number, string> = { 3: '50% 0%', 8: '50% 0%', 5: '50% 6%', 2: '50% 4%' };
+
 function viewGod(run: Run): string {
   const v = run.god!;
   const g = GOD_BY_ID[v.id];
-  const offer = v.offer.map((id) => {
+  // Trois tablettes autour de l'œuf du dieu : à gauche, à droite, en bas (comme sur le croquis de référence).
+  const SLOTS_POS = ['l', 'r', 'b'];
+  const offer = v.offer.map((id, i) => {
     const b = BOON_BY_ID[id];
     const on = v.taken === id;
-    return `<button class="boon-card${on ? ' on' : ''}${v.taken && !on ? ' off' : ''}" data-act="take-boon" data-id="${id}" ${v.taken ? 'disabled' : ''}>
+    return `<button class="boon-card at-${SLOTS_POS[i]}${on ? ' on' : ''}${v.taken && !on ? ' off' : ''}" data-act="take-boon" data-id="${id}" ${v.taken ? 'disabled' : ''}>
       <b class="boon-name">${esc(b.name)}</b>
       <span class="boon-lines">${boonLines(b).map((l) => `<span>${esc(l)}</span>`).join('')}</span>
       ${b.lore ? `<i class="boon-lore">${esc(b.lore)}</i>` : ''}
@@ -991,17 +996,16 @@ function viewGod(run: Run): string {
   }).join('');
   return `<main class="godview">
     <section class="god" style="--god:${g.color}">
-      <header class="god-banner">
-        <img class="god-illu" src="${asset(`gods/${g.breed}.webp`)}" alt="${esc(`${g.name}, ${g.title}`)}">
-        <div class="god-caption">
-          <p class="god-kicker">Sanctuaire ${esc(deName(g.name))}, acte ${run.act}</p>
-          <h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
-          <blockquote>« ${esc(g.greeting)} »</blockquote>
-        </div>
+      <header class="god-head">
+        <p class="god-kicker">Sanctuaire ${esc(deName(g.name))}, acte ${run.act}</p>
+        <h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
+        <blockquote>« ${esc(g.greeting)} »</blockquote>
       </header>
-      <p class="muted">${esc(g.name)} t'offre une bénédiction pour toute la run. Choisis-en une parmi trois.</p>
-      <div class="boon-row">${offer}</div>
-      <p class="god-foot"><button class="link" data-act="leave-god">Repartir sans bénédiction</button></p>
+      <div class="altar">
+        <div class="altar-egg"><img class="god-illu" src="${asset(`gods/${g.breed}.webp`)}" alt="${esc(`${g.name}, ${g.title}`)}" style="object-position:${EGG_FOCUS[g.breed] ?? '50% 18%'}"></div>
+        ${offer}
+      </div>
+      <p class="god-foot"><span class="muted">Une bénédiction pour toute la run, au choix parmi trois.</span><button class="link" data-act="leave-god">Repartir sans bénédiction</button></p>
     </section>
     ${sheet(run)}
   </main>`;
