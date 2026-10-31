@@ -28,6 +28,8 @@ import { buildCharacter, defaultColors, drawAnim, type Appearance, type Characte
 import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
 import { paintBoard, paintTitle } from './scene/paint.ts';
+import { Online, newCode } from './online.ts';
+import type { PartyAction } from '../game/party.ts';
 
 // ───────────── état de l'interface ─────────────
 
@@ -73,6 +75,10 @@ const ui = {
   /** Choix en attente sur l'écran de récompense : rien n'est pris avant « Reprendre la route ». */
   pickCard: null as string | null,
   pickItem: null as string | null,
+  /** Jeu à plusieurs : formulaire du salon ouvert sur l'accueil, connexion au salon, geste envoyé pas encore revenu. */
+  salonForm: false,
+  online: null as Online | null,
+  waitAck: false,
 };
 
 function loadColors(): Record<string, (number | null)[]> {
@@ -552,6 +558,132 @@ function resumeHtml(): string {
     <span class="resume-meta"><img src="${asset(`classes/${DOFUS.breeds[sv.classe].id}.png`)}" alt="">${who}, ${where}, ${m.hp} PV sur ${m.maxHp}, ${m.kamas} kamas</span></div>`;
 }
 
+// ───────────── jeu à plusieurs ─────────────
+// Le salon se crée ou se rejoint depuis l'accueil (avec la classe et l'apparence choisies là). Une fois la partie
+// lancée, l'interface affiche la run de ce joueur comme en solo ; les gestes partent au salon (voir online.ts) et
+// reviennent dans l'ordre pour tout le monde. Pas de sauvegarde locale : le salon garde le journal.
+const SALON_KEY = 'slay.salon';
+const storedName = (): string => { try { return localStorage.getItem('slay.name') ?? ''; } catch { return ''; } };
+const savedSalon = (): string | null => { try { return localStorage.getItem(SALON_KEY); } catch { return null; } };
+let pickedInSalon = '';
+
+function connectOnline(code: string, name: string): void {
+  ui.online?.leave();
+  try { localStorage.setItem('slay.name', name); } catch { /* stockage indisponible */ }
+  pickedInSalon = '';
+  ui.online = new Online(code, name, onlineChange, onlineAction);
+}
+
+function closeOnline(): void {
+  ui.online?.leave();
+  ui.online = null;
+  ui.salonForm = false;
+  ui.waitAck = false;
+  try { localStorage.removeItem(SALON_KEY); } catch { /* rien */ }
+}
+
+function onlineChange(): void {
+  const o = ui.online;
+  if (!o) return;
+  // Dans le salon : la classe et l'apparence choisies sur l'accueil
+  const want = `${ui.pick}${ui.gender[ui.pick]}`;
+  if (o.status === 'salon' && pickedInSalon !== want) { pickedInSalon = want; o.pick(ui.pick, ui.gender[ui.pick]); }
+  if (o.party && o.run) {
+    if (ui.run !== o.run) { ui.run = o.run; ui.modal = null; ui.selecting = null; }
+    try { localStorage.setItem(SALON_KEY, o.code); } catch { /* rien */ }
+    if (o.party.over) try { localStorage.removeItem(SALON_KEY); } catch { /* rien */ }
+  }
+  if (!drag) render();
+}
+
+/** Une action du journal arrive : on l'applique, en animant le combat autour comme pour un geste local. */
+function onlineAction(a: PartyAction, apply: () => void): void {
+  const o = ui.online!;
+  const run = ui.run;
+  const c = run?.phase === 'combat' ? run.combat : null;
+  const fight = !!c && c.outcome === 'ongoing' && (a[1] === 'c.playCard' || a[1] === 'c.endTurn') && c === o.run?.combat;
+  const before = fight ? snapshot() : null;
+  const wasDown = !!c && c.isDown(run!.seat);
+  if (fight && a[1] === 'c.endTurn' && c.seats.every((st, i) => st.ready || c.isDown(i) || i === a[0])) {
+    // Dernier joueur prêt : les monstres vont frapper
+    flushImpacts();
+    for (const e of c.living()) if (c.intent(e).damage > 0) ui.lunge.add(e.uid);
+  }
+  apply();
+  if (a[0] === o.me) ui.waitAck = false;
+  if (o.run && ui.run !== o.run) ui.run = o.run;
+  if (before && ui.run?.combat === c) {
+    schedule(before, snapshot(), undefined, 0);
+    // Mon héros vient de tomber : il s'effondre (il revient avec 1 PV si la table gagne)
+    if (!wasDown && c!.isDown(ui.run!.seat) && c!.outcome === 'ongoing' && stage.visible) stage.die();
+    settle();
+  }
+  onlineChange();
+}
+
+/** Le salon sur l'accueil : formulaire, puis joueurs présents, lien à partager et bouton de départ pour l'hôte. */
+function salonDock(): string {
+  const o = ui.online;
+  const back = '<button class="link" data-act="salon-close">Retour</button>';
+  if (!o || o.status === 'fermé') {
+    const prefill = (location.hash.match(/^#salon=([A-Z0-9]{4,8})$/i)?.[1] ?? '').toUpperCase();
+    return `<div class="salon">
+      ${o?.error ? `<p class="resume-error" role="alert">${esc(o.error)}</p>` : ''}
+      <label class="salon-field"><span>Ton nom</span><input data-salon-name maxlength="20" autocomplete="nickname" value="${esc(storedName())}" placeholder="Ton nom"></label>
+      <div class="salon-row">
+        <button class="play" data-act="salon-create">Créer un salon</button>
+        <span class="salon-or">ou</span>
+        <label class="salon-field code"><span>Code d'un salon</span><input data-salon-code maxlength="8" autocapitalize="characters" spellcheck="false" value="${esc(prefill)}" placeholder="ABCDE"></label>
+        <button class="look-toggle" data-act="salon-join">Rejoindre</button>
+      </div>
+      <p class="resume-note">De 1 à 4 joueurs. Chacun joue sa classe, ses cartes et ses objets ; la carte se vote et les combats se jouent ensemble.</p>
+      ${back}
+    </div>`;
+  }
+  const L = o.lobby;
+  const link = `${location.origin}${location.pathname}#salon=${o.code}`;
+  const me = L?.members[L.you];
+  const list = (L?.members ?? []).map((m, i) => {
+    const b = DOFUS.breeds[m.classe];
+    return `<li class="${m.online ? '' : 'off'}${i === L!.you ? ' me' : ''}"><img src="${asset(`classes/${b.id}.png`)}" alt=""><b>${esc(m.name)}</b><span>${esc(b.n)}${m.host ? ', hôte' : ''}${m.online ? '' : ', déconnecté'}</span></li>`;
+  }).join('');
+  const status = o.status === 'connexion' ? 'Connexion au salon…' : o.status === 'coupé' ? 'Connexion perdue, on réessaie…' : '';
+  return `<div class="salon">
+    ${o.error ? `<p class="resume-error" role="alert">${esc(o.error)}</p>` : ''}
+    <p class="salon-code">Salon <b>${esc(o.code)}</b> <button class="link" data-act="salon-copy" data-link="${esc(link)}">Copier le lien</button></p>
+    ${status ? `<p class="resume-note" aria-live="polite">${status}</p>` : ''}
+    <ol class="salon-list" aria-label="Joueurs du salon">${list}</ol>
+    <p class="resume-note">Choisis ta classe et ton apparence au-dessus. Les autres te rejoignent avec le code ou le lien.</p>
+    <div class="pick-actions">
+      ${me?.host ? `<button class="play" data-act="salon-start">Lancer la partie</button>` : '<span class="resume-note">L\'hôte lance la partie quand tout le monde est là.</span>'}
+      <button class="look-toggle" data-act="look-toggle" aria-expanded="${ui.lookOpen}">Apparence</button>
+      <button class="look-toggle" data-act="salon-close">Quitter le salon</button>
+    </div>
+  </div>`;
+}
+
+/** Les autres héros du combat : nom, PV, prêts ou non. */
+function alliesHtml(run: Run): string {
+  const o = ui.online, c = run.combat;
+  if (!o?.party || !c || c.partySize < 2) return '';
+  const rows = c.seats.map((st, i) => {
+    if (i === run.seat) return '';
+    const m = o.party!.members[i];
+    const b = DOFUS.breeds[m.classe];
+    const down = c.isDown(i);
+    const state = down ? 'hors combat' : st.ready ? 'prêt' : 'joue';
+    return `<li class="ally${down ? ' down' : ''}${st.ready ? ' ready' : ''}"><img src="${asset(`classes/${b.id}.png`)}" alt=""><span class="ally-name">${esc(m.name)}</span>${hpBar(st.player.hp, st.player.maxHp, st.player.block, `a${i}`)}<span class="ally-state">${state}</span></li>`;
+  }).join('');
+  return `<ul class="allies" aria-label="Les autres héros">${rows}</ul>`;
+}
+
+/** Qui la table attend encore pour voter (joueurs pas encore revenus sur la carte). */
+function waitingFor(): string[] {
+  const p = ui.online?.party;
+  if (!p) return [];
+  return p.runs.map((r, i) => (p.onMap(i) ? '' : p.members[i].name)).filter(Boolean);
+}
+
 function viewTitle(): string {
   const pick = ui.pick;
   const saved = !!readSave()?.meta;
@@ -577,13 +709,15 @@ function viewTitle(): string {
     <section class="pick-dock" aria-live="polite">
       <p class="pick-pitch">${CLASS_INFO[pick].pitch}</p>
       <p class="pick-passive">${passiveBadge(pick)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
-      ${resumeHtml()}
+      ${ui.salonForm || ui.online ? salonDock() : `${resumeHtml()}
+      ${savedSalon() ? `<div class="resume"><button class="play" data-act="salon-resume">Reprendre la partie en ligne</button><span class="resume-meta">Salon ${esc(savedSalon()!)}</span></div>` : ''}
       <div class="pick-actions">
         ${saved ? `<button class="look-toggle new-run" data-act="new-run" data-classe="${pick}" aria-describedby="new-run-note">Nouvelle partie avec ${heroName(pick)}</button>`
           : `<button class="play" data-act="new-run" data-classe="${pick}">Jouer ${heroName(pick)}</button>`}
+        <button class="look-toggle" data-act="salon-open">Jouer à plusieurs</button>
         <button class="look-toggle" data-act="look-toggle" aria-expanded="${ui.lookOpen}">Apparence</button>
       </div>
-      ${saved ? '<p id="new-run-note" class="resume-note">Une nouvelle partie remplace celle en cours.</p>' : ''}
+      ${saved ? '<p id="new-run-note" class="resume-note">Une nouvelle partie remplace celle en cours.</p>' : ''}`}
       ${ui.lookOpen ? `<div class="look-panel">
         <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
         ${colorRow(pick, g)}
@@ -739,7 +873,10 @@ const ACT_BOARD: Record<number, number> = { 1: 8, 2: 46, 3: 66 };
 function viewMap(run: Run): string {
   const m = run.map;
   const { pos, shrine, width, height, TOP, H } = mapLayout(run);
-  const avail = new Set(run.availableNodes());
+  const party = ui.online?.party;
+  // En ligne, on ne vote qu'une fois toute la table revenue sur la carte (le sanctuaire, lui, se visite seul).
+  const blocked = !!ui.online?.party && run.availableNodes()[0] !== 'dieu' && ui.online.party.voteOptions().length === 0;
+  const avail = new Set(blocked ? [] : run.availableNodes());
   const visited = new Set(run.path);
   const step = (a: string, b: string) => run.path.indexOf(b) === run.path.indexOf(a) + 1 && run.path.includes(a);
   const segs = Object.values(m.nodes).flatMap((n) => n.next.map((id) => {
@@ -769,6 +906,10 @@ function viewMap(run: Run): string {
     return `<div class="node-wrap t-${n.type} s-${state}" style="left:${p.x}px;top:${p.y}px" ${state === 'avail' ? '' : 'tabindex="0"'}>
       <button class="node t-${n.type} s-${state}" ${go} aria-label="${label}">${icon}</button>
       ${n.id === run.position ? `<span class="you" title="Tu es ici"><img src="${asset(`classes/${breed.id}.png`)}" alt="Ta position"></span>` : ''}
+      ${party ? (() => {
+        const who = party.votes.map((v, i) => (v === n.id ? i : -1)).filter((i) => i >= 0);
+        return who.length ? `<span class="votes" aria-label="${who.length} vote${who.length > 1 ? 's' : ''}">${who.map((i) => `<img src="${asset(`classes/${DOFUS.breeds[party.members[i].classe].id}.png`)}" alt="${esc(party.members[i].name)}" title="${esc(party.members[i].name)}">`).join('')}</span>` : '';
+      })() : ''}
       ${n.type === 'boss' ? `<span class="boss-plate">${esc(boss.name)}</span>` : ''}
       ${nodeTip(run, n)}
     </div>`;
@@ -787,7 +928,11 @@ function viewMap(run: Run): string {
   })() : '';
   const floors = Array.from({ length: m.floors - 1 }, (_, i) => i + 1)
     .map((f) => `<span class="floor-no${f === run.stats.floor ? ' current' : ''}" style="top:${TOP + (m.floors - 1 - f) * H}px">${f}</span>`).join('');
+  const waiting = party ? waitingFor() : [];
+  const myVote = party ? party.votes[ui.online!.me] : null;
   const hint = avail.has('dieu') && god ? `Commence par le sanctuaire ${deName(god.name)}, au pied de la carte.`
+    : party && waiting.length ? `On attend ${waiting.join(', ')} avant de voter.`
+    : party ? (myVote ? 'Ton vote est pris. La case qui a la majorité l\'emporte ; à égalité, le sort tranche.' : 'Vote pour la prochaine case : la majorité l\'emporte.')
     : run.position === null ? 'Choisis ta première case en bas de la carte.' : 'Choisis ta prochaine case. Survole-la pour voir ce qui t\'y attend.';
   return `<main class="mapview">
     <section class="map-wrap">
@@ -955,11 +1100,18 @@ function viewCombat(run: Run): string {
   return `<main class="combatview${ui.busy ? ' busy' : ''}">
     ${topbarHtml(run)}
     ${arenaHtml(run)}
+    ${alliesHtml(run)}
     <footer class="tray">
       <button class="pile pile-draw" data-act="pile" data-pile="draw" title="Pioche : ${c.drawPile.length} cartes" aria-label="Pioche, ${c.drawPile.length} cartes">${c.drawPile.length ? cardBack('pb-2') + cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.drawPile.length}</b></button>
       <div class="gem${p.energy ? '' : ' empty'}" role="img" aria-label="${p.energy} PA sur ${BASE_ENERGY}"><b>${p.energy}/${BASE_ENERGY}</b><span>PA</span></div>
       <div class="hand fan${n > 7 ? ' crowded' : ''}">${hand || '<p class="muted">Main vide.</p>'}</div>
-      <button class="end-turn" data-act="end-turn">Finir le tour</button>
+      ${(() => {
+        if (!ui.online || c.partySize < 2) return '<button class="end-turn" data-act="end-turn">Finir le tour</button>';
+        if (c.isDown(run.seat)) return '<button class="end-turn waiting" disabled title="Si la table gagne, tu reviens avec 1 PV.">Hors combat</button>';
+        const ready = c.seats[run.seat]?.ready;
+        const left = c.seats.filter((st, i) => !st.ready && !c.isDown(i) && i !== run.seat).length;
+        return ready ? `<button class="end-turn waiting" disabled>Prêt, on attend ${left > 1 ? `${left} joueurs` : '1 joueur'}</button>` : '<button class="end-turn" data-act="end-turn">Prêt</button>';
+      })()}
       <button class="pile pile-discard" data-act="pile" data-pile="discard" title="Défausse : ${c.discardPile.length} cartes" aria-label="Défausse, ${c.discardPile.length} cartes">${c.discardPile.length ? cardBack('pb-1') + cardBack() : '<span class="pile-empty"></span>'}<b>${c.discardPile.length}</b></button>
     </footer>
     ${ui.logOpen ? `<aside class="log"><ol>${c.log.slice(-40).map((l) => `<li>${esc(l)}</li>`).join('')}</ol></aside>` : ''}
@@ -1406,7 +1558,8 @@ function render(): void {
   }
   const handBefore = captureHand();
   const barsBefore = captureBars();
-  root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) + viewPending(run) : '');
+  const net = ui.online?.party && ui.online.status === 'coupé' ? '<p class="net-banner" role="status">Connexion au salon perdue, on réessaie…</p>' : '';
+  root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) + viewPending(run) : '') + net;
   if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
   if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
   else stage.hide();
@@ -1710,7 +1863,7 @@ function enemyPoint(uid: number): { x: number; y: number } | null {
 function playCard(index: number, target?: number): void {
   const run = ui.run!;
   const c = run.combat!;
-  if (ui.busy || !c.hand[index]) return;
+  if (ui.busy || !c.hand[index] || ui.waitAck || c.seats[run.seat]?.ready) return;
   const inst = c.hand[index];
   const def = c.cardDef(inst);
   if (c.costOf(inst) > c.player.energy) return;
@@ -1724,6 +1877,12 @@ function playCard(index: number, target?: number): void {
   ui.flying.add(inst.uid);
   flyCard(index, points[0] ?? { x: p.x, y: p.y - p.h * 0.55 }, delay);
   ui.selecting = null;
+  if (ui.online) {
+    // En ligne : le geste part au salon ; l'effet s'affichera à son retour (onlineAction).
+    ui.waitAck = true;
+    c.playCard(index, uid);
+    return;
+  }
   const before = snapshot();
   try { c.playCard(index, uid); } catch (err) { console.error(err); }
   schedule(before, snapshot(), def.element, delay);
@@ -1733,6 +1892,13 @@ function playCard(index: number, target?: number): void {
 function endTurn(): void {
   if (ui.busy) return;
   const c = ui.run!.combat!;
+  if (ui.online) {
+    if (ui.waitAck || c.seats[ui.run!.seat]?.ready) return;
+    ui.waitAck = true;
+    sfx('turn');
+    c.endTurn();
+    return;
+  }
   flushImpacts();
   for (const e of c.living()) if (c.intent(e).damage > 0) ui.lunge.add(e.uid);
   sfx('turn');
@@ -1862,6 +2028,33 @@ function handle(act: string, d: DOMStringMap): void {
     case 'pick-class':
       ui.pick = asHero(d.classe ?? null);
       try { localStorage.setItem('slay.pick', ui.pick); } catch { /* stockage indisponible */ }
+      if (ui.online?.status === 'salon') onlineChange();
+      break;
+    case 'salon-open':
+      ui.salonForm = true;
+      break;
+    case 'salon-close':
+      closeOnline();
+      if (location.hash.startsWith('#salon=')) history.replaceState(null, '', location.pathname + location.search);
+      break;
+    case 'salon-create':
+    case 'salon-join': {
+      const name = ((root.querySelector('[data-salon-name]') as HTMLInputElement | null)?.value ?? '').trim() || storedName() || 'Aventurier';
+      const typed = ((root.querySelector('[data-salon-code]') as HTMLInputElement | null)?.value ?? '').trim().toUpperCase();
+      if (act === 'salon-join' && !/^[A-Z0-9]{4,8}$/.test(typed)) break;
+      connectOnline(act === 'salon-create' ? newCode() : typed, name);
+      break;
+    }
+    case 'salon-resume': {
+      const code = savedSalon();
+      if (code) connectOnline(code, storedName() || 'Aventurier');
+      break;
+    }
+    case 'salon-start':
+      ui.online?.start();
+      break;
+    case 'salon-copy':
+      void navigator.clipboard?.writeText(d.link ?? '');
       break;
     case 'look-toggle':
       ui.lookOpen = !ui.lookOpen;
@@ -1869,8 +2062,10 @@ function handle(act: string, d: DOMStringMap): void {
     case 'gender':
       ui.gender[asHero(d.classe ?? null)] = d.g === 'f' ? 'f' : 'm';
       try { localStorage.setItem('slay.gender', JSON.stringify(ui.gender)); } catch { /* stockage indisponible */ }
+      if (ui.online?.status === 'salon') onlineChange();
       break;
     case 'title':
+      if (ui.online) closeOnline();
       ui.run = null;
       ui.modal = null;
       break;
@@ -2178,5 +2373,7 @@ void balanceReady;
 };
 
 window.addEventListener('hashchange', render);
+// Lien d'invitation (#salon=CODE) : l'accueil ouvre le formulaire du salon, code déjà rempli.
+if (/^#salon=[A-Z0-9]{4,8}$/i.test(location.hash)) ui.salonForm = true;
 render();
 // Artwork officiel des Dofus : chargé en arrière-plan, l'écran se redessine s'il en affiche.

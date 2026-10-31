@@ -1,6 +1,8 @@
 // Petit serveur local pour essayer la version construite : node tools/serve.mjs [dossier] [port]
-// (npm run preview construit puis lance ce serveur sur http://localhost:8080)
+// (npm run preview construit puis lance ce serveur sur http://localhost:8080). Les salons à plusieurs marchent aussi
+// (tools/salon-local.mjs) : ouvre deux onglets pour jouer à deux.
 import { createServer } from 'node:http';
+import { upgrade } from './salon-local.mjs';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 
@@ -19,4 +21,5 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404); res.end('Introuvable');
   }
-}).listen(port, () => console.log(`Dofus Slay : http://localhost:${port} (dossier ${root})`));
+}).on('upgrade', (req, socket) => { if (!upgrade(req, socket)) socket.destroy(); })
+  .listen(port, () => console.log(`Dofus Slay : http://localhost:${port} (dossier ${root})`));

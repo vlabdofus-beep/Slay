@@ -13,7 +13,7 @@ Règles du jeu et historique des décisions : `docs/DESIGN.md`. Mesures d'équil
 npm install
 npm test            # obligatoire avant chaque push : tout doit passer
 npm run typecheck   # obligatoire aussi
-npm run preview     # construit dans dist/ et sert sur http://localhost:8080
+npm run preview     # construit dans dist/ et sert sur http://localhost:8080 (salons à plusieurs compris : deux onglets)
 npm run sim         # bot : parties complètes, pour mesurer la difficulté
 npm run balance:export   # ajoute à equilibrage.json les cartes, monstres, bénédictions nouveaux (sans écraser)
 ```
