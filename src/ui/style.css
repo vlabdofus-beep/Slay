@@ -1524,3 +1524,19 @@ body[data-screen="evenement"] { --accent: #9a86d6; --accent-ink: #1d1530; }
 .net-banner { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 50; margin: 0;
   padding: .5rem 1rem; border-radius: 999px; background: rgba(120, 30, 30, .92); color: #fff; font-size: .9rem; }
 @media (max-width: 700px) { .allies { top: 4.4rem; width: 46vw; } }
+
+/* ───────────── Réglages du son ───────────── */
+.snd-wrap { position: relative; display: inline-flex; }
+.snd-panel {
+  position: absolute; top: calc(100% + .5rem); right: 0; z-index: 60; width: 15rem;
+  display: grid; gap: .55rem; padding: .8rem .9rem; border-radius: 12px; text-align: left;
+  background: rgba(14, 22, 18, .96); color: #f7ecd6; box-shadow: 0 10px 28px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 226, 160, .18);
+}
+.title-foot .snd-panel { top: auto; bottom: calc(100% + .5rem); left: 0; right: auto; }
+.snd-row { display: grid; grid-template-columns: 5.2rem 1fr 2rem; align-items: center; gap: .5rem; font-size: .85rem; }
+.snd-row input { width: 100%; accent-color: #f0b84a; }
+.snd-row output { text-align: right; font-variant-numeric: tabular-nums; color: rgba(247, 236, 214, .75); }
+.snd-mute { justify-self: start; font: 600 .85rem var(--font); color: #f7ecd6; background: rgba(255, 245, 225, .08);
+  border: 1px solid rgba(255, 226, 160, .25); border-radius: 999px; padding: .3rem .8rem; cursor: pointer; }
+.snd-mute:hover, .snd-mute:focus-visible { background: rgba(255, 245, 225, .16); }
+.snd-hint { margin: 0; font-size: .75rem; color: rgba(247, 236, 214, .55); }

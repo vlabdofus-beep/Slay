@@ -225,3 +225,6 @@ Jusqu'à 4 joueurs dans la même run, qui jouent **en même temps** à chaque to
 
 ## Nom du jeu (31/10/2026)
 Le jeu s'appelle **La Main des Douze** (choix du propriétaire) : la main de cartes et la main des douze dieux qui bénissent la run. L'ancien nom de travail, « Dofus Slay », reprenait Slay the Spire et le nom d'un jeu d'Ankama. Le dépôt (`Slay`) et le Worker Cloudflare (`slay`) gardent leur nom technique.
+
+## Réglages du son (31/10/2026)
+Son coupé par défaut. Un clic sur le haut-parleur l'active ; quand il est actif, le même bouton ouvre un panneau avec trois volumes (musique, bruitages, voix du héros, de 0 à 100) et « Couper le son ». Les volumes s'appliquent pendant qu'on glisse (petit bruit d'essai pour les bruitages et la voix) et restent dans le navigateur. L'icône suit le volume. La touche M coupe ou remet le son partout (sauf pendant une saisie). Onglet caché : la musique se met en pause et reprend au retour.
