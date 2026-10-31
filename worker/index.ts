@@ -1,4 +1,4 @@
-// Worker Cloudflare de Dofus Slay : sert le jeu (fichiers de dist/) et les salons à plusieurs.
+// Worker Cloudflare de La Main des Douze : sert le jeu (fichiers de dist/) et les salons à plusieurs.
 //   /salon/<CODE>?id=<identifiant du navigateur>  →  WebSocket vers le Durable Object du salon.
 // Tout le reste est servi par les fichiers statiques.
 // Un salon est un Durable Object : un seul exemplaire par code dans le monde, qui garde la liste des joueurs, la graine

@@ -1,4 +1,4 @@
-# Dofus Slay
+# La Main des Douze
 
 Deckbuilder roguelike façon Slay the Spire dans l'univers de Dofus. Fan game non officiel :
 données issues de DofusDB (via Dofdle), animations, décors, effets et musiques de Dofus 3 repris de Dofus Survivors,

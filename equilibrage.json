@@ -1,6 +1,6 @@
 {
   "_aide": [
-    "Fichier d'équilibrage de Dofus Slay. Modifie les nombres puis enregistre : le jeu en ligne relit ce fichier à chaque démarrage.",
+    "Fichier d'équilibrage de La Main des Douze. Modifie les nombres puis enregistre : le jeu en ligne relit ce fichier à chaque démarrage.",
     "Garde la forme JSON : guillemets doubles, virgules entre les éléments, pas de virgule après le dernier. En cas d'erreur, le jeu garde ses valeurs par défaut et l'écrit dans la console du navigateur.",
     "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop, Visée du Crâ et Téléfrag du Xélor (marques : ennemis marqués au début du tour, pioche : cartes piochées, parTour : fois par tour).",
     "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",

@@ -1,4 +1,4 @@
-# Feuille de route
+# Feuille de route : La Main des Douze
 
 Le tableau de bord partagé entre le propriétaire du projet et les IA qui y travaillent.
 **Avant de commencer une tâche** : vérifie qu'elle n'a pas déjà quelqu'un dans « Qui », inscris-toi (sur ta branche),
@@ -70,6 +70,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : le jeu s'appelle désormais **La Main des Douze** (accueil, onglet, documentation). Dépôt et Worker gardent leur nom technique.
 - 31/10/2026 : Claude — multijoueur, étape 5 : on joue à plusieurs dans le jeu. Salon depuis l'accueil (« Jouer à plusieurs », code ou lien), votes sur la carte, alliés et bouton « Prêt » en combat, reprise après coupure. `npm run preview` fait tourner les salons en local (deux onglets pour jouer à deux).
 - 31/10/2026 : Claude — multijoueur, étape 4 : le salon en ligne (`worker/`) : un Durable Object Cloudflare par code de salon, WebSockets, journal d'actions numéroté, retour d'un joueur avec tout le journal, effacement après une journée.
 - 31/10/2026 : Grok — monstres relevés après les stats d'objets. Acte 1 ×1,15 PV et ×1,08 dégâts, acte 2 ×1,35 et ×1,22, acte 3 ×1,50 et ×1,32. 72 runs : Iop 40/13/1 (14,9), Crâ 33/14/4 (13,6), Xélor 36/10/3 (14,3), contre 38/8/2, 34/12/3 et 36/12/2 avant les objets.
