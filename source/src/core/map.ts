@@ -1,7 +1,7 @@
 // Carte d'un acte, façon Slay the Spire : des étages, des chemins qui montent, des nœuds typés.
 import { Rng } from './rng.ts';
 
-export type NodeType = 'combat' | 'elite' | 'zaap' | 'marchand' | 'boss';
+export type NodeType = 'combat' | 'elite' | 'zaap' | 'marchand' | 'evenement' | 'boss';
 
 export interface MapNode {
   id: string;
@@ -26,16 +26,18 @@ const PATHS = 4;
 
 const nodeId = (floor: number, col: number) => `${floor}:${col}`;
 
-/** Règles d'étage : 1-3 combats (faibles) ; marchands à partir du 4e ; élites et Zaaps à partir du 5e ;
- *  le 12e est un Zaap ; puis le boss. Jamais deux élites, deux Zaaps ou deux marchands d'affilée. */
+/** Règles d'étage : le 1er est un combat ; 2-3 : combats (faibles) ou événements ; marchands à partir du 4e ;
+ *  élites et Zaaps à partir du 5e ; le 12e est un Zaap ; puis le boss.
+ *  Jamais deux élites, deux Zaaps ou deux marchands d'affilée. */
 function pickType(rng: Rng, floor: number, parents: MapNode[]): NodeType {
-  if (floor <= 3) return 'combat';
+  if (floor === 1) return 'combat';
+  if (floor <= 3) return rng.next() < 0.28 ? 'evenement' : 'combat';
   if (floor === MAP_FLOORS) return 'zaap';
   const banned = new Set<NodeType>();
   if (floor < 5) banned.add('elite').add('zaap');
   if (floor === MAP_FLOORS - 1) banned.add('zaap'); // pas deux Zaaps d'affilée avant le boss
   for (const p of parents) if (p.type === 'elite' || p.type === 'zaap' || p.type === 'marchand') banned.add(p.type);
-  const weights: [NodeType, number][] = [['combat', 56], ['elite', 16], ['zaap', 14], ['marchand', 10]];
+  const weights: [NodeType, number][] = [['combat', 44], ['evenement', 22], ['elite', 16], ['zaap', 14], ['marchand', 10]];
   const pool = weights.filter(([t]) => !banned.has(t));
   const total = pool.reduce((s, [, w]) => s + w, 0);
   let roll = rng.next() * total;

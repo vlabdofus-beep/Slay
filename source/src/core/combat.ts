@@ -1,4 +1,4 @@
-import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EventId, type EvCtx, type ItemEffect, type RewardDef, type RuleId, type TriggerDef } from './effects.ts';
+import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EffectPart, type EventId, type EvCtx, type ItemEffect, type RewardDef, type RuleId, type TriggerDef } from './effects.ts';
 import { Rng } from './rng.ts';
 import { PASSIVE_VALUES } from './classes.ts';
 const VISEE = () => PASSIVE_VALUES.visee.attaques;
@@ -158,7 +158,33 @@ export function resolveCard(lib: Library, inst: CardInstance): CardDef {
 }
 
 /** Effet d'un objet : chaque objet ne peut se déclencher qu'un nombre limité de fois par tour (RewardDef.perTurn). */
-interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number; src: string }
+interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number; src: string; limit: number; once: boolean }
+
+/** Résultat d'une prévisualisation de carte : PV et armure retirés à chaque ennemi touché, effet sur le joueur. */
+export interface Preview {
+  enemies: Record<number, { lost: number; blockLost: number; dead: boolean }>;
+  player: { lost: number; healed: number; block: number };
+}
+
+/** Copie profonde d'un combat qui garde les prototypes et partage les données figées. */
+function cloneCombat(c: Combat): Combat {
+  const shared = new Set<unknown>([c.lib, ...Object.values(c.lib.cards), ...Object.values(c.lib.monsters), ...c.enemies.map((e) => e.def), ...Object.values(TRIGGER_BY_ID), ...Object.values(REWARD_BY_ID)]);
+  const memo = new Map<unknown, unknown>();
+  const copy = (v: unknown): unknown => {
+    if (v === null || typeof v !== 'object' || shared.has(v)) return v;
+    if (memo.has(v)) return memo.get(v);
+    if (v instanceof Set) { const s = new Set(); memo.set(v, s); for (const x of v) s.add(copy(x)); return s; }
+    if (v instanceof Map) { const m = new Map(); memo.set(v, m); for (const [k, x] of v) m.set(k, copy(x)); return m; }
+    if (Array.isArray(v)) { const a: unknown[] = []; memo.set(v, a); for (const x of v) a.push(copy(x)); return a; }
+    const o = Object.create(Object.getPrototypeOf(v)) as Record<string, unknown>;
+    memo.set(v, o);
+    for (const k of Object.keys(v)) o[k] = copy((v as Record<string, unknown>)[k]);
+    return o;
+  };
+  const sim = copy(c) as Combat;
+  sim.log = [];
+  return sim;
+}
 
 const ZERO_EL = (): Record<Element, number> => ({ terre: 0, feu: 0, eau: 0, air: 0, neutre: 0 });
 
@@ -209,6 +235,9 @@ export class Combat {
   /** Déclenchements de chaque objet depuis le début du combat (l'interface les fait briller). */
   fired: Record<string, number> = {};
 
+  /** Sablier : PA gardé du tour précédent ; pioche à main vide déjà faite ce tour. */
+  private leftover = 0;
+  private emptyDrawn = false;
   private reviveAvailable = false;
   revived = false;
   private depth = 0;
@@ -242,7 +271,9 @@ export class Combat {
     for (const e of this.enemies) {
       if (this.rules.has('ocre')) this.addStatus(e, 'puissance', 1);
       if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
+      if (this.rules.has('colosse')) this.addStatus(e, 'puissance', 2);
     }
+    if (this.rules.has('colosse')) this.addStatus(this.player, 'puissance', 2);
     this.drawPile = this.rng.shuffle([...deck]);
     // Cartes innées : sur le dessus de la pioche (la pioche se fait par la fin du tableau).
     const innate = this.drawPile.filter((i) => this.cardDef(i).innate);
@@ -256,10 +287,10 @@ export class Combat {
   /** Branche un effet (objet, Dofus ou pouvoir) sur les événements du combat. */
   private addEffect(e: ItemEffect | GrantFx, src: string): void {
     if (e.kind === 'rule') { this.rules.add(e.rule as RuleId); return; }
-    for (const p of e.parts) {
+    for (const p of e.parts as EffectPart[]) {
       const trigger = TRIGGER_BY_ID[p.trigger], reward = REWARD_BY_ID[p.reward];
       if (!trigger || !reward) continue;
-      (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src });
+      (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src, limit: p.once ? 1 : p.limit ?? perTurn(reward), once: !!p.once });
     }
   }
 
@@ -311,7 +342,7 @@ export class Combat {
     for (const list of Object.values(this.handlers)) for (const h of list ?? []) {
       if (h.src !== src || !['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'].includes(h.trigger.event) || h.trigger.single) continue;
       used = Math.max(used, h.used);
-      limit = Math.max(limit, perTurn(h.reward));
+      limit = Math.max(limit, h.limit);
     }
     return limit ? { used, limit } : null;
   }
@@ -398,6 +429,34 @@ export class Combat {
     return actions;
   }
 
+  // ───────────── prévisualisation ─────────────
+
+  /**
+   * Ce que ferait la carte si on la jouait maintenant : on la joue sur une copie du combat (même tirage aléatoire,
+   * mêmes objets et passifs), puis on compare. Les données figées (bibliothèque, fiches des monstres) sont partagées.
+   * Pour une carte à cible unique, `targetUid` choisit la cible.
+   */
+  preview(handIndex: number, targetUid?: number): Preview | null {
+    const inst = this.hand[handIndex];
+    if (!inst || this.outcome !== 'ongoing') return null;
+    const def = this.cardDef(inst);
+    if (def.unplayable || this.costOf(inst) > this.player.energy) return null;
+    const sim = cloneCombat(this);
+    try { sim.playCard(handIndex, targetUid); } catch { return null; }
+    const enemies: Preview['enemies'] = {};
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const after = sim.enemies.find((x) => x.uid === e.uid);
+      if (!after) continue;
+      const lost = e.hp - after.hp, blockLost = Math.max(0, e.block - after.block);
+      if (lost > 0 || blockLost > 0 || after.dead) enemies[e.uid] = { lost, blockLost, dead: after.dead || after.hp <= 0 };
+    }
+    return {
+      enemies,
+      player: { lost: Math.max(0, this.player.hp - sim.player.hp), healed: Math.max(0, sim.player.hp - this.player.hp), block: Math.max(0, sim.player.block - this.player.block) },
+    };
+  }
+
   // ───────────── actions ─────────────
 
   playCard(handIndex: number, targetUid?: number): void {
@@ -423,6 +482,8 @@ export class Combat {
       if (this.aimReady()) { this.dmgMul = PASSIVE_VALUES.visee.multiplicateur; this.aim = 0; this.fired['classe'] = (this.fired['classe'] ?? 0) + 1; this.log.push('Visée : dégâts doublés'); }
       else this.aim++;
     }
+    if (def.type === 'attaque' && this.rules.has('critique') && this.rng.next() < 0.25) { this.dmgMul *= 2; this.log.push('Coup critique !'); }
+    if (def.type === 'attaque' && this.rules.has('premier_double') && this.turnAttacks === 0) twice = true;
     const hits = this.resolveEffects(def, target);
     if (twice && this.outcome === 'ongoing') {
       const again = target && target.dead ? undefined : target;
@@ -459,6 +520,10 @@ export class Combat {
       this.drawCards(2);
     }
     this.emit('cardPlayed', { card: def, cost, target, hits: [...hits], element: def.element });
+    if (this.rules.has('pioche_vide') && !this.emptyDrawn && this.hand.length === 0 && this.outcome === 'ongoing') {
+      this.emptyDrawn = true;
+      this.drawCards(2);
+    }
     this.checkEnd();
   }
 
@@ -485,9 +550,10 @@ export class Combat {
       }
     }
     if (this.checkEnd()) return;
+    this.leftover = Math.min(1, this.player.energy);
     if (!this.rules.has('main_gardee')) {
-      // Les cartes conservées restent en main.
-      const keep = this.hand.filter((i) => this.cardDef(i).retain);
+      // Les cartes conservées restent en main (et la première carte avec Retenue).
+      const keep = this.hand.filter((i, k) => this.cardDef(i).retain || (k === 0 && this.rules.has('retenue') && !this.cardDef(i).status));
       this.discardPile.push(...this.hand.filter((i) => !keep.includes(i)));
       this.hand = keep;
     }
@@ -569,7 +635,7 @@ export class Combat {
     this.depth++;
     for (const h of list) {
       if (h.trigger.test && !h.trigger.test(this, x)) continue;
-      if (h.used >= perTurn(h.reward)) continue;
+      if (h.used >= h.limit) continue;
       h.used++;
       if (h.src) this.fired[h.src] = (this.fired[h.src] ?? 0) + 1;
       h.reward.apply(this, h.amount, x, h.trigger);
@@ -617,7 +683,10 @@ export class Combat {
     this.prevType = null;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
-    for (const list of Object.values(this.handlers)) for (const h of list ?? []) h.used = 0;
+    for (const list of Object.values(this.handlers)) for (const h of list ?? []) if (!h.once) h.used = 0;
+    if (this.rules.has('sablier') && !first) this.player.energy += this.leftover;
+    this.leftover = 0;
+    this.emptyDrawn = false;
     const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('pioche_plus') ? 1 : 0);
     this.drawCards(target);
     this.emit('turnStart');
@@ -705,7 +774,7 @@ export class Combat {
     const d = calcDamage(
       Math.round(base * this.scale.damage),
       element,
-      { status: e.status, dom: 0, weakMul: this.rules.has('faiblesse_forte') ? 0.5 : 0.75 },
+      { status: this.rules.has('poison_affaiblit') && (e.status.poison ?? 0) > 0 && !(e.status.faiblesse ?? 0) ? { ...e.status, faiblesse: 1 } : e.status, dom: 0, weakMul: this.rules.has('faiblesse_forte') ? 0.5 : 0.75 },
       { status: this.player.status },
     );
     return this.rules.has('ivoire') ? Math.max(0, d - 2) : d;
@@ -728,6 +797,11 @@ export class Combat {
       const a = Math.min(t.block, rest);
       t.block -= a;
       rest -= a;
+      // Épines (règle) : ce que l'armure du joueur absorbe d'un coup revient à l'attaquant.
+      if (a > 0 && t === this.player && o.attacker && !o.attacker.dead && !o.dot && this.rules.has('epines_armure')) {
+        this.applyHit(o.attacker, a, { dot: true });
+        this.markIfDead(o.attacker);
+      }
       const sh = Math.min(t.status.bouclier ?? 0, rest);
       if (sh) { t.status.bouclier = (t.status.bouclier ?? 0) - sh; rest -= sh; }
     }
@@ -862,7 +936,8 @@ export class Combat {
           for (let h = 0; h < hits; h++) {
             for (const e of targets) {
               if (e.dead) continue;
-              const dmg = this.playerHit(e, this.baseAmount(fx, e, def.id), fx.element);
+              const blood = def.type === 'attaque' && this.rules.has('sang') ? Math.floor((this.player.maxHp - this.player.hp) / 8) : 0;
+              const dmg = this.playerHit(e, this.baseAmount(fx, e, def.id) + blood, fx.element);
               const lost = this.applyHit(e, dmg, { pierce });
               hit.add(e);
               if (fx.type === 'drain') this.heal(lost);
@@ -1054,7 +1129,7 @@ export class Combat {
       const burn = t.status.brulure ?? 0;
       if (burn > 0) {
         this.srcElement = 'feu';
-        this.applyHit(t, burn, { dot: true });
+        this.applyHit(t, mine && this.rules.has('brulure_double') ? burn * 2 : burn, { dot: true });
         if (!(mine && this.rules.has('brulure_tenace'))) t.status.brulure = burn - 1;
       }
       const poison = t.status.poison ?? 0;

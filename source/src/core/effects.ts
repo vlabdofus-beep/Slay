@@ -219,13 +219,27 @@ export const DOFUS_RULES = {
   ocre: '+1 PA à chaque tour. Les monstres commencent chaque combat avec 1 puissance.',
   cauchemar: 'Les monstres commencent chaque combat avec 3 vulnérabilité.',
 } as const;
-export type RuleId = keyof typeof RULES | keyof typeof DOFUS_RULES;
+/** Règles des bénédictions divines et des reliques d'événement. */
+export const BOON_RULES = {
+  critique: 'Tes attaques ont 1 chance sur 4 d\'infliger le double de dégâts.',
+  sablier: 'Un PA non dépensé est conservé pour le tour suivant.',
+  retenue: 'En fin de tour, tu gardes en main la première carte de ta main.',
+  sang: 'Tes attaques infligent 1 dégât de plus par tranche de 8 PV qui te manquent.',
+  poison_affaiblit: 'Les ennemis empoisonnés infligent 25 % de dégâts en moins.',
+  premier_double: 'Ta première attaque de chaque tour est lancée deux fois.',
+  pioche_vide: 'Quand ta main est vide pendant ton tour, pioche 2 cartes (une fois par tour).',
+  brulure_double: 'La brûlure inflige le double de dégâts.',
+  epines_armure: 'Quand un ennemi frappe ton armure, il subit autant de dégâts qu\'elle en absorbe.',
+  colosse: 'Tu commences chaque combat avec 2 puissance, mais les monstres aussi.',
+} as const;
+export type RuleId = keyof typeof RULES | keyof typeof DOFUS_RULES | keyof typeof BOON_RULES;
 export const RULE_IDS = Object.keys(RULES) as (keyof typeof RULES)[];
-export const ruleText = (r: RuleId): string => (r in RULES ? RULES[r as keyof typeof RULES] : DOFUS_RULES[r as keyof typeof DOFUS_RULES]);
+export const ruleText = (r: RuleId): string => (r in RULES ? RULES[r as keyof typeof RULES] : r in DOFUS_RULES ? DOFUS_RULES[r as keyof typeof DOFUS_RULES] : BOON_RULES[r as keyof typeof BOON_RULES]);
 
 // ───────────── tirage ─────────────
 
-export interface EffectPart { trigger: string; reward: string; amount: number }
+/** limit : déclenchements par tour (remplace celui de la récompense) ; once : une seule fois par combat. */
+export interface EffectPart { trigger: string; reward: string; amount: number; limit?: number; once?: boolean }
 export type ItemEffect = { kind: 'roll'; parts: EffectPart[] } | { kind: 'rule'; rule: RuleId };
 
 /** Budget de chaque rareté, en points par combat. Le mythique répartit le sien sur deux récompenses. */
@@ -297,7 +311,8 @@ export function partText(p: EffectPart): string {
 export function effectText(e: ItemEffect): string {
   if (e.kind === 'rule') return ruleText(e.rule);
   const t = TRIGGER_BY_ID[e.parts[0].trigger];
-  const lim = (p: EffectPart) => { const n = perTurn(REWARD_BY_ID[p.reward]); return n === 1 ? 'une fois par tour' : `${n} fois par tour au plus`; };
+  const lim = (p: EffectPart) => { if (p.once) return 'une fois par combat'; const n = p.limit ?? perTurn(REWARD_BY_ID[p.reward]); return n === 1 ? 'une fois par tour' : `${n} fois par tour au plus`; };
+  if (e.parts.some((p) => p.once)) return `${t.text} : ${e.parts.map(partText).join(' et ')} (une fois par combat).`;
   if (!REPEATABLE.includes(t.event) || t.single) return `${t.text} : ${e.parts.map(partText).join(' et ')}.`;
   const same = new Set(e.parts.map(lim)).size === 1;
   if (same) return `${t.text} : ${e.parts.map(partText).join(' et ')} (${lim(e.parts[0])}).`;

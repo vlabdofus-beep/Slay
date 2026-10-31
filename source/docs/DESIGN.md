@@ -145,3 +145,24 @@ L'accueil et la carte sont les premières images du jeu : ils se posent désorma
 - **Accueil** : paysage peint avec les pièces du pack « champs d'Astrub » (ciel, collines en perspective aérienne, décors en rangs) ; les deux héros se tiennent dans le décor, une plaque sombre sous chacun.
 - **Carte** : plateau peint au sol du lieu de l'acte (champs d'Astrub, jungle, landes), semé de ses décors hors des cases et des chemins ; route prise et prochains pas en sentier de terre, le reste en pointillés ; cases en médaillons crème cerclés d'encre.
 - Code : `src/ui/scene/paint.ts` (peintures), `viewTitle`, `viewMap`, `mountLand`, `mountBoard` dans `src/ui/app.ts`.
+
+## Dieux, événements et reliques (31/10/2026)
+
+**Les douze dieux** (`src/data/gods.ts`). Au début de chaque acte, un dieu jamais croisé dans la run apparaît (écran `dieu`) et propose 3 de ses 6 bénédictions ; on en garde une pour toute la run, ou on repart sans rien. 72 bénédictions, fidèles à chaque classe : Iop la force (puissance, Terre, coup doublé), Crâ la précision (vulnérabilité, Air, ricochet), Eniripsa le soin, Écaflip la chance (critique, résurrection, une carte de plus aux récompenses), Enutrof l'argent (prospection, kamas, remises), Sram le poison et la ruse, Xélor le temps (PA gardé, carte retenue, étourdi), Sacrieur le sang (dégâts selon les PV perdus, renvoi), Féca la protection (armure gardée, épines), Osamodas les bêtes (dégâts et brûlure à chaque tour, faiblesse renforcée), Sadida la nature (ronces, contagion, soin après combat), Pandawa l'ivresse (étourdi, brûlure doublée).
+
+Une bénédiction (`src/game/boons.ts`, type `Boon`) combine au choix : des **effets de combat** (le même moteur que les objets : déclencheur × récompense, avec une limite par tour ou « une fois par combat », ou une règle), des **stats** fixes, des **avantages de run** (kamas en plus, remise du marchand, cartes proposées en plus, résurrection, soin du Zaap) et des **opérations immédiates** (soin, PV max, kamas, cartes améliorées, retirées, copiées ou transformées, carte ou objet au choix, relique, malédiction, combat avec prime, pile ou face). Dix règles nouvelles dans `BOON_RULES` (`src/core/effects.ts`) : critique, sablier, retenue, sang, poison_affaiblit, premier_double, pioche_vide, brulure_double, epines_armure, colosse.
+
+**Les événements** (`src/data/events.ts`) : nouvelles cases « ? » sur la carte (dès l'étage 2 ; environ une case sur cinq ensuite). 15 événements par acte, tirés sans répétition dans la run. Une scène, deux ou trois choix au prix clair, à la Slay the Spire : payer, saigner, prendre une malédiction ou se battre pour une prime. Les choix impossibles (pas assez de kamas, prix en PV mortel, aucune carte à choisir) sont grisés avec la raison. Le texte de chaque choix est écrit à partir de ses opérations : il ne peut pas mentir.
+
+**Les malédictions** (`src/data/statusCards.ts`) : Doute (injouable), Honte (injouable, 2 dégâts si gardée en main), Fardeau (1 PA, s'épuise). Elles restent dans le deck jusqu'à ce qu'on les retire.
+
+**Les reliques** (`src/data/relics.ts`) : 18 trésors légendaires, sans emplacement, plus forts qu'un objet, avec leur vraie icône Dofus (Gelano, Dofus Cawotte, Marteau de Moon, Shushu de Rushu…). On les gagne seulement dans les événements, contre un risque ou des kamas.
+
+Affichage : bénédictions et reliques dans la fiche du personnage et dans la barre d'effets du combat (elles brillent quand elles se déclenchent). Les choix de cartes ou d'objets qu'elles demandent s'ouvrent dans une fenêtre qu'on peut passer. Le bestiaire a un onglet « Dieux et reliques ». Les événements, eux, n'y sont pas : ils gardent la surprise.
+
+## Lisibilité du combat (31/10/2026)
+
+- **Jauge du passif** sous les PV du héros : symbole, nom, une pastille par étape (attaques du tour pour Courroux, attaques avant le tir doublé pour Visée), lueur dorée quand il est prêt, flash quand il se déclenche.
+- **Prévisualisation des dégâts** : au survol ou au focus d'une carte, chaque ennemi montre ce qu'il perdrait (« −12 PV », « Achevé »), en hachures sur sa barre de PV ; le héros montre l'armure gagnée ou les PV perdus. Une carte à cible unique montre la valeur pour chaque cible possible, puis seulement pour celle qu'on vise. Le calcul (`Combat.preview`) joue la carte sur une copie du combat : il compte tout (puissance, résistances, vulnérabilité, objets, passifs, même tirage aléatoire), et un test vérifie qu'il donne exactement ce que fait la carte jouée.
+- **Bulles d'effet** : des pilules lisibles, l'icône puis le chiffre en clair. Le liseré gauche dit ce que c'est : or pour un bonus, rouge pour un malus, violet pour une mécanique de monstre, bleu pour un pouvoir joué.
+- **Récompenses** : un clic sélectionne une carte ou un objet, un autre clic change d'avis, recliquer annule. Rien n'est pris avant « Reprendre la route ».

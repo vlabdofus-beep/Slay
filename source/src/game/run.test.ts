@@ -24,7 +24,8 @@ test('carte : boss accessible depuis chaque départ, règles d\'étage respecté
     }
     for (const n of Object.values(m.nodes)) {
       if (n.type !== 'boss') assert.ok(n.next.length >= 1);
-      if (n.floor <= 3) assert.equal(n.type, 'combat');
+      if (n.floor === 1) assert.equal(n.type, 'combat');
+      if (n.floor <= 3) assert.ok(n.type === 'combat' || n.type === 'evenement');
       if (n.floor < 5) assert.ok(n.type !== 'elite' && n.type !== 'zaap');
       if (n.floor < 4) assert.notEqual(n.type, 'marchand');
       if (n.floor === MAP_FLOORS) assert.equal(n.type, 'zaap');
@@ -48,11 +49,33 @@ test('carte : boss accessible depuis chaque départ, règles d\'étage respecté
   }
 });
 
+/** Dieux, événements et choix en attente : la première option possible, la première carte. */
+function stepExtra(run: Run): boolean {
+  const p = run.pending;
+  if (p) {
+    if (p.kind === 'card') run.chooseCard(p.options[0]);
+    else if (p.kind === 'item') run.chooseItem(p.options[0]);
+    else run.resolvePick(run.pickCandidates(p.what)[0].uid);
+    return true;
+  }
+  if (run.phase === 'dieu') { run.takeBoon(run.god!.offer[0]); return true; }
+  if (run.phase === 'evenement') {
+    const ev = run.event!;
+    if (ev.chosen === null) {
+      const i = [0, 1, 2, 3].find((k) => run.optionState(k).ok);
+      run.chooseOption(i!);
+    } else run.leaveEvent();
+    return true;
+  }
+  return false;
+}
+
 /** Joue une run complète avec le bot : 1re route disponible, 1re carte, 1er item, repos ou amélioration au Zaap. */
 function autoplay(run: Run): void {
   let guard = 0;
   while (run.phase !== 'victory' && run.phase !== 'defeat') {
     if (++guard > 500) throw new Error('Run bloquée');
+    if (stepExtra(run)) continue;
     switch (run.phase) {
       case 'map':
         run.enterNode(run.availableNodes()[0]);
@@ -107,6 +130,7 @@ test('butin : les élites donnent toujours un objet (jamais commun), la prospect
   for (let seed = 1; seed <= 12 && elites < 3; seed++) {
     const run = new Run('iop', seed);
     while (run.phase !== 'defeat' && run.phase !== 'victory') {
+      if (stepExtra(run)) continue;
       if (run.phase === 'map') {
         const next = run.availableNodes().map((id) => run.map.nodes[id]);
         run.enterNode((next.find((n) => n.type === 'elite') ?? next[0]).id);
@@ -117,7 +141,7 @@ test('butin : les élites donnent toujours un objet (jamais commun), la prospect
       } else if (run.phase === 'reward') {
         const r = run.reward!;
         assert.ok(r.prospection >= 0);
-        if (run.node!.type === 'elite') {
+        if (run.node!.type === 'elite' && run.reward!.itemSource) {
           elites++;
           assert.equal(r.itemSource, 'elite');
           assert.equal(r.items.length, 3);
@@ -133,7 +157,7 @@ test('butin : les élites donnent toujours un objet (jamais commun), la prospect
 });
 
 test('chaque objet a un effet tiré pour la run, identique pour une même graine', () => {
-  const a = new Run('cra', 5), b = new Run('cra', 5), c = new Run('cra', 6);
+  const a = new Run('cra', 5, 'm', { gods: false }), b = new Run('cra', 5, 'm', { gods: false }), c = new Run('cra', 6, 'm', { gods: false });
   assert.deepEqual(a.itemEffects, b.itemEffects);
   assert.notDeepEqual(a.itemEffects, c.itemEffects);
   for (const it of Object.values(ITEMS.items)) {
@@ -144,7 +168,7 @@ test('chaque objet a un effet tiré pour la run, identique pour une même graine
 });
 
 test('équiper un item qui donne des PV augmente aussi les PV actuels', () => {
-  const run = new Run('cra', 2);
+  const run = new Run('cra', 2, 'm', { gods: false });
   run.hp = 50;
   const id = Object.values(ITEMS.items).find((it) => it.rarity === 'commun' && it.stats.pv)!.id; // +6 PV
   run.equip(id);
@@ -154,9 +178,9 @@ test('équiper un item qui donne des PV augmente aussi les PV actuels', () => {
 
 test('chaque case de combat connaît sa rencontre à l\'avance, et c\'est celle qu\'on affronte', async () => {
   const { ENCOUNTERS } = await import('../data/monsters.ts');
-  const run = new Run('cra', 11);
+  const run = new Run('cra', 11, 'm', { gods: false });
   for (const n of Object.values(run.map.nodes)) {
-    if (n.type === 'zaap' || n.type === 'marchand') assert.equal(run.encounters[n.id], undefined);
+    if (n.type === 'zaap' || n.type === 'marchand' || n.type === 'evenement') assert.equal(run.encounters[n.id], undefined);
     else assert.equal(ENCOUNTERS[run.encounters[n.id]].tier, Run.tierOf(n));
   }
   const first = run.availableNodes()[0];
@@ -166,7 +190,7 @@ test('chaque case de combat connaît sa rencontre à l\'avance, et c\'est celle 
 });
 
 test('marchand : acheter une carte, un objet, retirer une carte ; les kamas baissent', () => {
-  const run = new Run('cra', 4);
+  const run = new Run('cra', 4, 'm', { gods: false });
   const shopNode = Object.values(run.map.nodes).find((n) => n.type === 'marchand')!;
   run.position = Object.values(run.map.nodes).find((n) => n.next.includes(shopNode.id))!.id;
   run.kamas = 1000;
@@ -192,7 +216,7 @@ test('marchand : acheter une carte, un objet, retirer une carte ; les kamas bais
 });
 
 test('boss des actes 1 et 2 : choix d\'un Dofus parmi 3, puis acte suivant avec PV au maximum', () => {
-  const run = new Run('iop', 8);
+  const run = new Run('iop', 8, 'm', { gods: false });
   for (const act of [1, 2]) {
     run.position = Object.values(run.map.nodes).find((n) => n.next.includes('boss'))!.id;
     run.enterNode('boss');
@@ -214,7 +238,7 @@ test('boss des actes 1 et 2 : choix d\'un Dofus parmi 3, puis acte suivant avec 
 });
 
 test('Dokoko : une résurrection par run', () => {
-  const run = new Run('iop', 2);
+  const run = new Run('iop', 2, 'm', { gods: false });
   run.dofus.push('dokoko');
   run.enterNode(run.availableNodes()[0]);
   const c = run.combat!;

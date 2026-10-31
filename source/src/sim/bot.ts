@@ -3,6 +3,7 @@ import type { ItemEffect } from '../core/effects.ts';
 import { Rng } from '../core/rng.ts';
 import type { ClassId, Element } from '../core/types.ts';
 import { ITEMS } from '../data/items.ts';
+import { EVENT_BY_ID } from '../data/events.ts';
 import { LIBRARY } from '../data/library.ts';
 import { Run } from '../game/run.ts';
 import { chooseItem } from './itemPolicy.ts';
@@ -18,6 +19,8 @@ export interface BotOptions {
   favor?: Exclude<Element, 'neutre'>;
   /** Le bot ne prend jamais d'objet (comparaison). */
   noItems?: boolean;
+  /** Ignorer les dieux (comparaison avec la version sans bénédictions). */
+  noGods?: boolean;
 }
 
 export interface BotResult {
@@ -33,6 +36,16 @@ export interface BotResult {
   rarities: Record<string, number>;
 }
 
+/** Choix en attente : retirer d'abord les malédictions et les cartes de base, améliorer au hasard, prendre la première carte. */
+function resolvePending(run: Run, rng: Rng): void {
+  const p = run.pending!;
+  if (p.kind === 'card') { run.chooseCard(rng.pick(p.options)); return; }
+  if (p.kind === 'item') { run.chooseItem(chooseItem(LIBRARY, ITEMS, run.itemEffects, run.deck, run.equipment, p.options) ?? p.options[0]); return; }
+  const c = run.pickCandidates(p.what);
+  const bad = c.find((x) => LIBRARY.cards[x.id].curse) ?? c.find((x) => x.id.endsWith('coup_epee') || x.id.endsWith('coup_arc'));
+  run.resolvePick((p.what === 'remove' || p.what === 'transform') && bad ? bad.uid : rng.pick(c).uid);
+}
+
 export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotResult {
   const run = new Run(classe, seed);
   run.extraEffects = o.extra ?? [];
@@ -41,8 +54,22 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
   const rng = new Rng(seed * 2654435761);
   const rarities: Record<string, number> = {};
   let hpBeforeBoss: number | null = null;
-  for (let guard = 0; guard < 160; guard++) {
+  for (let guard = 0; guard < 220; guard++) {
     if (run.phase === 'victory' || run.phase === 'defeat') break;
+    if (run.pending) { resolvePending(run, rng); continue; }
+    if (run.phase === 'dieu') {
+      if (o.noGods) run.leaveGod();
+      else run.takeBoon(rng.pick(run.god!.offer));
+      continue;
+    }
+    if (run.phase === 'evenement') {
+      const ev = run.event!;
+      if (ev.chosen === null) {
+        const ok = EVENT_BY_ID[ev.id].options.map((_, i) => i).filter((i) => run.optionState(i).ok);
+        run.chooseOption(rng.pick(ok));
+      } else run.leaveEvent();
+      continue;
+    }
     if (run.phase === 'map') {
       const next = run.availableNodes().map((id) => run.map.nodes[id]);
       // Chemin : zaap si les PV sont bas, élite si les PV sont hauts, sinon au hasard.

@@ -1,5 +1,6 @@
 // Cartes de statut glissées dans le deck par certains monstres (repères : Hébété, Gluant, Brûlure, Blessure de StS).
 // Elles ne vont jamais dans les récompenses et disparaissent à la fin du combat (le deck de la run n'est pas touché).
+// Les malédictions, elles, viennent des événements et restent dans le deck jusqu'à ce qu'on les retire.
 import type { CardDef } from '../core/types.ts';
 
 const base = { classe: 'neutre' as const, type: 'competence' as const, element: 'neutre' as const, target: 'self' as const, rarity: 'base' as const, effects: [], status: true };
@@ -13,4 +14,10 @@ export const STATUS_CARDS: CardDef[] = [
     lore: 'Elle brûle les doigts tant qu\'on la garde.' },
   { ...base, id: 'statut_blessure', name: 'Blessure', cost: 0, unplayable: true, icon: 'assets/fx/degats.webp',
     lore: 'Une plaie qui encombre le deck jusqu\'à la fin du combat.' },
+  { ...base, id: 'malediction_doute', name: 'Doute', cost: 0, unplayable: true, curse: true, icon: 'assets/fx/faiblesse.webp',
+    lore: 'Malédiction. Elle prend une place dans ta main, sans rien faire.' },
+  { ...base, id: 'malediction_honte', name: 'Honte', cost: 0, unplayable: true, curse: true, endTurnDamage: 2, icon: 'assets/fx/vulnerabilite.webp',
+    lore: 'Malédiction. Tant qu\'elle reste en main, elle te ronge.' },
+  { ...base, id: 'malediction_fardeau', name: 'Fardeau', cost: 1, exhaust: true, curse: true, icon: 'assets/fx/erosion.webp',
+    lore: 'Malédiction. Il faut 1 PA pour la poser, à chaque combat.' },
 ];

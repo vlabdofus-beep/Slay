@@ -11,6 +11,10 @@ import { ITEMS } from '../data/items.ts';
 import { LIBRARY } from '../data/library.ts';
 import { ACTS, ENCOUNTERS, TIER_SCALE, type EncounterTier } from '../data/monsters.ts';
 import { STATUS_CARDS } from '../data/statusCards.ts';
+import { GODS } from '../data/gods.ts';
+import { RELICS } from '../data/relics.ts';
+import { itemIcon } from '../data/dofus.ts';
+import { boonLines } from '../game/boons.ts';
 import { ELEMENT_NAMES, STATUS_INFO, cardText, esc, powerInfo, statsText } from './describe.ts';
 
 /** Outils de rendu partagés avec app.ts (cartes, objets, badges). */
@@ -31,7 +35,7 @@ export interface BxHelpers {
   rarityName: (r: string) => string;
 }
 
-type Tab = 'tout' | 'monstres' | 'cartes' | 'objets' | 'dofus' | 'effets';
+type Tab = 'tout' | 'monstres' | 'cartes' | 'objets' | 'dofus' | 'dieux' | 'effets';
 export const bx = {
   tab: 'monstres' as Tab,
   /** Onglet ouvert avant de lancer une recherche : on y revient quand la recherche est vidée. */
@@ -195,6 +199,7 @@ function counts(h: BxHelpers): Record<Exclude<Tab, 'tout'>, number> {
     cartes: [...ALL_CARDS, ...STATUS_CARDS].filter((c) => hit(cardHay(c))).length,
     objets: Object.values(ITEMS.items).filter((it) => hit(itemHay(it, h))).length,
     dofus: EGGS.filter((e) => hit(eggHay(e))).length,
+    dieux: GODS.reduce((n, g) => n + g.boons.filter((b) => hit(boonHay(b, `${g.name} ${g.title}`))).length, 0) + RELICS.filter((r) => hit(boonHay(r, 'relique'))).length,
     effets: effectLines(h).filter((l) => hit(l.text)).length,
   };
 }
@@ -358,6 +363,22 @@ function effectLine(fx: ItemEffect): string {
   return `${t?.text ?? ''} : ${fx.parts.map((p) => REWARDS.find((r) => r.id === p.reward)!.text(p.amount, t!)).join(' et ')}.`;
 }
 
+const boonHay = (b: { name: string; lore?: string }, extra = '') => [b.name, extra, b.lore ?? '', ...boonLines(b as never)].join(' ');
+
+function viewGods(h: BxHelpers): string {
+  const gods = GODS.map((g) => {
+    const boons = g.boons.filter((b) => hit(boonHay(b, `${g.name} ${g.title}`)));
+    if (!boons.length) return '';
+    return `<section class="bx-god" style="--god:${g.color}"><h3 class="bx-group"><img src="${h.asset(`classes/${g.breed}.png`)}" alt="" class="bx-god-ico">${esc(g.name)}, ${esc(g.title)}</h3>
+      <ul class="bx-boons">${boons.map((b) => `<li><b>${mark(esc(b.name))}</b> ${boonLines(b).map((l) => mark(esc(l))).join(' ')}</li>`).join('')}</ul></section>`;
+  }).join('');
+  const relics = RELICS.filter((r) => hit(boonHay(r, 'relique'))).map((r) => `<li><img src="${r.iconId ? itemIcon(r.iconId) : h.asset(`fx/${r.fx}.webp`)}" alt="" class="bx-relic-ico" onerror="this.style.visibility='hidden'">
+      <span><b>${mark(esc(r.name))}</b> ${boonLines(r).map((l) => mark(esc(l))).join(' ')}<i>${esc(r.lore ?? '')}</i></span></li>`).join('');
+  return `<p class="bx-lead">Au début de chaque acte, un des douze dieux apparaît et propose trois de ses six bénédictions. Les reliques, elles, se trouvent dans les événements (cases « ? ») : légendaires, elles ne prennent aucun emplacement.</p>
+    <div class="bx-gods">${gods}</div>
+    ${relics ? `<h3 class="bx-group">Reliques <span class="muted">${RELICS.length}</span></h3><ul class="bx-relics">${relics}</ul>` : ''}`;
+}
+
 function viewEffects(h: BxHelpers): string {
   const statuses = Object.entries(STATUS_INFO).filter(([, s]) => hit(`${s.name} ${s.help}`)).map(([id, s]) => `<li><img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span></li>`).join('');
   const passives = (Object.keys(PASSIVES) as ClassId[]).filter((cl) => hit(`${PASSIVES[cl]!.name} ${cl} ${PASSIVES[cl]!.text}`)).map((cl) => `<li>${h.passiveBadge(cl)}<span><b>${esc(PASSIVES[cl]!.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(PASSIVES[cl]!.text)}</span></li>`).join('');
@@ -385,11 +406,12 @@ const TABS: [Exclude<Tab, 'tout'>, string, () => number][] = [
   ['cartes', 'Cartes', () => ALL_CARDS.length + STATUS_CARDS.length],
   ['objets', 'Objets', () => Object.keys(ITEMS.items).length],
   ['dofus', 'Dofus', () => EGGS.length],
+  ['dieux', 'Dieux et reliques', () => GODS.length * 6 + RELICS.length],
   ['effets', 'Effets et statuts', () => 0],
 ];
 
 /** Combien de résultats montrer par catégorie dans la vue « Tout » avant de renvoyer vers l'onglet. */
-const PREVIEW = { monstres: 12, cartes: 8, objets: 9, dofus: 6, effets: 10 };
+const PREVIEW = { monstres: 12, cartes: 8, objets: 9, dofus: 6, dieux: 0, effets: 10 };
 
 function more(tab: Exclude<Tab, 'tout'>, shown: number, total: number, label: string): string {
   return `<h3 class="bx-group bx-hit-head">${label} <span class="muted">${total}</span>
@@ -430,6 +452,10 @@ function viewAll(h: BxHelpers, n: ReturnType<typeof counts>): string {
     out += `<div class="bx-eggs">${list.map((e) => `<div class="bx-egg">${h.eggIcon(e.id, 'bx-egg-ico')}<div><b>${mark(esc(e.name))}</b>${h.eggBadges(e.id)}
       <span class="bx-eggtxt">${e.effects.map(effectLine).map((t) => `<span>${mark(esc(t))}</span>`).join('')}</span></div></div>`).join('')}</div>`;
   }
+  if (n.dieux) {
+    out += more('dieux', 0, n.dieux, 'Bénédictions et reliques');
+    out += viewGods(h).replace(/^<p class="bx-lead">[\s\S]*?<\/p>/, '');
+  }
   if (n.effets) {
     const list = effectLines(h).filter((l) => hit(l.text));
     out += more('effets', Math.min(list.length, PREVIEW.effets), list.length, 'Effets et règles');
@@ -456,7 +482,7 @@ export function viewBestiary(h: BxHelpers, inRun: boolean): string {
   if (!searching && bx.tab === 'tout') bx.tab = bx.back;
   const n = searching ? counts(h) : null;
   const body = bx.tab === 'tout' && n ? viewAll(h, n) : bx.tab === 'monstres' ? viewMonsters(h) : bx.tab === 'cartes' ? viewCards(h) : bx.tab === 'objets' ? viewItems(h)
-    : bx.tab === 'dofus' ? viewEggs(h) : viewEffects(h);
+    : bx.tab === 'dofus' ? viewEggs(h) : bx.tab === 'dieux' ? viewGods(h) : viewEffects(h);
   const total = n ? Object.values(n).reduce((a, b) => a + b, 0) : 0;
   return `<main class="bestiary">
     <header class="bx-head">

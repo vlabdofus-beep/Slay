@@ -217,3 +217,14 @@ Effet (bot, 300 runs par classe, boss 1 / 2 / 3 atteints) : Iop 16 / 2 / 0 % →
 - **Résistances** : fin du tout-ou-rien (×1,5 / ×0,5). Chaque monstre porte ses pourcentages réels de Dofus dans les cinq éléments, neutre compris : 20 % = −20 % de dégâts, −10 % = +10 %, 100 % = insensible. En moyenne : 18,6 % en neutre, 10 à 13 % par élément.
 - Les monstres en deviennent plus solides d'environ 13 % : leurs PV sont multipliés par 0,88 (`RES_HP`) pour garder la même durée de combat.
 - Bot, 300 runs : Iop 28 / 3 / 0 %, Crâ 35 / 8 / 0 % (avant : 25 / 4 / 0 et 34 / 9 / 3).
+
+## Dieux et événements (31/10/2026)
+
+Bot (choix au hasard parmi les bénédictions et les options possibles), 300 runs par ligne, part des runs qui battent le boss 1 / le boss 2 / gagnent :
+
+| | Iop | Crâ |
+|---|---|---|
+| Événements, sans dieux | 33 / 5 / 1 % | 33 / 8 / 2 % |
+| Événements et dieux | 49 / 16 / 3 % | 42 / 18 / 4 % |
+
+Les dieux jouent le rôle de la bénédiction de Neow dans Slay : un vrai coup de pouce de départ, choisi par le joueur. Comme le bot choisit au hasard, un joueur qui choisit bien en tirera plus. Pas encore de mesure bénédiction par bénédiction.

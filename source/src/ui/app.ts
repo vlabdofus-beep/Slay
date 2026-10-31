@@ -1,6 +1,6 @@
 // Interface du jeu : rendu DOM simple (re-rendu complet à chaque action) + délégation d'événements.
 // Toute la logique est dans src/game/run.ts et src/core ; ce fichier ne fait qu'afficher et relayer.
-import { BASE_ENERGY, resolveCard, type Combat, type Enemy } from '../core/combat.ts';
+import { BASE_ENERGY, resolveCard, type Combat, type Enemy, type Preview } from '../core/combat.ts';
 import { PASSIVE_VALUES, PASSIVES } from '../core/classes.ts';
 import { EL_NAME, effectText as itemEffectText, partText, perTurn, REWARD_BY_ID, ruleText, TRIGGER_BY_ID, type EffectPart, type ItemEffect } from '../core/effects.ts';
 import { lootChance, prospFactor } from '../core/offers.ts';
@@ -15,6 +15,10 @@ import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
 import { EGG_BY_ID, eggImage } from '../data/eggs.ts';
 import { bestiaryAct, bestiarySearch, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
+import { boonLines, opText, type Boon } from '../game/boons.ts';
+import { GOD_BY_ID, BOON_BY_ID } from '../data/gods.ts';
+import { RELIC_BY_ID } from '../data/relics.ts';
+import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
 import {
   cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
@@ -53,6 +57,11 @@ const ui = {
   lookOpen: false,
   /** Couleurs choisies à l'accueil, par classe et sexe (5 emplacements, null = d'origine). */
   colors: loadColors(),
+  /** Le passif de classe vient de se déclencher (la jauge flashe). */
+  passiveFlash: false,
+  /** Choix en attente sur l'écran de récompense : rien n'est pris avant « Reprendre la route ». */
+  pickCard: null as string | null,
+  pickItem: null as string | null,
 };
 
 function loadColors(): Record<string, (number | null)[]> {
@@ -131,7 +140,7 @@ function statusChips(st: StatusMap, down = false): string {
       const info = STATUS_INFO[id as keyof typeof STATUS_INFO];
       return `<span class="fxb st ${GOOD_STATUS.has(id) ? 'good' : 'bad'}" tabindex="0" aria-label="${esc(`${info.name} ${v} : ${info.help}`)}">
         <span class="fxi"><img src="${asset(STATUS_ICON[id])}" alt="" draggable="false"><b>${v}</b></span>
-        <span class="fxtip${down ? ' down' : ''}" role="tooltip"><b class="fxt">${esc(info.name)} ${v}</b><span class="fx-what"><span>${esc(info.help)}</span></span></span></span>`;
+        <span class="fxtip${down ? ' down' : ''}" role="tooltip"><b class="fxt">${esc(info.name)} ${v}</b><span class="tip-meta">${GOOD_STATUS.has(id) ? 'Bonus' : 'Malus'}</span><span class="fx-what"><span>${esc(info.help)}</span></span></span></span>`;
     })
     .join('');
 }
@@ -166,7 +175,7 @@ function powerBadges(e: Enemy, c: NonNullable<Run['combat']>): string {
     if ((p.kind === 'division' && e.m.split) || (p.kind === 'artefact' && !e.m.artefact) || (p.kind === 'sommeil' && !e.m.asleep)) return '';
     return `<span class="fxb st power" tabindex="0" aria-label="${esc(`${info.name} : ${info.help}${extra}`)}">
       <span class="fxi"><img src="${asset(POWER_ICON[p.kind])}" alt="" draggable="false">${n !== undefined ? `<b>${n}</b>` : ''}</span>
-      <span class="fxtip" role="tooltip"><b class="fxt">${esc(info.name)}</b><span class="fx-what"><span>${esc(info.help + extra)}</span></span></span></span>`;
+      <span class="fxtip" role="tooltip"><b class="fxt">${esc(info.name)}</b><span class="tip-meta">Mécanique du monstre</span><span class="fx-what"><span>${esc(info.help + extra)}</span></span></span></span>`;
   }).join('');
 }
 
@@ -272,6 +281,31 @@ function passiveBadge(classe: ClassId, o: { c?: Combat | null; flash?: boolean; 
       <span class="fx-what"><span>${esc(p.text)}</span></span>${state ? `<span class="fx-when"><i>Maintenant</i> ${esc(state)}</span>` : ''}</span></span>`;
 }
 
+/**
+ * Jauge du passif de classe, sous les PV du héros : symbole, nom, une pastille par étape (attaques du tour pour
+ * Courroux, attaques avant le tir doublé pour Visée). Pleine, elle s'illumine ; au déclenchement, elle flashe.
+ */
+function passiveGauge(classe: ClassId, c: Combat, flash: boolean): string {
+  const p = PASSIVES[classe];
+  if (!p) return '';
+  let steps = 0, done = 0, ready = false, state = '', goal = '';
+  if (classe === 'iop') {
+    steps = PASSIVE_VALUES.courroux.attaques; done = Math.min(steps, c.turnAttacks); ready = done >= steps;
+    goal = `+${PASSIVE_VALUES.courroux.puissance}`;
+    state = ready ? `Gagne ${PASSIVE_VALUES.courroux.puissance} puissance à la fin du tour.` : `Attaques ce tour : ${done} sur ${steps}.`;
+  } else if (classe === 'cra') {
+    steps = PASSIVE_VALUES.visee.attaques - 1; ready = c.aimReady(); done = ready ? steps : c.aim;
+    goal = `×${PASSIVE_VALUES.visee.multiplicateur}`;
+    state = ready ? 'Ta prochaine attaque inflige le double de dégâts.' : `Encore ${steps - done} attaque${steps - done > 1 ? 's' : ''} avant le tir doublé.`;
+  }
+  const pips = Array.from({ length: steps }, (_, i) => `<i class="pip${i < done ? ' on' : ''}"></i>`).join('');
+  return `<span class="pgauge hastip${ready ? ' ready' : ''}${flash ? ' flash' : ''}" tabindex="0" aria-label="${esc(`${p.name} : ${state}`)}">
+    <img src="${asset(`classes/${DOFUS.breeds[classe].id}.png`)}" alt="" draggable="false">
+    <span class="pg-name">${esc(p.name)}</span><span class="pg-pips">${pips}</span><b class="pg-goal">${goal}</b>
+    <span class="fxtip" role="tooltip"><b class="fxt">${esc(p.name)}</b><span class="tip-meta">Passif de classe</span>
+      <span class="fx-what"><span>${esc(p.text)}</span></span><span class="fx-when"><i>Maintenant</i> ${esc(state)}</span></span></span>`;
+}
+
 /** Pouvoirs joués ce combat : icône du sort, nombre d'exemplaires, texte de la carte au survol. */
 function powerChips(c: Combat): string {
   return c.powers.map((pw) => {
@@ -333,6 +367,7 @@ function sheet(run: Run): string {
     <h3>Passif de classe</h3><p class="passive-line">${passiveBadge(run.classe)}<span><b>${esc(PASSIVES[run.classe]?.name ?? '')}</b> <span class="muted small">${esc(PASSIVES[run.classe]?.text ?? '')}</span></span></p>
     <h3>Équipement</h3><div class="slots">${slots}</div>
     ${effects ? `<ul class="fx-list">${effects}</ul><p class="muted small">Un même objet se déclenche au plus 3 fois par tour (une fois pour la pioche, les PA et les réductions de coût). Les objets se cumulent entre eux.</p>` : '<p class="muted small">Les objets se gagnent après les combats. Chacun donne une stat fixe et un effet tiré au sort pour cette run.</p>'}
+    ${run.blessings().length ? `<h3>Bénédictions et reliques</h3><div class="boon-list">${run.blessings().map(([src]) => boonBadge(src)).join('')}</div>` : ''}
     ${run.dofus.length ? `<h3>Dofus</h3><ul class="eggs">${run.dofus.map((id) => `<li>${eggIcon(id)}<span><b>${esc(EGG_BY_ID[id].name)}</b>${eggBadges(id)}</span></li>`).join('')}</ul>` : ''}
     <h3>Kamas et prospection</h3>
     <p class="prosp">${KAMAS(run.kamas)}</p>
@@ -456,7 +491,7 @@ function startPreviews(): void {
   previewRaf = requestAnimationFrame(loop);
 }
 
-const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', marchand: 'Marchand', boss: 'Boss' };
+const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', marchand: 'Marchand', evenement: 'Événement', boss: 'Boss' };
 /** Icônes officielles de l'interface Dofus (modes de Dofusle, objets de Dofus Survivors). */
 const uiIcon = (name: string, cls = 'ui-ico') => `<img class="${cls}" src="${asset(`ui/${name}.webp`)}" alt="" draggable="false">`;
 const NODE_ICON: Record<MapNode['type'], string> = {
@@ -464,6 +499,7 @@ const NODE_ICON: Record<MapNode['type'], string> = {
   elite: uiIcon('elite'),
   zaap: uiIcon('zaap'),
   marchand: uiIcon('marchand'),
+  evenement: '<span class="node-q" aria-hidden="true">?</span>',
 } as Record<MapNode['type'], string>;
 const actName = (run: Run) => ACTS[run.act - 1].name;
 /** Icône officielle de la pièce de kama (objet Dofus « Pièce de Kama géante »), repli dessiné en local. */
@@ -501,13 +537,15 @@ const hpRange = (hp: [number, number]) => {
 
 /** Infobulle d'une case : ce qu'on y trouve et ce qu'on y gagne. */
 function nodeTip(run: Run, n: MapNode): string {
-  const kind = n.type === 'boss' ? 'Boss' : n.type === 'elite' ? 'Élite' : n.type === 'zaap' ? 'Zaap' : n.type === 'marchand' ? 'Marchand' : n.floor < 4 ? 'Combat facile' : 'Combat';
+  const kind = n.type === 'boss' ? 'Boss' : n.type === 'elite' ? 'Élite' : n.type === 'zaap' ? 'Zaap' : n.type === 'marchand' ? 'Marchand' : n.type === 'evenement' ? 'Événement' : n.floor < 4 ? 'Combat facile' : 'Combat';
   let body: string;
-  if (n.type === 'marchand') {
+  if (n.type === 'evenement') {
+    body = '<p class="tip-text">Une rencontre imprévue : un choix, et son prix. Parfois un trésor, parfois un piège, parfois une relique légendaire.</p>';
+  } else if (n.type === 'marchand') {
     body = `<p class="tip-text">Des cartes, des objets et le retrait d'une carte du deck, contre des kamas. Tu en as ${run.kamas}.</p>`;
   } else if (n.type === 'zaap') {
     body = `<p class="tip-text">Une halte avant de repartir. Une action au choix :</p>
-      <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * ZAAP_HEAL)} PV</li><li>améliorer une carte</li></ul>`;
+      <ul class="tip-list"><li>se reposer et récupérer ${Math.round(run.maxHp * (ZAAP_HEAL + run.perks().zaapHeal))} PV</li><li>améliorer une carte</li></ul>`;
   } else {
     const mobs = encounterGroups(run.encounters[n.id]).map(({ def, count }) => {
       return `<li>${pic(def.image, def.name, 'tip-pic')}
@@ -582,7 +620,7 @@ function viewMap(run: Run): string {
         ${run.position === null ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 42}px">Départ</span>` : ''}
         ${nodes}
       </div></div>
-      <ul class="legend">${(['combat', 'elite', 'zaap', 'marchand'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
+      <ul class="legend">${(['combat', 'elite', 'evenement', 'zaap', 'marchand'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
     </section>
     ${sheet(run)}
   </main>`;
@@ -693,8 +731,9 @@ function relicBar(run: Run): string {
     const f = flash(src);
     return `<span class="relic egg">${eggIcon(id)}${eggBadges(id, { live: () => c.usage(src), flash: f, down: true })}</span>`;
   });
-  const passive = passiveBadge(run.classe, { c, flash: flash('classe'), down: true });
-  const all = [passive, ...eggs, ...items].filter(Boolean).join('');
+  ui.passiveFlash = flash('classe');
+  const boons = run.blessings().map(([src]) => boonBadge(src, { flash: flash(src), down: true }));
+  const all = [...boons, ...eggs, ...items].filter(Boolean).join('');
   return all ? `<div class="relics" aria-label="Effets d'objets et de Dofus">${all}</div>` : '';
 }
 
@@ -707,6 +746,7 @@ function arenaHtml(run: Run): string {
   return `<section class="arena${targeting ? ' targeting' : ''}">
       <div class="hero${ui.playerHit ? ' hurt' : ''}" style="left:${STAGE.playerX * 100}%;top:${STAGE.ground * 100}%">
         ${hpBar(hp, p.maxHp, block, 'p')}
+        ${passiveGauge(run.classe, c, ui.passiveFlash)}
         ${floatsHtml(-1)}
         <span class="chips">${powerChips(c)}${statusChips(p.status)}</span>
       </div>
@@ -739,23 +779,41 @@ function viewCombat(run: Run): string {
   </main>`;
 }
 
+/**
+ * Récompense de combat. Le choix reste ouvert : cliquer une carte (ou un objet) la sélectionne, en cliquer une autre
+ * change d'avis, recliquer la même annule. Rien n'entre dans le deck ni dans l'équipement avant « Reprendre la route ».
+ */
 function viewReward(run: Run): string {
   const r = run.reward!;
+  const pc = ui.pickCard && r.cards.includes(ui.pickCard) ? ui.pickCard : null;
+  const pi = ui.pickItem && r.items.includes(ui.pickItem) ? ui.pickItem : null;
   const cards = r.cards.map((id) => {
     const def = LIBRARY.cards[id];
-    return r.cardTaken
-      ? cardHtml(def, { disabled: r.cardTaken !== id, selected: r.cardTaken === id })
-      : cardHtml(def, { act: 'take-card', data: `data-id="${id}"` });
+    const on = pc === id;
+    return `<div class="pick-slot${on ? ' on' : ''}${pc && !on ? ' dim' : ''}">${cardHtml(def, { act: 'take-card', data: `data-id="${id}" aria-pressed="${on}"`, selected: on })}
+      <span class="pick-mark" aria-hidden="true">${on ? 'Choisie' : ''}</span></div>`;
   }).join('');
-  const items = r.items.map((id) => itemTile(ITEMS.items[id], r.itemTaken ? { taken: r.itemTaken === id, dim: r.itemTaken !== id } : { act: 'take-item' })).join('');
+  const items = r.items.map((id) => {
+    const on = pi === id;
+    return `<div class="pick-slot item-slot${on ? ' on' : ''}${pi && !on ? ' dim' : ''}">${itemTile(ITEMS.items[id], { act: 'take-item' }).replace('data-act="take-item"', `data-act="take-item" aria-pressed="${on}"`)}
+      <span class="pick-mark" aria-hidden="true">${on ? 'Choisi' : ''}</span></div>`;
+  }).join('');
+  const what = [pc ? `<b>${esc(LIBRARY.cards[pc].name)}</b>` : '', pi ? `<b>${esc(ITEMS.items[pi].name)}</b>` : ''].filter(Boolean);
+  const cta = what.length ? `Prendre et reprendre la route` : 'Reprendre la route sans rien prendre';
   return `<main class="rewardview">
-    <section class="reward">
-      <h2 class="with-ico">${uiIcon(r.itemSource === 'elite' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
-      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}. Tu ramasses ${KAMAS(r.kamas)}.${r.stolen ? ` Des voleurs se sont enfuis avec ${KAMAS(r.stolen)}.` : ''}</p>
-      <h3>${r.cardTaken ? 'Carte ajoutée au deck' : 'Ajoute une carte à ton deck'}</h3>
-      <div class="row cards">${cards}</div>
-      ${items ? `<h3>${r.itemTaken ? 'Objet équipé' : 'Choisis un objet'}</h3><p class="muted small">Prospection ${r.prospection}. La stat d'un objet est fixe ; son effet a été tiré pour cette run.</p><div class="row items">${items}</div>` : `<p class="muted small">Pas d'objet cette fois (prospection ${r.prospection}).</p>`}
-      <button class="primary" data-act="leave-reward">${r.cardTaken || r.itemTaken ? 'Reprendre la route' : 'Passer et reprendre la route'}</button>
+    <section class="reward rv">
+      <header class="rv-head">
+        <h2 class="with-ico">${uiIcon(r.itemSource === 'elite' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
+        <p class="rv-loot"><span class="rv-chip">${HEART}${run.hp} / ${run.maxHp} PV</span><span class="rv-chip">+${KAMAS(r.kamas)}</span>${r.stolen ? `<span class="rv-chip bad">Volés : ${KAMAS(r.stolen)}</span>` : ''}</p>
+      </header>
+      <h3 class="rv-h">Une carte pour ton deck <span class="muted">au choix, ou aucune</span></h3>
+      <div class="rv-cards">${cards}</div>
+      ${items ? `<h3 class="rv-h">Un objet à équiper <span class="muted">prospection ${r.prospection}</span></h3>
+        <div class="rv-items">${items}</div>` : `<p class="muted small rv-none">Pas d'objet cette fois (prospection ${r.prospection}).</p>`}
+      <footer class="rv-foot">
+        <p class="rv-sum">${what.length ? `Tu prends ${what.join(' et ')}. Tu peux encore changer d'avis.` : 'Clique une carte ou un objet pour le choisir. Reclique pour annuler.'}</p>
+        <button class="primary" data-act="leave-reward">${cta}</button>
+      </footer>
     </section>
     ${sheet(run)}
   </main>`;
@@ -811,6 +869,117 @@ function viewDofus(run: Run): string {
     </section>
     ${sheet(run)}
   </main>`;
+}
+
+// ───────────── dieux, événements, reliques ─────────────
+
+/** Icône d'une bénédiction (symbole du dieu) ou d'une relique (icône Dofus, repli local). */
+function boonIcon(src: string, cls = 'boon-ico'): string {
+  const [kind, id] = src.split(':');
+  if (kind === 'dieu') return `<img class="${cls}" src="${asset(`classes/${GOD_BY_ID[BOON_BY_ID[id].god].breed}.png`)}" alt="" draggable="false">`;
+  const r = RELIC_BY_ID[id];
+  const fb = asset(r.fx === 'brulure' ? 'elements/feu.png' : `fx/${r.fx}.webp`);
+  return `<img class="${cls} relic-ico" src="${r.iconId ? itemIcon(r.iconId) : fb}" alt="" draggable="false" onerror="this.onerror=null;this.src='${fb}'">`;
+}
+function boonOf(src: string): Boon & { god?: string } {
+  const [kind, id] = src.split(':');
+  return kind === 'dieu' ? BOON_BY_ID[id] : RELIC_BY_ID[id];
+}
+/** Badge de bénédiction ou de relique : icône, détail au survol, éclat quand elle se déclenche. */
+function boonBadge(src: string, o: { flash?: boolean; down?: boolean } = {}): string {
+  const b = boonOf(src);
+  const meta = src.startsWith('dieu:') ? `Bénédiction de ${GOD_BY_ID[BOON_BY_ID[b.id].god].name}` : 'Relique légendaire';
+  return `<span class="fxb boon ${src.startsWith('dieu:') ? 'is-god' : 'is-relic'}${o.flash ? ' flash' : ''}" tabindex="0" aria-label="${esc(`${b.name} : ${stripTags(boonLines(b).join(' '))}`)}">
+    <span class="fxi">${boonIcon(src)}</span>
+    <span class="fxtip${o.down ? ' down' : ''}" role="tooltip"><b class="fxt">${esc(b.name)}</b><span class="tip-meta">${meta}</span>
+      <span class="fx-what">${boonLines(b).map((l) => `<span>${esc(l)}</span>`).join('')}</span>${b.lore ? `<span class="tip-lore">${esc(b.lore)}</span>` : ''}</span></span>`;
+}
+
+function viewGod(run: Run): string {
+  const v = run.god!;
+  const g = GOD_BY_ID[v.id];
+  const offer = v.offer.map((id) => {
+    const b = BOON_BY_ID[id];
+    const on = v.taken === id;
+    return `<button class="boon-card${on ? ' on' : ''}${v.taken && !on ? ' off' : ''}" data-act="take-boon" data-id="${id}" ${v.taken ? 'disabled' : ''}>
+      <b class="boon-name">${esc(b.name)}</b>
+      <span class="boon-lines">${boonLines(b).map((l) => `<span>${esc(l)}</span>`).join('')}</span>
+      ${b.lore ? `<i class="boon-lore">${esc(b.lore)}</i>` : ''}
+    </button>`;
+  }).join('');
+  return `<main class="godview">
+    <section class="god" style="--god:${g.color}">
+      <div class="god-head">
+        <span class="god-halo"><img src="${asset(`classes/${g.breed}.png`)}" alt=""></span>
+        <div><p class="god-kicker">Acte ${run.act}, ${esc(actName(run))}</p><h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
+        <blockquote>« ${esc(g.greeting)} »</blockquote></div>
+      </div>
+      <p class="muted">${esc(g.name)} t'offre une bénédiction pour toute la run. Choisis-en une parmi trois.</p>
+      <div class="boon-row">${offer}</div>
+      <p class="god-foot"><button class="link" data-act="leave-god">Repartir sans bénédiction</button></p>
+    </section>
+    ${sheet(run)}
+  </main>`;
+}
+
+function eventArt(a: EventArt): string {
+  if (a.breed) return `<img src="${asset(`classes/${a.breed}.png`)}" alt="">`;
+  if (a.iconId) return `<img src="${itemIcon(a.iconId)}" alt="" onerror="this.style.display='none'">`;
+  const m = a.monster ? LIBRARY.monsters[a.monster] : null;
+  return m ? pic(m.image, m.name, 'ev-pic') : '';
+}
+
+function viewEvent(run: Run): string {
+  const v = run.event!;
+  const ev = EVENT_BY_ID[v.id];
+  const done = v.chosen !== null;
+  const opts = ev.options.map((o, i) => {
+    const st = run.optionState(i);
+    const hint = o.ops.map(opText).join('. ');
+    const on = v.chosen === i;
+    return `<button class="ev-opt${on ? ' on' : ''}${done && !on ? ' off' : ''}" data-act="event-opt" data-i="${i}" ${done || !st.ok ? 'disabled' : ''}>
+      <b>${esc(o.label)}</b><span>${hint ? esc(hint) + '.' : 'Rien ne se passe.'}</span>${!done && !st.ok ? `<em>${esc(st.why)}</em>` : ''}</button>`;
+  }).join('');
+  const result = done ? `<div class="ev-result" role="status"><p>${esc(v.result || 'C\'est fait.')}</p>
+      ${v.gains.length ? `<ul class="ev-gains">${v.gains.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+      ${run.pending ? '' : '<button class="primary" data-act="leave-event">Continuer</button>'}</div>` : '';
+  return `<main class="eventview">
+    <section class="ev">
+      <div class="ev-head"><span class="ev-art">${eventArt(ev.art)}</span>
+        <div><p class="god-kicker">Événement, étage ${run.stats.floor}</p><h2>${esc(ev.title)}</h2></div></div>
+      <p class="ev-text">${esc(ev.text)}</p>
+      <div class="ev-opts">${opts}</div>
+      ${result}
+    </section>
+    ${sheet(run)}
+  </main>`;
+}
+
+/** Choix en attente (bénédiction, événement, prime de combat) : retirer, améliorer, copier, transformer, choisir. */
+function viewPending(run: Run): string {
+  const p = run.pending;
+  if (!p) return '';
+  let title = '', body = '', note = '';
+  if (p.kind === 'pick') {
+    const T = { remove: 'Retire une carte', upgrade: 'Améliore une carte', transform: 'Transforme une carte', duplicate: 'Copie une carte' };
+    title = T[p.what] + (p.left > 1 ? ` (encore ${p.left})` : '');
+    note = p.what === 'transform' ? 'Elle sera remplacée par une carte de ta classe au hasard.' : p.what === 'upgrade' ? 'Tu vois la version améliorée.' : '';
+    body = run.pickCandidates(p.what).map((inst) => {
+      const shown = p.what === 'upgrade' ? { ...inst, upgraded: true } : inst;
+      return cardHtml(resolveCard(LIBRARY, shown), { inst: shown, act: 'pend-pick', data: `data-uid="${inst.uid}"` });
+    }).join('');
+  } else if (p.kind === 'card') {
+    title = 'Choisis une carte';
+    body = p.options.map((id) => cardHtml(LIBRARY.cards[id], { act: 'pend-card', data: `data-id="${id}"` })).join('');
+  } else {
+    title = 'Choisis un objet';
+    note = 'Il remplace celui de son emplacement.';
+    body = p.options.map((id) => itemTile(ITEMS.items[id], { act: 'pend-item' })).join('');
+  }
+  return `<div class="modal pend" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-box">
+    <header><h2>${esc(title)}</h2><button class="link" data-act="pend-skip">Passer</button></header>
+    ${note ? `<p class="muted small">${esc(note)}</p>` : ''}
+    <div class="modal-grid">${body}</div></div></div>`;
 }
 
 function viewEnd(run: Run): string {
@@ -1020,6 +1189,8 @@ function render(): void {
   else if (run.phase === 'zaap') html = viewZaap(run);
   else if (run.phase === 'marchand') html = viewShop(run);
   else if (run.phase === 'dofus') html = viewDofus(run);
+  else if (run.phase === 'dieu') html = viewGod(run);
+  else if (run.phase === 'evenement') html = viewEvent(run);
   else html = viewEnd(run);
   document.body.dataset.screen = run ? run.phase : 'title';
   if (run?.phase !== 'combat' || !run.combat) {
@@ -1030,7 +1201,7 @@ function render(): void {
   }
   const handBefore = captureHand();
   const barsBefore = captureBars();
-  root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) : '');
+  root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) + viewPending(run) : '');
   if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
   if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
   else stage.hide();
@@ -1042,6 +1213,8 @@ function render(): void {
   }
   if (run?.phase === 'combat' && run.combat && run.node?.type === 'boss' && ui.bossIntro !== run.combat) bossIntro(run);
   clearMarks();
+  previewKey = '';
+  if (run?.phase === 'combat' && ui.selecting?.kind === 'card') showPreview(ui.selecting.index);
 }
 
 function clearMarks(): void {
@@ -1059,11 +1232,14 @@ function renderArena(): void {
   const top = root.querySelector('.topbar');
   if (!run?.combat || run.phase !== 'combat' || !arena || !top) { if (!drag) render(); return; }
   const barsBefore = captureBars();
+  const topHtml = topbarHtml(run); // d'abord : la barre d'objets note si le passif vient de se déclencher
   arena.outerHTML = arenaHtml(run);
-  top.outerHTML = topbarHtml(run);
+  top.outerHTML = topHtml;
   tweenBars(barsBefore);
   if (drag?.over != null) root.querySelector(`.enemy[data-uid="${drag.over}"]`)?.classList.add('aimed');
   clearMarks();
+  previewKey = '';
+  if (ui.selecting?.kind === 'card') showPreview(ui.selecting.index);
 }
 
 // ───────────── mouvements de la main ─────────────
@@ -1356,6 +1532,82 @@ function endTurn(): void {
   settle();
 }
 
+// ───────────── prévisualisation des dégâts ─────────────
+// Au survol (ou au focus) d'une carte de la main : sur chaque ennemi, ce qu'il perdrait, en fantôme sur sa barre de PV,
+// avec le chiffre au-dessus et « Achevé » si le coup le tue. Une carte à cible unique montre ce que prendrait chaque
+// ennemi s'il était visé ; en visant, seule la cible reste. Le calcul joue la carte sur une copie du combat :
+// puissance, résistances, vulnérabilité, objets et passifs sont pris en compte.
+let previewKey = '';
+function clearPreview(): void {
+  previewKey = '';
+  root.querySelectorAll('.pv-ghost, .pv-tag, .pv-self').forEach((n) => n.remove());
+  root.querySelectorAll('.enemy.pv-on, .hero.pv-on').forEach((n) => n.classList.remove('pv-on', 'pv-kill'));
+}
+function showPreview(index: number, aimed: number | null = null): void {
+  const c = ui.run?.combat;
+  if (!c || ui.busy || c.outcome !== 'ongoing' || !c.hand[index]) { clearPreview(); return; }
+  const key = `${index}|${aimed}|${c.hand[index].uid}|${c.player.energy}`;
+  if (key === previewKey) return;
+  clearPreview();
+  previewKey = key;
+  const def = c.cardDef(c.hand[index]);
+  const per: Record<number, Preview['enemies'][number]> = {};
+  let self: Preview['player'] | null = null;
+  if (def.target === 'enemy') {
+    for (const e of c.living()) {
+      if (aimed !== null && e.uid !== aimed) continue;
+      const pv = c.preview(index, e.uid);
+      if (!pv) return;
+      if (pv.enemies[e.uid]) per[e.uid] = pv.enemies[e.uid];
+      if (aimed !== null || !self) self = pv.player;
+    }
+  } else {
+    const pv = c.preview(index);
+    if (!pv) return;
+    Object.assign(per, pv.enemies);
+    self = pv.player;
+  }
+  for (const [uid, r] of Object.entries(per)) {
+    const el = root.querySelector(`.enemy[data-uid="${uid}"]`) as HTMLElement | null;
+    const e = c.enemies.find((x) => x.uid === Number(uid));
+    if (!el || !e) continue;
+    const barEl = el.querySelector('.bar.hp') as HTMLElement | null;
+    if (barEl && r.lost > 0) {
+      const from = Math.max(0, e.hp - r.lost) / e.maxHp, to = e.hp / e.maxHp;
+      barEl.insertAdjacentHTML('beforeend', `<span class="pv-ghost" style="left:${(from * 100).toFixed(1)}%;width:${((to - from) * 100).toFixed(1)}%"></span>`);
+    }
+    const parts = [];
+    if (r.dead) parts.push('<b>Achevé</b>');
+    else if (r.lost > 0) parts.push(`<b>−${r.lost}</b> PV`);
+    if (r.blockLost > 0) parts.push(`<span class="pv-arm">−${r.blockLost} armure</span>`);
+    if (!parts.length) continue;
+    el.classList.add('pv-on');
+    if (r.dead) el.classList.add('pv-kill');
+    el.querySelector('.enemy-under')?.insertAdjacentHTML('afterbegin', `<span class="pv-tag${r.dead ? ' kill' : ''}" aria-hidden="true">${parts.join(' ')}</span>`);
+  }
+  const hero = root.querySelector('.hero') as HTMLElement | null;
+  if (hero && self && (self.lost || self.healed || self.block)) {
+    const bits = [self.block ? `<span class="pv-arm">+${self.block} armure</span>` : '', self.lost ? `<b>−${self.lost}</b> PV` : '', self.healed ? `<span class="pv-heal">+${self.healed} PV</span>` : ''].filter(Boolean);
+    hero.classList.add('pv-on');
+    hero.insertAdjacentHTML('afterbegin', `<span class="pv-tag pv-self" aria-hidden="true">${bits.join(' ')}</span>`);
+  }
+}
+/** Carte de la main sous le pointeur ou le focus, ou carte en cours de ciblage. */
+function previewFromDom(target: EventTarget | null): void {
+  if (!ui.run?.combat || drag) return;
+  const t = target as HTMLElement | null;
+  const card = t?.closest?.('.hand .card[data-index]') as HTMLElement | null;
+  if (card) { showPreview(Number(card.dataset.index)); return; }
+  if (ui.selecting?.kind === 'card') {
+    const foe = t?.closest?.('.enemy:not(.dead)') as HTMLElement | null;
+    showPreview(ui.selecting.index, foe ? Number(foe.dataset.uid) : null);
+    return;
+  }
+  if (previewKey) clearPreview();
+}
+document.addEventListener('pointerover', (ev) => previewFromDom(ev.target));
+document.addEventListener('focusin', (ev) => previewFromDom(ev.target));
+
 function select(index: number): void {
   const c = ui.run!.combat!;
   if (ui.busy) return;
@@ -1430,14 +1682,19 @@ function handle(act: string, d: DOMStringMap): void {
       ui.modal = { kind: 'pile', pile: d.pile as 'draw' | 'discard' | 'exhaust' };
       break;
     case 'take-card':
-      run!.takeCard(d.id!);
+      ui.pickCard = ui.pickCard === d.id ? null : d.id ?? null;
       break;
     case 'take-item':
-      run!.takeItem(d.id!);
+      ui.pickItem = ui.pickItem === d.id ? null : d.id ?? null;
       break;
-    case 'leave-reward':
+    case 'leave-reward': {
+      const r = run!.reward!;
+      if (ui.pickCard && r.cards.includes(ui.pickCard)) run!.takeCard(ui.pickCard);
+      if (ui.pickItem && r.items.includes(ui.pickItem)) run!.takeItem(ui.pickItem);
+      ui.pickCard = ui.pickItem = null;
       run!.leaveReward();
       break;
+    }
     case 'zaap-rest':
       run!.zaapRest();
       break;
@@ -1470,6 +1727,14 @@ function handle(act: string, d: DOMStringMap): void {
     case 'take-dofus':
       run!.takeDofus(d.id!);
       break;
+    case 'take-boon': run!.takeBoon(d.id!); break;
+    case 'leave-god': run!.leaveGod(); break;
+    case 'event-opt': run!.chooseOption(Number(d.i)); break;
+    case 'leave-event': run!.leaveEvent(); break;
+    case 'pend-pick': run!.resolvePick(Number(d.uid)); break;
+    case 'pend-card': run!.chooseCard(d.id!); break;
+    case 'pend-item': run!.chooseItem(d.id!); break;
+    case 'pend-skip': run!.skipPending(); break;
     case 'leave-zaap':
       run!.leaveZaap();
       break;
@@ -1531,8 +1796,11 @@ document.addEventListener('pointermove', (ev) => {
     const under = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.enemy:not(.dead)') as HTMLElement | null;
     root.querySelectorAll('.enemy.aimed').forEach((e) => e.classList.remove('aimed'));
     if (under) under.classList.add('aimed');
-    d.over = under ? Number(under.dataset.uid) : null;
+    const over = under ? Number(under.dataset.uid) : null;
+    if (over !== d.over || !previewKey) showPreview(d.index, over);
+    d.over = over;
   } else {
+    if (!previewKey) showPreview(d.index);
     d.el.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
     d.el.classList.toggle('will-play', ev.clientY < window.innerHeight * PLAY_LINE);
   }

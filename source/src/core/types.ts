@@ -108,6 +108,8 @@ export interface CardDef {
   token?: boolean;
   endTurnDamage?: number;
   status?: boolean;
+  /** Malédiction : carte de statut qui reste dans le deck de la run (événements). */
+  curse?: boolean;
 }
 
 export interface MonsterMove {
