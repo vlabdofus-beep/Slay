@@ -85,3 +85,11 @@ test('Salon : un message mal formé ou une action avant le départ ne change rie
   await a.send({ t: 'act', a: ['vote', 'x'] });
   assert.equal(a.ws.got.filter((m) => m.t === 'act').length, 0);
 });
+
+test('Salon : un navigateur sur une autre version du jeu est refusé', async () => {
+  const h = harness();
+  const a = await h.salon.message('ABCDE', 'a', JSON.stringify({ t: 'join', name: 'A', v: 'app.111.js' }));
+  const b = await h.salon.message('ABCDE', 'b', JSON.stringify({ t: 'join', name: 'B', v: 'app.222.js' }));
+  assert.equal(a, null);
+  assert.match(b ?? '', /version/);
+});

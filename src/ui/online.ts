@@ -26,6 +26,9 @@ const RUN_ACTIONS = [
 ];
 type Fn = (...a: unknown[]) => unknown;
 
+/** Version du jeu : le nom du fichier construit (app.<empreinte>.js) change à chaque mise à jour. */
+const BUILD = (() => { try { return new URL(import.meta.url).pathname.split('/').pop() ?? ''; } catch { return ''; } })();
+
 /** Code de salon : 5 lettres et chiffres sans confusion possible (pas de O, 0, I, 1). */
 export function newCode(): string {
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -78,7 +81,7 @@ export class Online {
     let ws: WebSocket;
     try { ws = new WebSocket(url); } catch { this.fail('Connexion impossible au salon.'); return; }
     this.ws = ws;
-    ws.onopen = () => { this.retry = 0; this.send({ t: 'join', name: this.name }); };
+    ws.onopen = () => { this.retry = 0; this.send({ t: 'join', name: this.name, v: BUILD }); };
     ws.onmessage = (ev) => { try { this.receive(JSON.parse(String(ev.data)) as ServerMsg); } catch (e) { console.error(e); } };
     ws.onclose = () => {
       this.ws = null;
