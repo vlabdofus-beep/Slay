@@ -54,11 +54,11 @@
       "benedictions": {
         "iop_colere": {
           "nom": "Colère de Iop",
-          "effets": [{"declencheur": "debut_combat", "recompense": "puissance", "quantite": 2}]
+          "effets": [{"declencheur": "debut_combat", "recompense": "puissance", "quantite": 1}]
         },
         "iop_epee": {"nom": "Épée céleste", "immediat": [{"op": "cardChoice", "rarity": "rare"}]},
         "iop_bond": {"nom": "Bond", "effets": [{"regle": "premier_double"}]},
-        "iop_terre": {"nom": "Poigne tellurique", "stats": {"degats": {"terre": 3}}},
+        "iop_terre": {"nom": "Poigne tellurique", "stats": {"degats": {"terre": 2}}},
         "iop_fracas": {"nom": "Fracas", "effets": [{"regle": "vulne_forte"}]},
         "iop_tete": {"nom": "Tête brûlée", "effets": [{"regle": "colosse"}]}
       }
@@ -73,7 +73,7 @@
           "effets": [{"declencheur": "premiere_carte", "recompense": "vulnerabilite", "quantite": 1}]
         },
         "cra_fleche": {"nom": "Dernière flèche", "effets": [{"declencheur": "dernier_pa", "recompense": "degats", "quantite": 5}]},
-        "cra_vent": {"nom": "Vent d'est", "stats": {"degats": {"air": 3}}},
+        "cra_vent": {"nom": "Vent d'est", "stats": {"degats": {"air": 2}}},
         "cra_ricochet": {"nom": "Ricochet", "effets": [{"regle": "ricochet"}]},
         "cra_perce": {"nom": "Flèche perçante", "effets": [{"regle": "air_perce"}]},
         "cra_carquois": {"nom": "Carquois sans fond", "immediat": [{"op": "pick", "what": "duplicate", "n": 1}]}
@@ -87,7 +87,7 @@
         "eni_mot": {"nom": "Mot de régénération", "effets": [{"declencheur": "debut_tour", "recompense": "soin", "quantite": 2}]},
         "eni_vampire": {"nom": "Mot vampirique", "effets": [{"regle": "eau_vampire"}]},
         "eni_reconstituant": {"nom": "Mot reconstituant", "effets": [{"regle": "soin_bouclier"}], "stats": {"pv": 6}},
-        "eni_source": {"nom": "Source de vie", "immediat": [{"op": "maxHp", "n": 12}]},
+        "eni_source": {"nom": "Source de vie", "immediat": [{"op": "maxHp", "n": 18}]},
         "eni_onde": {"nom": "Onde", "stats": {"degats": {"eau": 3}}},
         "eni_purification": {"nom": "Purification", "immediat": [{"op": "healPct", "pct": 1}, {"op": "pick", "what": "remove", "n": 1}]}
       }
@@ -125,11 +125,11 @@
       "titre": "dieu de l'Argent",
       "phrase": "Hé hé… Tout trésor a un prix, petit. Mais pour toi, je fais une ristourne.",
       "benedictions": {
-        "enu_pelle": {"nom": "Pelle du prospecteur", "stats": {"prospection": 40}},
+        "enu_pelle": {"nom": "Pelle du prospecteur", "stats": {"prospection": 100}},
         "enu_bourse": {"nom": "Bourse sans fond", "avantages": {"kamas": 0.35}, "immediat": [{"op": "kamas", "n": 60}]},
         "enu_tresor": {"nom": "Trésor enfoui", "immediat": [{"op": "itemChoice", "rarity": "mythique"}]},
         "enu_marchand": {"nom": "Ami des marchands", "avantages": {"remise_marchand": 0.25}},
-        "enu_lenteur": {"nom": "Lenteur", "effets": [{"declencheur": "debut_tour", "recompense": "faiblesse", "quantite": 1}]},
+        "enu_lenteur": {"nom": "Maladresse", "effets": [{"declencheur": "debut_tour", "recompense": "faiblesse", "quantite": 1}]},
         "enu_coffre": {"nom": "Coffre d'Enutrof", "effets": [{"regle": "prospecteur"}]}
       }
     },
@@ -142,11 +142,11 @@
         "sram_langueur": {"nom": "Langueur", "effets": [{"regle": "poison_affaiblit"}]},
         "sram_piege": {
           "nom": "Piège sournois",
-          "effets": [{"declencheur": "debut_combat", "recompense": "poison_zone", "quantite": 4}]
+          "effets": [{"declencheur": "debut_combat", "recompense": "poison_zone", "quantite": 6}]
         },
-        "sram_invisible": {"nom": "Invisibilité", "effets": [{"declencheur": "premier_tour", "recompense": "esquive", "quantite": 2}]},
+        "sram_invisible": {"nom": "Invisibilité", "effets": [{"declencheur": "premier_tour", "recompense": "esquive", "quantite": 1}]},
         "sram_larcin": {"nom": "Larcin", "avantages": {"kamas": 0.2}, "immediat": [{"op": "kamas", "n": 40}]},
-        "sram_fourbe": {"nom": "Fourberie", "effets": [{"declencheur": "cible_empoisonnee", "recompense": "degats", "quantite": 3}]}
+        "sram_fourbe": {"nom": "Fourberie", "effets": [{"declencheur": "cible_empoisonnee", "recompense": "degats", "quantite": 4}]}
       }
     },
     "xelor": {
@@ -156,7 +156,7 @@
       "benedictions": {
         "xel_sablier": {"nom": "Sablier", "effets": [{"regle": "sablier"}]},
         "xel_retenue": {"nom": "Instant figé", "effets": [{"regle": "retenue"}]},
-        "xel_ralenti": {"nom": "Ralentissement", "effets": [{"declencheur": "tous_3_tours", "recompense": "etourdi", "quantite": 1}]},
+        "xel_ralenti": {"nom": "Ralentissement", "effets": [{"declencheur": "tous_4_tours", "recompense": "etourdi", "quantite": 1}]},
         "xel_horloge": {
           "nom": "Horloge",
           "effets": [
@@ -179,8 +179,8 @@
           "nom": "Punition",
           "effets": [{"declencheur": "pv_perdus", "recompense": "puissance", "quantite": 1, "par_tour": 1}]
         },
-        "sac_sacrifice": {"nom": "Sacrifice", "immediat": [{"op": "maxHp", "n": -8}, {"op": "upgradeAll", "type": "attaque"}]},
-        "sac_transfert": {"nom": "Transfert de vie", "effets": [{"declencheur": "ennemi_meurt", "recompense": "soin", "quantite": 5}]},
+        "sac_sacrifice": {"nom": "Sacrifice", "immediat": [{"op": "maxHp", "n": -16}, {"op": "upgradeAll", "type": "attaque"}]},
+        "sac_transfert": {"nom": "Transfert de vie", "effets": [{"declencheur": "ennemi_meurt", "recompense": "soin", "quantite": 2}]},
         "sac_folie": {"nom": "Folie sanguinaire", "effets": [{"declencheur": "pv_bas", "recompense": "pa", "quantite": 1}]}
       }
     },
@@ -192,7 +192,7 @@
         "fec_glyphe": {"nom": "Glyphe de garde", "effets": [{"regle": "armure_persistante"}]},
         "fec_bouclier": {
           "nom": "Bouclier Féca",
-          "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 10}]
+          "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 18}]
         },
         "fec_epines": {"nom": "Armure d'épines", "effets": [{"regle": "epines_armure"}]},
         "fec_armure": {"nom": "Armure terrestre", "stats": {"armure": 2}},
@@ -207,7 +207,7 @@
       "benedictions": {
         "osa_fouet": {"nom": "Fouet", "effets": [{"regle": "faiblesse_forte"}]},
         "osa_bouftou": {"nom": "Bouftou fidèle", "effets": [{"declencheur": "debut_tour", "recompense": "degats", "quantite": 4}]},
-        "osa_dragonnet": {"nom": "Dragonnet", "effets": [{"declencheur": "debut_tour", "recompense": "brulure", "quantite": 1}]},
+        "osa_dragonnet": {"nom": "Dragonnet", "effets": [{"declencheur": "debut_tour", "recompense": "brulure", "quantite": 2}]},
         "osa_tofu": {"nom": "Tofu messager", "effets": [{"declencheur": "tous_3_tours", "recompense": "pioche", "quantite": 2}]},
         "osa_crapaud": {"nom": "Crapaud", "effets": [{"declencheur": "fin_armure", "recompense": "soin", "quantite": 2}]},
         "osa_meute": {
@@ -221,14 +221,14 @@
       "titre": "dieu de la Nature",
       "phrase": "La forêt t'a vu passer. Elle a décidé de t'aider. N'abîme pas ses arbres.",
       "benedictions": {
-        "sad_ronces": {"nom": "Ronces", "effets": [{"declencheur": "debut_combat", "recompense": "renvoi", "quantite": 4}]},
+        "sad_ronces": {"nom": "Ronces", "effets": [{"declencheur": "debut_combat", "recompense": "soin", "quantite": 4}]},
         "sad_contagion": {"nom": "Peste verte", "effets": [{"regle": "contagion"}]},
         "sad_poupee": {
           "nom": "Poupée sacrifiée",
           "effets": [{"declencheur": "pv_perdus", "recompense": "bouclier", "quantite": 3, "par_tour": 1}]
         },
-        "sad_arbre": {"nom": "Arbre de vie", "effets": [{"declencheur": "victoire", "recompense": "soin", "quantite": 8}]},
-        "sad_racines": {"nom": "Racines profondes", "stats": {"pv": 6, "degats": {"terre": 2}}},
+        "sad_arbre": {"nom": "Arbre de vie", "effets": [{"declencheur": "victoire", "recompense": "soin", "quantite": 2}]},
+        "sad_racines": {"nom": "Racines profondes", "stats": { "degats": {"terre": 2}}},
         "sad_seve": {"nom": "Sève vénéneuse", "effets": [{"declencheur": "carte_terre", "recompense": "poison", "quantite": 1}]}
       }
     },
@@ -241,7 +241,7 @@
         "pan_lait": {"nom": "Lait de bambou", "stats": {"pv": 5}, "immediat": [{"op": "healPct", "pct": 1}]},
         "pan_karcham": {"nom": "Karcham", "effets": [{"declencheur": "chere", "recompense": "etourdi", "quantite": 1, "par_tour": 1}]},
         "pan_souffle": {"nom": "Souffle alcoolisé", "effets": [{"regle": "brulure_double"}]},
-        "pan_flamme": {"nom": "Flamme du bambou", "stats": {"degats": {"feu": 3}}},
+        "pan_flamme": {"nom": "Flamme du bambou", "stats": {"degats": {"feu": 2}}},
         "pan_vapeurs": {"nom": "Vapeurs", "effets": [{"declencheur": "zone", "recompense": "vulnerabilite", "quantite": 1}]}
       }
     }
