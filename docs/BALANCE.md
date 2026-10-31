@@ -252,3 +252,33 @@ Les morts se répartissent ainsi : environ 60 % dans l'acte 1 (surtout les comba
 ## Après le poison en début de tour, le plafond de résistances et les nouveaux événements (31/10/2026)
 
 Bot, 300 runs par classe, boss 1 / boss 2 / victoire : Iop 34 / 8 / 2 %, Crâ 39 / 14 / 3 %. Proche de la cible fixée plus tôt (≈ 35 / 10 / 3 %) ; le Crâ profite un peu du poison qui frappe avant l'action du monstre. Échelle des monstres inchangée.
+
+## Sorts du Iop et du Crâ, rencontres hors salle (31/10/2026)
+
+Les attaques sont déjà sur les repères du 31/10 (cible 6 / 9 / 14 / 24, zone 5 / 8 / 14, annexes comptées à moitié, amélioration +30 % ou +2). On n'a pas réécrit le catalogue. L'écart mesuré n'est pas un sort isolé trop gros : sur 300 runs, boss 1 / 2 / victoire, le Iop est à 37 / 8 / 3 % et le Crâ à 35 / 16 / 5 %. L'acte 1 est équivalent. L'écart est l'acte 2, où le poison de zone touche plusieurs monstres et où la Visée tombe souvent.
+
+Passer la Visée de 5 à 6 attaques a été mesuré à part et **laissé de côté** : le Crâ tombe à 31 / 13 / 3 % et passe sous le Iop en étages (14,1 contre 14,5). L'acte 1 paie trop, et l'acte 2 reste devant. Le choix du 30/10 (Courroux 3, Visée 5) tient.
+
+Après les corrections de cartes et de monstres ci-dessous (Visée toujours à 5), 300 runs : Iop 35 / 8 / 3 %, Crâ 34 / 14 / 5 %. L'acte 1 se rejoint. L'acte 2 du Crâ ne bouge quasiment pas : le poison de zone et les +1 des zones du Iop sont trop petits pour le bot. L'écart d'acte 2 reste ouvert.
+
+Corrections retenues, dans `cards.ts` et `equilibrage.json` :
+
+| Carte | Avant | Après |
+|---|---|---|
+| Rassemblement, Tannée, Fustigation (zones du Iop à 1 PA, en dessous du repère 8) | 6, amélioration 8 ou 9 | 7, amélioration 10 |
+| Flèche Ralentissante | poison 3 / 4 à tous | poison 2 / 3 |
+| Pluie Empoisonnée | poison 4 / 6 à tous | poison 3 / 4 |
+
+Rencontres trop loin de la médiane de leur salle (PV ou coup), ramenées vers elle. Les Gelées gardent leur division : seul le coup de masse baisse, il dépassait le coup des autres salles normales.
+
+| Monstre | Avant | Après |
+|---|---|---|
+| Gelées (masse) | 11 | 9 |
+| Tofu Maléfique, Tofu Noir | 16–20 PV | 24–28 |
+| Kwak de Terre | 30–34 PV | 42–48 |
+| Crabe | 36–40 PV, pince 10 | 48–54, pince 12 |
+| Rat d'Égoutant | 40–46 PV, morsure 10 | 52–60, morsure 14 |
+| Ramane d'Égoutant | griffe 12 | 16 |
+| Corbac Chef | 56–60 PV | 70–76 |
+| Corbac Dressé | 46–50 PV, plongeon 16 | 58–64, plongeon 20 |
+

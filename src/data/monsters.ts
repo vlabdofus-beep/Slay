@@ -212,8 +212,8 @@ export const MONSTERS: MonsterDef[] = [
     morsure: { name: 'Morsure', effects: [hit(16, 'terre')] },
     ecorce: { name: 'Écorce', effects: [block(14)] },
   }, cycle('morsure', 'ecorce')),
-  fromDofus('rat_egoutant', 442, [40, 46], {
-    morsure: { name: 'Morsure infectée', effects: [hit(10, 'eau'), debuff('poison', 3)] },
+  fromDofus('rat_egoutant', 442, [52, 60], {
+    morsure: { name: 'Morsure infectée', effects: [hit(14, 'eau'), debuff('poison', 3)] },
     fuite: { name: 'Fuite', effects: [block(10)] },
   }, random({ morsure: 65, fuite: 35 })),
   fromDofus('craqueboule', 483, [64, 70], {
