@@ -1,3 +1,4 @@
+import { capRes } from '../core/types.ts';
 import type { MonsterScale } from '../core/combat.ts';
 import type { Effect, Element, MonsterDef, MonsterMove, MovePattern } from '../core/types.ts';
 import { monster, monsterImage } from './dofus.ts';
@@ -43,7 +44,8 @@ const drain = (amount: number, element: Element): Effect => ({ type: 'drain', am
 
 function fromDofus(id: string, dofusId: number, hp: [number, number], moves: Record<string, MonsterMove>, pattern: MovePattern): MonsterDef {
   const m = monster(dofusId);
-  return { id, name: m.n, hp, res: { ...m.res }, moves, pattern, dofusId, image: monsterImage(m.gfx), level: m.l };
+  const res = Object.fromEntries(Object.entries(m.res).map(([el, v]) => [el, capRes(v as number)])) as typeof m.res;
+  return { id, name: m.n, hp, res, moves, pattern, dofusId, image: monsterImage(m.gfx), level: m.l };
 }
 
 const cycle = (...order: string[]): MovePattern => ({ kind: 'cycle', order });

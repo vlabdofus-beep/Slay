@@ -248,3 +248,7 @@ Bot, 600 runs par classe sur deux jeux de graines, part des runs qui battent le 
 | Pour mémoire, avant dieux et événements | 28 / 3 / 0 % | 35 / 8 / 0 % |
 
 Les morts se répartissent ainsi : environ 60 % dans l'acte 1 (surtout les combats normaux et le boss), 25 % dans l'acte 2, 7 % dans l'acte 3. Outil de mesure : `botRun` renvoie maintenant `diedAt` (acte et palier du combat perdu).
+
+## Après le poison en début de tour, le plafond de résistances et les nouveaux événements (31/10/2026)
+
+Bot, 300 runs par classe, boss 1 / boss 2 / victoire : Iop 34 / 8 / 2 %, Crâ 39 / 14 / 3 %. Proche de la cible fixée plus tôt (≈ 35 / 10 / 3 %) ; le Crâ profite un peu du poison qui frappe avant l'action du monstre. Échelle des monstres inchangée.

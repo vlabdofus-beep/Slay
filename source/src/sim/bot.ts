@@ -3,7 +3,6 @@ import type { ItemEffect } from '../core/effects.ts';
 import { Rng } from '../core/rng.ts';
 import type { ClassId, Element } from '../core/types.ts';
 import { ITEMS } from '../data/items.ts';
-import { EVENT_BY_ID } from '../data/events.ts';
 import { LIBRARY } from '../data/library.ts';
 import { Run } from '../game/run.ts';
 import { ENCOUNTERS } from '../data/monsters.ts';
@@ -68,7 +67,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
     if (run.phase === 'evenement') {
       const ev = run.event!;
       if (ev.chosen === null) {
-        const ok = EVENT_BY_ID[ev.id].options.map((_, i) => i).filter((i) => run.optionState(i).ok);
+        const ok = run.eventPage()!.options.map((_, i) => i).filter((i) => run.optionState(i).ok);
         run.chooseOption(rng.pick(ok));
       } else run.leaveEvent();
       continue;

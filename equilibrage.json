@@ -5,7 +5,7 @@
     "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop et Visée du Crâ.",
     "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
     "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
-    "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 100 = insensible), mecaniques, actions et rythme.",
+    "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 50 au plus), mecaniques, actions et rythme.",
     "Effets — damage : dégâts (amount, element : terre, feu, eau, air, neutre ; hits = nombre de coups ; bonus.per / bonus.n = +n par attaques, puissance, armure, ennemis, statuts, main, lancers, visee, epuisees ; pierce = ignore l'armure).",
     "Effets — drain : dégâts dont les PV retirés soignent. block : armure. heal : soin. draw : pioche. energy : PA. loseHp : PV perdus par le lanceur. charge : Visée du Crâ.",
     "Effets — status : statut (status : puissance, faiblesse, vulnerabilite, brulure, poison, bouclier, renvoi, erosion, esquive, etourdi ; on : self, target, all_enemies).",
@@ -2078,7 +2078,7 @@
     "kwak_flamme": {
       "nom": "Kwak de Flamme",
       "pv": [30, 34],
-      "resistances": {"neutre": 75, "terre": 10, "feu": 75, "eau": -50, "air": 10},
+      "resistances": {"neutre": 50, "terre": 10, "feu": 50, "eau": -50, "air": 10},
       "mecaniques": [],
       "actions": {
         "flamme": {
@@ -2096,7 +2096,7 @@
     "kwak_glace": {
       "nom": "Kwak de Glace",
       "pv": [30, 34],
-      "resistances": {"neutre": 75, "terre": 10, "feu": -50, "eau": 75, "air": 10},
+      "resistances": {"neutre": 50, "terre": 10, "feu": -50, "eau": 50, "air": 10},
       "mecaniques": [{"kind": "esquive", "n": 1}],
       "actions": {
         "glace": {
@@ -2166,7 +2166,7 @@
     "scarafeuille_bleu": {
       "nom": "Scarafeuille Bleu",
       "pv": [30, 34],
-      "resistances": {"neutre": 25, "terre": 0, "feu": -50, "eau": 100, "air": 0},
+      "resistances": {"neutre": 25, "terre": 0, "feu": -50, "eau": 50, "air": 0},
       "mecaniques": [],
       "actions": {
         "mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "eau", "hits": 2}]},
@@ -2177,7 +2177,7 @@
     "crocodaille": {
       "nom": "Crocodaille",
       "pv": [44, 48],
-      "resistances": {"neutre": 39, "terre": 24, "feu": 0, "eau": 89, "air": 33},
+      "resistances": {"neutre": 39, "terre": 24, "feu": 0, "eau": 50, "air": 33},
       "mecaniques": [],
       "actions": {
         "machoires": {"nom": "Mâchoires", "effets": [{"type": "damage", "amount": 13, "element": "eau"}]},
@@ -2223,7 +2223,7 @@
     "craqueleur_legendaire": {
       "nom": "Craqueleur Légendaire",
       "pv": [150, 160],
-      "resistances": {"neutre": 58, "terre": -12, "feu": 58, "eau": 67, "air": -17},
+      "resistances": {"neutre": 50, "terre": -12, "feu": 50, "eau": 50, "air": -17},
       "mecaniques": [{"kind": "cameleon"}, {"kind": "carapace", "n": 5}],
       "actions": {
         "carapace": {
@@ -2282,7 +2282,7 @@
     "abraknyde_ancestral": {
       "nom": "Abraknyde Ancestral",
       "pv": [320, 330],
-      "resistances": {"neutre": 53, "terre": 53, "feu": -5, "eau": 53, "air": -5},
+      "resistances": {"neutre": 50, "terre": 50, "feu": -5, "eau": 50, "air": -5},
       "mecaniques": [],
       "actions": {
         "racines": {
@@ -2339,7 +2339,7 @@
     "rat_egoutant": {
       "nom": "Rat d'Égoutant",
       "pv": [40, 46],
-      "resistances": {"neutre": 9, "terre": 51, "feu": -20, "eau": 28, "air": -13},
+      "resistances": {"neutre": 9, "terre": 50, "feu": -20, "eau": 28, "air": -13},
       "mecaniques": [],
       "actions": {
         "morsure": {
@@ -2384,7 +2384,7 @@
     "piralak": {
       "nom": "Piralak",
       "pv": [58, 64],
-      "resistances": {"neutre": 18, "terre": 58, "feu": -6, "eau": -15, "air": -6},
+      "resistances": {"neutre": 18, "terre": 50, "feu": -6, "eau": -15, "air": -6},
       "mecaniques": [],
       "actions": {
         "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 18, "element": "eau"}]},
@@ -2474,7 +2474,7 @@
     "maitre_corbac": {
       "nom": "Maître Corbac",
       "pv": [210, 224],
-      "resistances": {"neutre": 25, "terre": 25, "feu": 45, "eau": 55, "air": 55},
+      "resistances": {"neutre": 25, "terre": 25, "feu": 45, "eau": 50, "air": 50},
       "mecaniques": [{"kind": "rituel", "n": 2}],
       "actions": {
         "nuee": {
@@ -2514,7 +2514,7 @@
     "koulosse": {
       "nom": "Koulosse",
       "pv": [250, 265],
-      "resistances": {"neutre": 78, "terre": 28, "feu": -12, "eau": -12, "air": 33},
+      "resistances": {"neutre": 50, "terre": 28, "feu": -12, "eau": -12, "air": 33},
       "mecaniques": [{"kind": "plafond", "n": 45}, {"kind": "carapace", "n": 6}],
       "actions": {
         "carapace": {"nom": "Carapace", "effets": [{"type": "block", "amount": 30}]},
@@ -2526,7 +2526,7 @@
     "minotoror": {
       "nom": "Minotoror",
       "pv": [470, 490],
-      "resistances": {"neutre": 40, "terre": -20, "feu": 50, "eau": 60, "air": 50},
+      "resistances": {"neutre": 40, "terre": -20, "feu": 50, "eau": 50, "air": 50},
       "mecaniques": [{"kind": "plafond", "n": 70}],
       "actions": {
         "rage": {
@@ -2746,7 +2746,7 @@
     "champa_explosif": {
       "nom": "Champa Explosif",
       "pv": [20, 24],
-      "resistances": {"neutre": 0, "terre": -5, "feu": -5, "eau": 68, "air": -5},
+      "resistances": {"neutre": 0, "terre": -5, "feu": -5, "eau": 50, "air": -5},
       "mecaniques": [{"kind": "explosion", "turns": 3, "dmg": 18}],
       "actions": {"gonfle": {"nom": "Gonfle", "effets": [{"type": "block", "amount": 4}]}},
       "rythme": {"kind": "cycle", "order": ["gonfle"]}
@@ -2977,7 +2977,7 @@
     "shin_larve": {
       "nom": "Shin Larve",
       "pv": [180, 188],
-      "resistances": {"neutre": 54, "terre": 34, "feu": 34, "eau": -26, "air": -26},
+      "resistances": {"neutre": 50, "terre": 34, "feu": 34, "eau": -26, "air": -26},
       "mecaniques": [{"kind": "enroulement", "n": 10}],
       "actions": {
         "ponte": {
@@ -3025,7 +3025,7 @@
     "scarafeuille_rouge": {
       "nom": "Scarafeuille Rouge",
       "pv": [30, 34],
-      "resistances": {"neutre": 25, "terre": 0, "feu": 100, "eau": -50, "air": 0},
+      "resistances": {"neutre": 25, "terre": 0, "feu": 50, "eau": -50, "air": 0},
       "mecaniques": [{"kind": "carapace", "n": 4}],
       "actions": {"mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "feu", "hits": 2}]}},
       "rythme": {"kind": "cycle", "order": ["mandibules"]}
@@ -3033,7 +3033,7 @@
     "scarafeuille_vert": {
       "nom": "Scarafeuille Vert",
       "pv": [30, 34],
-      "resistances": {"neutre": 25, "terre": 100, "feu": 0, "eau": 0, "air": -50},
+      "resistances": {"neutre": 25, "terre": 50, "feu": 0, "eau": 0, "air": -50},
       "mecaniques": [{"kind": "carapace", "n": 4}],
       "actions": {"mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "terre", "hits": 2}]}},
       "rythme": {"kind": "cycle", "order": ["mandibules"]}
@@ -3041,7 +3041,7 @@
     "scarafeuille_blanc": {
       "nom": "Scarafeuille Blanc",
       "pv": [30, 34],
-      "resistances": {"neutre": 25, "terre": -50, "feu": 0, "eau": 0, "air": 100},
+      "resistances": {"neutre": 25, "terre": -50, "feu": 0, "eau": 0, "air": 50},
       "mecaniques": [{"kind": "carapace", "n": 4}],
       "actions": {"mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 2}]}},
       "rythme": {"kind": "cycle", "order": ["mandibules"]}
@@ -3049,7 +3049,7 @@
     "kwak_vent": {
       "nom": "Kwak de Vent",
       "pv": [30, 34],
-      "resistances": {"neutre": 75, "terre": -50, "feu": 10, "eau": 10, "air": 75},
+      "resistances": {"neutre": 50, "terre": -50, "feu": 10, "eau": 10, "air": 50},
       "mecaniques": [{"kind": "esquive", "n": 1}],
       "actions": {
         "bourrasque": {"nom": "Bourrasque", "effets": [{"type": "damage", "amount": 9, "element": "air"}]},
@@ -3060,7 +3060,7 @@
     "kwak_terre": {
       "nom": "Kwak de Terre",
       "pv": [30, 34],
-      "resistances": {"neutre": 75, "terre": 75, "feu": 10, "eau": 10, "air": -50},
+      "resistances": {"neutre": 50, "terre": 50, "feu": 10, "eau": 10, "air": -50},
       "mecaniques": [{"kind": "esquive", "n": 1}],
       "actions": {
         "eboulis": {"nom": "Éboulis", "effets": [{"type": "damage", "amount": 10, "element": "terre"}]},
@@ -3071,7 +3071,7 @@
     "kwakere_flamme": {
       "nom": "Kwakere de Flamme",
       "pv": [44, 48],
-      "resistances": {"neutre": 100, "terre": 25, "feu": 100, "eau": -25, "air": 25},
+      "resistances": {"neutre": 50, "terre": 25, "feu": 50, "eau": -25, "air": 25},
       "mecaniques": [],
       "actions": {
         "brasier": {
@@ -3091,7 +3091,7 @@
     "blop_coco": {
       "nom": "Blop Coco",
       "pv": [56, 62],
-      "resistances": {"neutre": 23, "terre": -50, "feu": 23, "eau": 23, "air": 62},
+      "resistances": {"neutre": 23, "terre": -50, "feu": 23, "eau": 23, "air": 50},
       "mecaniques": [{"kind": "division"}],
       "actions": {
         "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "air"}]},
@@ -3109,7 +3109,7 @@
     "blop_indigo": {
       "nom": "Blop Indigo",
       "pv": [56, 62],
-      "resistances": {"neutre": 23, "terre": 23, "feu": -50, "eau": 62, "air": 23},
+      "resistances": {"neutre": 23, "terre": 23, "feu": -50, "eau": 50, "air": 23},
       "mecaniques": [{"kind": "division"}],
       "actions": {
         "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "eau"}]},
@@ -3127,7 +3127,7 @@
     "blop_griotte": {
       "nom": "Blop Griotte",
       "pv": [56, 62],
-      "resistances": {"neutre": 23, "terre": 23, "feu": 62, "eau": -50, "air": 23},
+      "resistances": {"neutre": 23, "terre": 23, "feu": 50, "eau": -50, "air": 23},
       "mecaniques": [{"kind": "division"}],
       "actions": {
         "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "feu"}]},
@@ -3145,7 +3145,7 @@
     "blop_reinette": {
       "nom": "Blop Reinette",
       "pv": [56, 62],
-      "resistances": {"neutre": 23, "terre": 62, "feu": 23, "eau": 23, "air": -50},
+      "resistances": {"neutre": 23, "terre": 50, "feu": 23, "eau": 23, "air": -50},
       "mecaniques": [{"kind": "division"}],
       "actions": {
         "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "terre"}]},
@@ -3163,7 +3163,7 @@
     "biblop_coco": {
       "nom": "Biblop Coco",
       "pv": [1, 1],
-      "resistances": {"neutre": 23, "terre": -50, "feu": 23, "eau": 23, "air": 62},
+      "resistances": {"neutre": 23, "terre": -50, "feu": 23, "eau": 23, "air": 50},
       "mecaniques": [],
       "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "air"}]}},
       "rythme": {"kind": "cycle", "order": ["rebond"]}
@@ -3171,7 +3171,7 @@
     "biblop_indigo": {
       "nom": "Biblop Indigo",
       "pv": [1, 1],
-      "resistances": {"neutre": 23, "terre": 23, "feu": -50, "eau": 62, "air": 23},
+      "resistances": {"neutre": 23, "terre": 23, "feu": -50, "eau": 50, "air": 23},
       "mecaniques": [],
       "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "eau"}]}},
       "rythme": {"kind": "cycle", "order": ["rebond"]}
@@ -3179,7 +3179,7 @@
     "biblop_griotte": {
       "nom": "Biblop Griotte",
       "pv": [1, 1],
-      "resistances": {"neutre": 23, "terre": 23, "feu": 62, "eau": -50, "air": 23},
+      "resistances": {"neutre": 23, "terre": 23, "feu": 50, "eau": -50, "air": 23},
       "mecaniques": [],
       "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "feu"}]}},
       "rythme": {"kind": "cycle", "order": ["rebond"]}
@@ -3187,7 +3187,7 @@
     "biblop_reinette": {
       "nom": "Biblop Reinette",
       "pv": [1, 1],
-      "resistances": {"neutre": 23, "terre": 62, "feu": 23, "eau": 23, "air": -50},
+      "resistances": {"neutre": 23, "terre": 50, "feu": 23, "eau": 23, "air": -50},
       "mecaniques": [],
       "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "terre"}]}},
       "rythme": {"kind": "cycle", "order": ["rebond"]}
@@ -3195,7 +3195,7 @@
     "champa_vert": {
       "nom": "Champa Vert",
       "pv": [34, 38],
-      "resistances": {"neutre": 58, "terre": -5, "feu": -5, "eau": -5, "air": 68},
+      "resistances": {"neutre": 50, "terre": -5, "feu": -5, "eau": -5, "air": 50},
       "mecaniques": [{"kind": "spores", "n": 2}],
       "actions": {
         "spores": {"nom": "Spores", "effets": [{"type": "damage", "amount": 8, "element": "air"}]},
@@ -3206,7 +3206,7 @@
     "champa_bleu": {
       "nom": "Champa Bleu",
       "pv": [34, 38],
-      "resistances": {"neutre": 58, "terre": -5, "feu": -5, "eau": 68, "air": -5},
+      "resistances": {"neutre": 50, "terre": -5, "feu": -5, "eau": 50, "air": -5},
       "mecaniques": [{"kind": "spores", "n": 2}],
       "actions": {
         "spores": {"nom": "Spores", "effets": [{"type": "damage", "amount": 8, "element": "eau"}]},
@@ -3217,7 +3217,7 @@
     "champa_marron": {
       "nom": "Champa Marron",
       "pv": [34, 38],
-      "resistances": {"neutre": 58, "terre": 68, "feu": -5, "eau": -5, "air": -5},
+      "resistances": {"neutre": 50, "terre": 50, "feu": -5, "eau": -5, "air": -5},
       "mecaniques": [{"kind": "spores", "n": 2}],
       "actions": {
         "spores": {"nom": "Spores", "effets": [{"type": "damage", "amount": 8, "element": "terre"}]},
@@ -3332,7 +3332,7 @@
     "wabbit_squelette": {
       "nom": "Wabbit Squelette",
       "pv": [40, 44],
-      "resistances": {"neutre": 58, "terre": 44, "feu": 14, "eau": -10, "air": 19},
+      "resistances": {"neutre": 50, "terre": 44, "feu": 14, "eau": -10, "air": 19},
       "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
       "actions": {
         "os": {"nom": "Lancer d'os", "effets": [{"type": "damage", "amount": 13, "element": "terre"}]},
@@ -3370,7 +3370,7 @@
     "cochon_de_lait": {
       "nom": "Cochon de Lait",
       "pv": [40, 44],
-      "resistances": {"neutre": 15, "terre": 0, "feu": -15, "eau": -20, "air": 60},
+      "resistances": {"neutre": 15, "terre": 0, "feu": -15, "eau": -20, "air": 50},
       "mecaniques": [{"kind": "colere", "n": 2, "every": 3}],
       "actions": {"charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 11, "element": "air"}]}},
       "rythme": {"kind": "cycle", "order": ["charge"]}
@@ -3441,7 +3441,7 @@
     "chef_crocodaille": {
       "nom": "Chef Crocodaille",
       "pv": [100, 106],
-      "resistances": {"neutre": 23, "terre": 48, "feu": 43, "eau": 58, "air": 23},
+      "resistances": {"neutre": 23, "terre": 48, "feu": 43, "eau": 50, "air": 23},
       "mecaniques": [{"kind": "rage", "n": 1, "every": 4}],
       "actions": {
         "appel": {"nom": "Appel du marais", "effets": [{"type": "summon", "monster": "crocodaille", "count": 1}]},
@@ -3490,7 +3490,7 @@
     "blop_griotte_royal": {
       "nom": "Blop Griotte Royal",
       "pv": [300, 310],
-      "resistances": {"neutre": -12, "terre": -12, "feu": 94, "eau": -12, "air": -12},
+      "resistances": {"neutre": -12, "terre": -12, "feu": 50, "eau": -12, "air": -12},
       "mecaniques": [{"kind": "division"}],
       "actions": {
         "ecrase": {"nom": "Écrasement royal", "effets": [{"type": "damage", "amount": 24, "element": "feu"}]},
@@ -3509,7 +3509,7 @@
     "chene_mou": {
       "nom": "Chêne Mou",
       "pv": [330, 340],
-      "resistances": {"neutre": 82, "terre": 52, "feu": 52, "eau": -5, "air": -5},
+      "resistances": {"neutre": 50, "terre": 50, "feu": 50, "eau": -5, "air": -5},
       "mecaniques": [{"kind": "plafond", "n": 45}, {"kind": "regeneration", "n": 8}],
       "actions": {
         "racines": {
@@ -3576,7 +3576,7 @@
     "koalak_coco": {
       "nom": "Koalak Coco",
       "pv": [58, 62],
-      "resistances": {"neutre": 18, "terre": -12, "feu": -12, "eau": -12, "air": 78},
+      "resistances": {"neutre": 18, "terre": -12, "feu": -12, "eau": -12, "air": 50},
       "mecaniques": [],
       "actions": {
         "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 9, "element": "air", "hits": 2}]},
@@ -3587,7 +3587,7 @@
     "koalak_griotte": {
       "nom": "Koalak Griotte",
       "pv": [58, 62],
-      "resistances": {"neutre": 18, "terre": -12, "feu": 78, "eau": -12, "air": -12},
+      "resistances": {"neutre": 18, "terre": -12, "feu": 50, "eau": -12, "air": -12},
       "mecaniques": [],
       "actions": {
         "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 18, "element": "feu"}]},
@@ -3598,7 +3598,7 @@
     "warko_marron": {
       "nom": "Warko Marron",
       "pv": [60, 66],
-      "resistances": {"neutre": 28, "terre": 29, "feu": -10, "eau": -6, "air": 68},
+      "resistances": {"neutre": 28, "terre": 29, "feu": -10, "eau": -6, "air": 50},
       "mecaniques": [{"kind": "colere", "n": 2, "every": 3}],
       "actions": {"charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 17, "element": "air"}]}},
       "rythme": {"kind": "cycle", "order": ["charge"]}
@@ -3606,7 +3606,7 @@
     "mama_koalak": {
       "nom": "Mama Koalak",
       "pv": [70, 76],
-      "resistances": {"neutre": 38, "terre": 58, "feu": 38, "eau": -2, "air": -10},
+      "resistances": {"neutre": 38, "terre": 50, "feu": 38, "eau": -2, "air": -10},
       "mecaniques": [{"kind": "gardien"}],
       "actions": {
         "appel": {"nom": "Appel des petits", "effets": [{"type": "summon", "monster": "koalak_coco", "count": 1}]},
@@ -3691,7 +3691,7 @@
     "yokai_givrefoux": {
       "nom": "Yokaï Givrefoux",
       "pv": [60, 64],
-      "resistances": {"neutre": 16, "terre": 14, "feu": -36, "eau": 65, "air": 17},
+      "resistances": {"neutre": 16, "terre": 14, "feu": -36, "eau": 50, "air": 17},
       "mecaniques": [{"kind": "esquive", "n": 2}, {"kind": "artefact", "n": 1}],
       "actions": {
         "feux": {"nom": "Feux follets", "effets": [{"type": "damage", "amount": 7, "element": "air", "hits": 3}]},
@@ -3702,7 +3702,7 @@
     "boufcoul": {
       "nom": "Boufcoul",
       "pv": [72, 78],
-      "resistances": {"neutre": 38, "terre": 62, "feu": -12, "eau": -13, "air": 28},
+      "resistances": {"neutre": 38, "terre": 50, "feu": -12, "eau": -13, "air": 28},
       "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
       "actions": {
         "charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 19, "element": "feu"}]},
@@ -3777,7 +3777,7 @@
     "dok_alako": {
       "nom": "Dok Alako",
       "pv": [220, 230],
-      "resistances": {"neutre": 38, "terre": -3, "feu": 38, "eau": -20, "air": 68},
+      "resistances": {"neutre": 38, "terre": -3, "feu": 38, "eau": -20, "air": 50},
       "mecaniques": [{"kind": "rage", "n": 3, "every": 4}],
       "actions": {
         "rage": {"nom": "Rage du Dok", "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]},
@@ -3789,7 +3789,7 @@
     "gardienne_egouts": {
       "nom": "Gardienne des Égouts",
       "pv": [190, 200],
-      "resistances": {"neutre": 98, "terre": 45, "feu": 43, "eau": 28, "air": 18},
+      "resistances": {"neutre": 50, "terre": 45, "feu": 43, "eau": 28, "air": 18},
       "mecaniques": [{"kind": "gardien"}, {"kind": "regeneration", "n": 6}],
       "actions": {
         "appel": {"nom": "Appel des égouts", "effets": [{"type": "summon", "monster": "rat_egoutant", "count": 2}]},
@@ -3832,7 +3832,7 @@
     "tofu_royal": {
       "nom": "Tofu Royal",
       "pv": [430, 450],
-      "resistances": {"neutre": 38, "terre": 23, "feu": 18, "eau": 23, "air": 58},
+      "resistances": {"neutre": 38, "terre": 23, "feu": 18, "eau": 23, "air": 50},
       "mecaniques": [{"kind": "esquive", "n": 3}, {"kind": "rituel", "n": 1}],
       "actions": {
         "nuee": {"nom": "Nuée de Tofus", "effets": [{"type": "summon", "monster": "tofu", "count": 2}]},

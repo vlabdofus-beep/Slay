@@ -191,7 +191,7 @@ export const REWARD_BY_ID: Record<string, RewardDef> = Object.fromEntries(REWARD
 // ───────────── règles légendaires ─────────────
 
 export const RULES = {
-  brulure_tenace: 'La brûlure ne diminue plus en fin de round.',
+  brulure_tenace: 'La brûlure que tu poses ne diminue plus.',
   poison_tenace: 'Le poison perd 1 par round au lieu d\'être divisé par 2.',
   premiere_gratuite: 'Ta première carte de chaque tour coûte 1 PA de moins.',
   eau_vampire: 'Tes dégâts Eau te soignent de la moitié des PV retirés.',

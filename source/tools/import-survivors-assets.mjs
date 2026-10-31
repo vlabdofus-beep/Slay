@@ -38,6 +38,10 @@ for (const b of BREEDS) {
   copy(join(src, `anims/sp_${b}.js`), `public/game/anims/sp_${b}.js`);
   for (const g of ['m', 'f']) copy(join(src, `anims/look_${b}${g}.js`), `public/game/anims/look_${b}${g}.js`);
 }
+// Son : musiques (accueil, cartes des actes, combats, boss, victoire et défaite) et voix des héros
+const MUSIC = ['20100', '20101', '20152', '20148', '20147', '20401', '20402', '20403', '20404', '20405', '20406', '20407', '20408', '20409', '20410', 'victoire', 'defaite'];
+for (const m of MUSIC) copy(join(src, `music/${m}.ogg`), `public/game/music/${m}.ogg`);
+for (const b of BREEDS) for (const g of ['m', 'f']) for (const k of ['hit1', 'hit2', 'hit3', 'mort1', 'crijoie1']) copy(join(src, `sfx/${b}${g}_${k}.ogg`), `public/game/sfx/${b}${g}_${k}.ogg`);
 // Décors
 for (const id of MAP_PACKS) copy(join(src, `maps/${id}.js`), `public/game/maps/${id}.js`);
 

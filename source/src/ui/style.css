@@ -1425,3 +1425,38 @@ body[data-screen="evenement"] { --accent: #9a86d6; --accent-ink: #1d1530; }
   .altar .boon-card.at-l, .altar .boon-card.at-r, .altar .boon-card.at-b { position: relative; left: auto; right: auto; top: auto; margin: 0; }
   .altar .boon-card.at-l { margin-top: -54px; }
 }
+
+/* ───────────── effets d'objets écrits en entier ─────────────
+   Quand (pictogramme + déclencheur, sur fond teinté de la rareté), puis chaque récompense avec son icône,
+   puis la limite. Plus besoin de survoler pour savoir quand l'objet agit. */
+.ifx { display: grid; gap: 3px; padding: .5rem .55rem .5rem; border-radius: 8px; background: rgba(8, 14, 12, .55); border: 1px solid color-mix(in srgb, var(--rar, var(--gold)) 35%, var(--line)); }
+.ifx-when { display: flex; align-items: center; gap: .4rem; font: 700 .8rem/1.25 var(--font); color: color-mix(in srgb, var(--rar, var(--gold)) 55%, #fff3d6);
+  padding-bottom: 4px; margin-bottom: 1px; border-bottom: 1px dashed color-mix(in srgb, var(--rar, var(--gold)) 30%, transparent); }
+.trg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.trg-img { width: 18px; height: 18px; }
+.ifx-what { display: flex; align-items: center; gap: .35rem; font-size: .84rem; line-height: 1.3; color: var(--text); }
+.ifx-what .fxi { height: 22px; flex: none; }
+.ifx-what .fxi img { width: 18px; height: 18px; }
+.ifx-what .fxi b { font-size: .8rem; }
+.ifx-lim { font-size: .72rem; color: var(--muted); }
+.ifx.is-rule .ifx-what { display: block; }
+.fx-list li { display: grid; gap: .25rem; justify-content: stretch; }
+.fx-list .ifx { font-size: .8rem; }
+/* coin du badge en combat : le moment du déclenchement */
+.fxb .trg.corner { position: absolute; left: -6px; top: -7px; width: 15px; height: 15px; padding: 2px; border-radius: 50%; stroke-width: 2.2;
+  background: #10201a; color: color-mix(in srgb, var(--rar, var(--gold)) 70%, #fff3d6); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rar, var(--gold)) 60%, transparent); }
+.relic .fxb { margin-left: 4px; }
+
+/* ───────────── bouton son ───────────── */
+.bb-tools { position: absolute; right: 16px; top: 18px; display: flex; gap: .4rem; }
+.sound-btn { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; }
+.sound-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.sound-btn[aria-pressed="false"] { opacity: .75; }
+.title-foot .sound-btn { color: inherit; }
+@media (max-width: 760px) { .bb-tools { position: static; margin-top: .4rem; } .sound-btn span { display: none; } }
+.ev-lead { margin: 0; font-style: italic; color: #f3e3bd; padding-left: .8rem; border-left: 3px solid #9a86d6; }
+.ev-opt.ev-rien { border-left-color: #7b6bb8; }
+.ev-opt.ev-rien b::after { content: '?'; margin-left: .45rem; font: 400 .95rem var(--title); color: #b9a8f0; opacity: .8; }
+.ev-opt.ev-prix { border-left-color: var(--gold); }
+.ev-opt .ev-price { color: #ffcf6a; font-weight: 700; }
+.ev-opt.ev-tout { border-left-color: #6aa84f; }

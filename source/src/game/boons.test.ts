@@ -40,11 +40,20 @@ test('12 dieux, 6 bénédictions chacun (72), toutes valides et décrites', () =
 test('15 événements par acte, art et effets valides, reliques valides', () => {
   for (const act of [1, 2, 3]) assert.equal(EVENTS.filter((e) => e.act === act).length, 15, `acte ${act}`);
   assert.equal(new Set(EVENTS.map((e) => e.id)).size, EVENTS.length);
+  let hidden = 0, total = 0;
+  const walk = (opts: (typeof EVENTS)[number]['options'], id: string) => {
+    assert.ok(opts.length >= 2, id);
+    for (const o of opts) {
+      total++; if ((o.show ?? 'rien') === 'rien') hidden++;
+      checkOps(o.ops, id);
+      if (o.next) { assert.ok(!o.ops.some((x) => x.op === 'fight'), `${id} : pas de combat avant une seconde scène`); walk(o.next.options, id); }
+    }
+  };
   for (const e of EVENTS) {
     if (e.art.monster) assert.ok(LIBRARY.monsters[e.art.monster], `${e.id} : monstre ${e.art.monster}`);
-    assert.ok(e.options.length >= 2, e.id);
-    for (const o of e.options) checkOps(o.ops, e.id);
+    walk(e.options, e.id);
   }
+  assert.ok(hidden / total > 0.4 && hidden / total < 0.9, `part des réponses cachées : ${hidden}/${total}`);
   for (const r of RELICS) { (r.effects ?? []).forEach((fx) => checkFx(fx, r.id)); assert.ok(boonLines(r).length > 0, r.id); }
 });
 
@@ -77,11 +86,15 @@ test('événement : un choix payant est refusé sans les kamas, un choix fait s\
   run.enterNode(node.id);
   assert.equal(run.phase, 'evenement');
   const ev = (await_ev(run));
-  const paid = ev.options.findIndex((o) => o.ops.some((x) => x.op === 'kamas' && x.n < 0));
+  const paid = ev.options.findIndex((o) => o.show === 'prix' && o.ops.some((x) => x.op === 'kamas' && x.n < 0));
   if (paid >= 0) assert.equal(run.optionState(paid).ok, false);
-  const free = ev.options.findIndex((_, i) => run.optionState(i).ok && !ev.options[i].ops.some((x) => x.op === 'fight' || x.op === 'chance'));
-  run.chooseOption(free);
-  while (run.pending) run.skipPending();
+  // Une réponse sans combat, en suivant les scènes successives jusqu'au bout
+  for (let k = 0; k < 4 && run.event!.chosen === null; k++) {
+    const page = run.eventPage()!;
+    const free = page.options.findIndex((o, i) => run.optionState(i).ok && !JSON.stringify(o.ops).includes('fight'));
+    run.chooseOption(free);
+    while (run.pending) run.skipPending();
+  }
   run.leaveEvent();
   assert.equal(run.phase, 'map');
 });

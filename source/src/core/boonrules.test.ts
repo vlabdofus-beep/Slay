@@ -59,3 +59,23 @@ test('Armure d\'épines : la moitié de ce que l\'armure absorbe ; soin en trop 
   c.fxHeal(9);
   assert.equal(c.player.status.bouclier, 4);
 });
+
+test('poison au début du tour du monstre (il meurt avant d\'agir), brûlure à la fin de son tour', () => {
+  const c = make([], 6);
+  const e = c.enemies[0];
+  e.hp = 5; e.status.poison = 6;
+  const hp = c.player.hp;
+  c.endTurn();
+  assert.ok(e.dead, 'le poison tue au début de son tour');
+  assert.equal(c.player.hp, hp, 'il n\'a pas eu le temps d\'agir');
+
+  const d = make([], 7);
+  const f = d.enemies[0];
+  f.hp = 3; f.status.brulure = 5;
+  d.player.block = 0;
+  const php = d.player.hp;
+  const willHit = d.intent(f).damage > 0;
+  d.endTurn();
+  assert.ok(f.dead, 'la brûlure tue à la fin de son tour');
+  if (willHit) assert.ok(d.player.hp < php, 'mais il a frappé avant');
+});

@@ -213,3 +213,7 @@ export interface ItemDef {
   icon?: string;
   level?: number;
 }
+
+/** Résistance maximale d'un monstre, en % (même avec Peau de roche). */
+export const RES_CAP = 50;
+export const capRes = (r: number) => Math.max(-100, Math.min(RES_CAP, r));

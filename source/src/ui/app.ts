@@ -15,8 +15,9 @@ import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
 import { EGG_BY_ID, eggImage } from '../data/eggs.ts';
 import { bestiaryAct, bestiarySearch, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
-import { boonLines, opText, type Boon } from '../game/boons.ts';
+import { boonLines, opText, type Boon, type RunOp } from '../game/boons.ts';
 import { record, replay, type SaveFile } from '../game/save.ts';
+import { playMusic, sfx, soundButton, toggleSound, voice } from './sound.ts';
 import { GOD_BY_ID, BOON_BY_ID } from '../data/gods.ts';
 import { RELIC_BY_ID } from '../data/relics.ts';
 import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
@@ -241,6 +242,38 @@ function partIcon(p: EffectPart): string {
   return `<span class="fxi${ZONE.has(p.reward) ? ' zone' : ''}"><img src="${asset(el)}" alt="" draggable="false">${zone}${plus}<b>${p.amount}</b></span>`;
 }
 
+// Moment du déclenchement, en pictogramme : se lit sans survoler (tuiles d'objets, barre de combat).
+const TRG_SVG: Record<string, [string, string]> = {
+  cardPlayed: ['Carte jouée', '<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6"/>'],
+  turnStart: ['Début de tour', '<path d="M3 17h18"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M12 6v3M5.5 9.5l1.8 1.8M18.5 9.5l-1.8 1.8"/>'],
+  turnEnd: ['Fin de tour', '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9"/>'],
+  combatStart: ['Début du combat', '<path d="M5 19 19 5M14 5h5v5M5 5l14 14M10 19H5v-5"/>'],
+  enemyKilled: ['Ennemi vaincu', '<path d="M12 3a7 7 0 0 0-4 12.7V19h8v-3.3A7 7 0 0 0 12 3z"/><circle cx="9.5" cy="11" r="1.2"/><circle cx="14.5" cy="11" r="1.2"/>'],
+  hpLost: ['PV perdus', '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="m11 8-1.5 4h3L11 16"/>'],
+  blockGained: ['Armure gagnée', '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>'],
+  combatWon: ['Combat gagné', '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/>'],
+};
+const trgIcon = (ev: string, cls = 'trg') => {
+  const t = TRG_SVG[ev];
+  return t ? `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${t[1]}</svg>` : '';
+};
+
+/** Effet d'objet écrit en entier : quand (pictogramme + déclencheur), quoi (icône + récompense), limite. */
+function fxBlock(fx: ItemEffect): string {
+  if (fx.kind === 'rule') {
+    return `<span class="ifx is-rule"><span class="ifx-when"><img src="${asset('fx/regle.webp')}" alt="" class="trg-img">Règle légendaire, en permanence</span>
+      <span class="ifx-what">${esc(ruleText(fx.rule))}</span></span>`;
+  }
+  const t = TRIGGER_BY_ID[fx.parts[0].trigger];
+  const repeat = !t.single && ['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'].includes(t.event);
+  const lim = fx.parts.some((p) => p.recharge) ? `Une fois tous les ${fx.parts.find((p) => p.recharge)!.recharge} tours`
+    : fx.parts.some((p) => p.once) ? 'Une fois par combat'
+    : repeat ? [...new Set(fx.parts.map((p) => p.limit ?? perTurn(REWARD_BY_ID[p.reward])))].map((n) => (n === 1 ? 'Une fois par tour' : `${n} fois par tour au plus`)).join(', ') : '';
+  return `<span class="ifx"><span class="ifx-when">${trgIcon(t.event)}${esc(t.text)}${t.el ? '' : ''}</span>
+    ${fx.parts.map((p) => `<span class="ifx-what">${partIcon(p).replace(/<b>\d+<\/b>/, '')}<span>${esc(cap(partText(p)))}</span></span>`).join('')}
+    ${lim ? `<span class="ifx-lim">${lim}</span>` : ''}</span>`;
+}
+
 /** Badge d'effet : icônes + quantités ; infobulle avec l'effet détaillé et son activation. */
 function fxBadge(fx: ItemEffect, o: { title: string; icon?: string; live?: { used: number; limit: number } | null; flash?: boolean; down?: boolean } = { title: '' }): string {
   let icons: string, what: string, when: string;
@@ -257,7 +290,8 @@ function fxBadge(fx: ItemEffect, o: { title: string; icon?: string; live?: { use
     when = `${esc(t.text)}${t.el ? ` (${EL_NAME[t.el]})` : ''}.${lim}`;
   }
   const live = o.live ? `<span class="fxc${o.live.used >= o.live.limit ? ' full' : ''}" title="Déclenchements ce tour">${o.live.used}/${o.live.limit}</span>` : '';
-  return `<span class="fxb${o.flash ? ' flash' : ''}${fx.kind === 'rule' ? ' is-rule' : ''}" tabindex="0" aria-label="${esc(`${o.title} : ${itemEffectText(fx)}`)}">${icons}${live}
+  const corner = fx.kind === 'roll' ? trgIcon(TRIGGER_BY_ID[fx.parts[0].trigger].event, 'trg corner') : '';
+  return `<span class="fxb${o.flash ? ' flash' : ''}${fx.kind === 'rule' ? ' is-rule' : ''}" tabindex="0" aria-label="${esc(`${o.title} : ${itemEffectText(fx)}`)}">${corner}${icons}${live}
     <span class="fxtip${o.down ? ' down' : ''}" role="tooltip">${o.title ? `<b class="fxt">${esc(o.title)}</b>` : ''}<span class="fx-what">${what}</span><span class="fx-when"><i>Activation</i> ${when}</span></span></span>`;
 }
 
@@ -336,7 +370,7 @@ function itemTile(it: ItemDef, opts: { act?: string; taken?: boolean; dim?: bool
       <span class="item-id"><span class="item-name">${esc(it.name)}</span>
       <span class="item-meta"><span class="rar-tag">${RARITY_NAMES[it.rarity]}</span> ${SLOT_NAMES[it.slot]}${it.level ? `, niveau ${it.level}` : ''}</span></span></span>
     <span class="item-stats">${statsText(it.stats).map((t) => `<span>${esc(t)}</span>`).join('')}</span>
-    ${fx ? `<span class="item-fxrow">${fxBadge(fx, { title: it.name })}<span class="item-fxhint">${fx.kind === 'rule' ? 'Règle légendaire' : 'Survole pour le détail'}</span></span>` : ''}
+    ${fx ? fxBlock(fx) : ''}
     ${replaces ? `<span class="item-replace">Remplace ${esc(replaces.name)}</span>` : ''}
   </${tag}>`;
 }
@@ -361,7 +395,7 @@ function sheet(run: Run): string {
   const effects = SLOTS.map((slot) => run.equipment[slot]).filter((id): id is string => !!id).map((id) => {
     const it = ITEMS.items[id];
     const fx = itemEffect(id);
-    return fx ? `<li class="rar-${it.rarity}"><span class="fx-name">${esc(it.name)}</span>${fxBadge(fx, { title: it.name })}</li>` : '';
+    return fx ? `<li class="rar-${it.rarity}"><span class="fx-name">${esc(it.name)}</span>${fxBlock(fx)}</li>` : '';
   }).join('');
   return `<aside class="sheet">
     <div class="who"><img class="who-pic" src="${asset(`classes/${breed.id}.png`)}" alt=""><span><b>${esc(breed.n)}</b><span class="muted">${run.stats.floor ? `Étage ${run.stats.floor} sur ${run.map.floors}` : 'Au départ'}</span></span></div>
@@ -399,6 +433,28 @@ function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
 }
 
 const HERO_HUE: Record<'iop' | 'cra', string> = { iop: '#e5483b', cra: '#7dbb2e' };
+
+// ───────────── musique et sons de transition ─────────────
+const ACT_MUSIC: Record<number, string> = { 1: '20101', 2: '20152', 3: '20148' };
+const FIGHT_MUSIC = ['20401', '20402', '20403', '20404', '20405', '20406', '20407', '20408', '20409', '20410'];
+let lastPhase = '';
+function soundFor(run: Run | null): void {
+  const phase = run ? run.phase : 'title';
+  if (!run) playMusic('20100');
+  else if (phase === 'combat') {
+    const enc = run.encounter ?? '';
+    let h = 0; for (const ch of enc) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    playMusic(run.node?.type === 'boss' ? '20147' : FIGHT_MUSIC[h % FIGHT_MUSIC.length]);
+  } else if (phase === 'victory') playMusic('victoire');
+  else if (phase === 'defeat') playMusic('defaite');
+  else playMusic(ACT_MUSIC[run.act] ?? '20101');
+  if (run && phase !== lastPhase) {
+    if (phase === 'reward' || phase === 'victory' || phase === 'dofus') { voice(BREED[run.classe], run.gender, 'joie'); sfx('coin'); }
+    if (phase === 'defeat') voice(BREED[run.classe], run.gender, 'mort');
+    if (phase === 'dieu') sfx('god');
+  }
+  lastPhase = phase;
+}
 
 // ───────────── sauvegarde automatique ─────────────
 // La run en cours est gardée dans le navigateur (localStorage) après chaque action : graine + actions jouées,
@@ -486,6 +542,7 @@ function viewTitle(): string {
       </div>` : ''}
     </section>
     <footer class="title-foot">
+      ${soundButton('link')}
       <button class="link" data-act="bestiary">Bestiaire</button>
       <span>Fan game non officiel. Données DofusDB, animations et décors de Dofus 3, univers © Ankama.</span>
       <a class="link" href="#styleguide">Guide de style</a>
@@ -787,6 +844,7 @@ function topbarHtml(run: Run): string {
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
         <button class="tb-btn" data-act="toggle-log" aria-pressed="${ui.logOpen}">${uiIcon('journal')}Journal</button>
         <button class="tb-btn" data-act="bestiary" ${ui.busy ? 'disabled' : ''}>${uiIcon('deck')}Bestiaire</button>
+        ${soundButton('tb-btn')}
       </span>
       ${relicBar(run)}
     </header>`;
@@ -1018,17 +1076,26 @@ function eventArt(a: EventArt): string {
   return m ? pic(m.image, m.name, 'ev-pic') : '';
 }
 
+/** Prix visibles d'une réponse « prix » : kamas payés, PV perdus, PV max perdus. */
+function priceOf(ops: RunOp[]): string {
+  return ops.filter((o) => (o.op === 'kamas' && o.n < 0) || o.op === 'loseHp' || (o.op === 'maxHp' && o.n < 0)).map(opText).join(', ');
+}
+
 function viewEvent(run: Run): string {
   const v = run.event!;
   const ev = EVENT_BY_ID[v.id];
+  const page = run.eventPage()!;
   const done = v.chosen !== null;
-  const opts = ev.options.map((o, i) => {
+  const opts = page.options.map((o, i) => {
     const st = run.optionState(i);
-    const hint = o.ops.map(opText).join('. ');
+    const show = o.show ?? 'rien';
+    const hint = show === 'tout' ? (o.ops.length ? `${o.ops.map(opText).join('. ')}.` : 'Rien ne se passe.')
+      : show === 'prix' ? `<span class="ev-price">${esc(priceOf(o.ops))}.</span> La suite est inconnue.` : '';
     const on = v.chosen === i;
-    return `<button class="ev-opt${on ? ' on' : ''}${done && !on ? ' off' : ''}" data-act="event-opt" data-i="${i}" ${done || !st.ok ? 'disabled' : ''}>
-      <b>${esc(o.label)}</b><span>${hint ? esc(hint) + '.' : 'Rien ne se passe.'}</span>${!done && !st.ok ? `<em>${esc(st.why)}</em>` : ''}</button>`;
+    return `<button class="ev-opt ev-${show}${on ? ' on' : ''}${done && !on ? ' off' : ''}" data-act="event-opt" data-i="${i}" ${done || !st.ok ? 'disabled' : ''}>
+      <b>${esc(o.label)}</b>${hint ? `<span>${show === 'prix' ? hint : esc(hint)}</span>` : ''}${!done && !st.ok ? `<em>${esc(st.why)}</em>` : ''}</button>`;
   }).join('');
+  const lead = v.path.length && v.result ? `<p class="ev-lead">${esc(v.result)}</p>` : '';
   const result = done ? `<div class="ev-result" role="status"><p>${esc(v.result || 'C\'est fait.')}</p>
       ${v.gains.length ? `<ul class="ev-gains">${v.gains.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
       ${run.pending ? '' : '<button class="primary" data-act="leave-event">Continuer</button>'}</div>` : '';
@@ -1036,7 +1103,8 @@ function viewEvent(run: Run): string {
     <section class="ev">
       <div class="ev-head"><span class="ev-art">${eventArt(ev.art)}</span>
         <div><p class="god-kicker">Événement, étage ${run.stats.floor}</p><h2>${esc(ev.title)}</h2></div></div>
-      <p class="ev-text">${esc(ev.text)}</p>
+      ${lead}
+      <p class="ev-text">${esc(page.text)}</p>
       <div class="ev-opts">${opts}</div>
       ${result}
     </section>
@@ -1234,7 +1302,7 @@ function viewStyleguide(): string {
 /** En-tête gravé, comme sur Dofusle : nom au centre, lieu et étage en dessous. */
 function brandBar(run: Run): string {
   const where = `Acte ${run.act}, ${actName(run)}${run.stats.floor ? `, étage ${run.stats.floor} sur ${run.map.floors}` : ', au départ'}`;
-  return `<header class="brandbar"><p class="brand-name">Dofus Slay</p><p class="brand-sub">${where}</p><button class="tb-btn bb-bx" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></header>`;
+  return `<header class="brandbar"><p class="brand-name">Dofus Slay</p><p class="brand-sub">${where}</p><span class="bb-tools">${soundButton('tb-btn')}<button class="tb-btn" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></span></header>`;
 }
 
 const BX: BxHelpers = {
@@ -1282,6 +1350,7 @@ function render(): void {
   else if (run.phase === 'evenement') html = viewEvent(run);
   else html = viewEnd(run);
   document.body.dataset.screen = run ? run.phase : 'title';
+  soundFor(run);
   if (run?.phase !== 'combat' || !run.combat) {
     for (const ev of pending) clearTimeout(ev.timer);
     pending.length = 0;
@@ -1525,12 +1594,15 @@ function resolve(ev: Impact): void {
         ui.playerHit = a.hp - b.hp;
         pushFloat(-1, { n: a.hp - b.hp, el: 'neutre' });
         if (b.hp > 0) stage.hurt();
-      } else if (b.hp > a.hp) pushFloat(-1, { n: b.hp - a.hp, el: 'soin' });
-      if (b.block > a.block && ev.el) pushFloat(-1, { n: 0, el: 'armure', text: `+${b.block - a.block}` });
+        sfx('hurt');
+        if (ui.run && b.hp > 0) voice(BREED[ui.run.classe], ui.run.gender, 'hit');
+      } else if (b.hp > a.hp) { pushFloat(-1, { n: b.hp - a.hp, el: 'soin' }); sfx('heal'); }
+      if (b.block > a.block && ev.el) { pushFloat(-1, { n: 0, el: 'armure', text: `+${b.block - a.block}` }); sfx('block'); }
     } else if (b.hp < a.hp) {
       ui.hit.add(uid);
       pushFloat(uid, { n: a.hp - b.hp, el: ev.el ?? 'feu' });
-    } else if (ev.el && b.block < a.block) pushFloat(uid, { n: 0, el: 'armure', text: 'Bloqué' });
+      sfx(b.dead ? 'kill' : 'hit', ev.el ?? 'feu');
+    } else if (ev.el && b.block < a.block) { pushFloat(uid, { n: 0, el: 'armure', text: 'Bloqué' }); sfx('block'); }
   }
 }
 
@@ -1600,6 +1672,7 @@ function playCard(index: number, target?: number): void {
   const points = (def.target === 'enemy' ? [uid as number] : def.target === 'all_enemies' ? living.map((e) => e.uid) : [])
     .map(enemyPoint).filter((p): p is { x: number; y: number } => !!p);
   const delay = stage.visible ? stage.cast(def, points, def.target === 'self') : 0;
+  sfx('card', def.element);
   const p = stage.player;
   ui.flying.add(inst.uid);
   flyCard(index, points[0] ?? { x: p.x, y: p.y - p.h * 0.55 }, delay);
@@ -1615,6 +1688,7 @@ function endTurn(): void {
   const c = ui.run!.combat!;
   flushImpacts();
   for (const e of c.living()) if (c.intent(e).damage > 0) ui.lunge.add(e.uid);
+  sfx('turn');
   const before = snapshot();
   c.endTurn();
   schedule(before, snapshot(), undefined, 0);
@@ -1728,6 +1802,9 @@ function handle(act: string, d: DOMStringMap): void {
       startRun(new Run(classe, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, ui.gender[classe]));
       break;
     }
+    case 'sound':
+      toggleSound();
+      break;
     case 'continue-run':
       void continueRun();
       break;
@@ -1926,8 +2003,10 @@ document.addEventListener('click', (ev) => {
     }
     return;
   }
+  const act = el.dataset.act as string;
+  if (!['play', 'target', 'sound', 'pick-class'].includes(act)) sfx('click');
   try {
-    handle(el.dataset.act as string, el.dataset);
+    handle(act, el.dataset);
   } catch (err) {
     console.error(err);
   }

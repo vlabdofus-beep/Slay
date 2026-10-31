@@ -2,6 +2,7 @@
 //  - Au chargement des données, le fichier s'applique par-dessus les valeurs écrites dans le code.
 //  - Le jeu en ligne relit le fichier au démarrage : une modification faite sur GitHub s'applique sans reconstruire.
 //  - `node tools/export-balance.ts` ajoute au fichier les cartes et monstres nouveaux, sans toucher aux valeurs existantes.
+import { capRes } from '../core/types.ts';
 import type { CardDef, ClassId, Effect, Element, MonsterDef, MonsterMove, MonsterPower, MovePattern, Rarity, CardType } from '../core/types.ts';
 import { BOON_RULES, DOFUS_RULES, REWARDS, RULES, TRIGGERS, TRIGGER_BY_ID, REWARD_BY_ID, type ItemEffect, type RuleId } from '../core/effects.ts';
 import type { Boon, RunOp, RunPerks } from '../game/boons.ts';
@@ -63,7 +64,7 @@ export const HELP = [
   "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop et Visée du Crâ.",
   "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
   "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
-  "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 100 = insensible), mecaniques, actions et rythme.",
+  "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 50 au plus), mecaniques, actions et rythme.",
   "Effets — damage : dégâts (amount, element : terre, feu, eau, air, neutre ; hits = nombre de coups ; bonus.per / bonus.n = +n par attaques, puissance, armure, ennemis, statuts, main, lancers, visee, epuisees ; pierce = ignore l'armure).",
   "Effets — drain : dégâts dont les PV retirés soignent. block : armure. heal : soin. draw : pioche. energy : PA. loseHp : PV perdus par le lanceur. charge : Visée du Crâ.",
   "Effets — status : statut (status : puissance, faiblesse, vulnerabilite, brulure, poison, bouclier, renvoi, erosion, esquive, etourdi ; on : self, target, all_enemies).",
@@ -211,7 +212,7 @@ export function applyBalance(raw: unknown, t: BalanceTargets): string[] {
     if (v.resistances && typeof v.resistances === 'object') {
       for (const el of ['neutre', 'terre', 'feu', 'eau', 'air'] as Element[]) {
         const r = (v.resistances as Record<string, unknown>)[el];
-        if (isNum(r)) m.res[el] = Math.max(-100, Math.min(100, r)); else if (r !== undefined) warn.push(`${id}.resistances.${el} invalide`);
+        if (isNum(r)) m.res[el] = capRes(r); else if (r !== undefined) warn.push(`${id}.resistances.${el} invalide`);
       }
     }
     if (Array.isArray(v.mecaniques) && v.mecaniques.every((p) => p && typeof p.kind === 'string')) m.powers = v.mecaniques.length ? v.mecaniques : undefined;

@@ -2,6 +2,7 @@ import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EffectPart, type EventId, ty
 import { Rng } from './rng.ts';
 import { PASSIVE_VALUES } from './classes.ts';
 const VISEE = () => PASSIVE_VALUES.visee.attaques;
+import { capRes } from './types.ts';
 import type {
   CardDef,
   ClassId,
@@ -546,6 +547,9 @@ export class Combat {
       if (e) this.fxDamage(e, Math.floor(this.player.block / 2), 'neutre');
     }
     if (this.checkEnd()) return;
+    // Fin du tour du joueur : sa brûlure (son armure du tour l'absorbe).
+    this.tickBurn(this.player);
+    if (this.checkEnd()) return;
     // Cartes de statut encore en main : brûlures qui piquent, cartes éphémères qui s'épuisent.
     for (const inst of [...this.hand]) {
       const def = this.cardDef(inst);
@@ -565,10 +569,17 @@ export class Combat {
     }
     for (const e of this.enemies) e.m.lostThisTurn = 0;
 
+    // Chaque monstre : le poison le ronge au début de son tour (il peut en mourir avant d'agir),
+    // il agit, puis la brûlure le consume à la fin de son tour (son armure du tour l'absorbe).
     for (const e of [...this.living()]) {
       if (e.dead) continue;
       e.block = 0;
+      this.tickPoison(e);
+      if (this.checkEnd()) return;
+      if (e.dead) continue;
       this.enemyAct(e);
+      if (this.checkEnd()) return;
+      this.tickBurn(e);
       if (this.checkEnd()) return;
     }
 
@@ -581,6 +592,9 @@ export class Combat {
       this.log.push('Limite de tours atteinte');
       return;
     }
+    // Début du tour du joueur : son poison d'abord.
+    this.tickPoison(this.player);
+    if (this.checkEnd()) return;
     this.startPlayerTurn(false);
     this.checkEnd();
   }
@@ -762,7 +776,7 @@ export class Combat {
   /** Résistances d'un monstre à cet instant : Peau de roche ajoute 50 % dans l'élément du dernier coup reçu. */
   resOf(e: Enemy): Record<Element, number> {
     const r = { ...e.def.res };
-    if (power(e, 'cameleon') && e.m.lastEl) r[e.m.lastEl] = Math.min(100, r[e.m.lastEl] + 50);
+    if (power(e, 'cameleon') && e.m.lastEl) r[e.m.lastEl] = capRes(r[e.m.lastEl] + 50);
     return r;
   }
 
@@ -1129,25 +1143,32 @@ export class Combat {
   }
 
   /** Fin de round : brûlure (absorbée par l'armure), poison (direct), puis usure des durées. */
+  /** Poison : au début du tour de celui qui le porte, sans que l'armure ni le bouclier ne protègent, puis divisé par 2. */
+  private tickPoison(t: Entity): void {
+    const poison = t.status.poison ?? 0;
+    if (poison <= 0 || t.hp <= 0) return;
+    const mine = t !== this.player; // statuts posés par le joueur : les règles légendaires s'appliquent
+    this.srcElement = null;
+    this.applyHit(t, poison, { dot: true, pierce: true });
+    t.status.poison = mine && this.rules.has('poison_tenace') ? poison - 1 : Math.floor(poison / 2);
+    if (mine) this.markIfDead(t as Enemy);
+  }
+
+  /** Brûlure : à la fin du tour de celui qui la porte (l'armure et le bouclier l'absorbent), puis diminue de 1. */
+  private tickBurn(t: Entity): void {
+    const burn = t.status.brulure ?? 0;
+    if (burn <= 0 || t.hp <= 0) return;
+    const mine = t !== this.player;
+    this.srcElement = 'feu';
+    this.applyHit(t, mine && this.rules.has('brulure_double') ? burn * 2 : burn, { dot: true });
+    if (!(mine && this.rules.has('brulure_tenace'))) t.status.brulure = burn - 1;
+    this.srcElement = null;
+    if (mine) this.markIfDead(t as Enemy);
+  }
+
+  /** Fin de round : usure des durées (faiblesse, vulnérabilité, érosion, renvoi). */
   private endOfRound(): void {
     const entities: Entity[] = [this.player, ...this.living()];
-    for (const t of entities) {
-      const mine = t !== this.player; // statuts posés par le joueur : les règles légendaires s'appliquent
-      const burn = t.status.brulure ?? 0;
-      if (burn > 0) {
-        this.srcElement = 'feu';
-        this.applyHit(t, mine && this.rules.has('brulure_double') ? burn * 2 : burn, { dot: true });
-        if (!(mine && this.rules.has('brulure_tenace'))) t.status.brulure = burn - 1;
-      }
-      const poison = t.status.poison ?? 0;
-      if (poison > 0) {
-        this.srcElement = null;
-        this.applyHit(t, poison, { dot: true, pierce: true });
-        t.status.poison = mine && this.rules.has('poison_tenace') ? poison - 1 : Math.floor(poison / 2);
-      }
-      if (t !== this.player) this.markIfDead(t as Enemy);
-    }
-    this.srcElement = null;
     for (const t of entities) {
       for (const id of ['faiblesse', 'vulnerabilite', 'erosion', 'renvoi'] as const) {
         const v = t.status[id] ?? 0;

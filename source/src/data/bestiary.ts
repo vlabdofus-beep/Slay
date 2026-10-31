@@ -1,3 +1,4 @@
+import { capRes } from '../core/types.ts';
 // Bestiaire étendu : trois fois plus de monstres par acte, avec des mécaniques propres (types.ts, MonsterPower).
 // Repères Slay the Spire 2 pour les valeurs (PV, coups) et les mécaniques (division des Slimes, enroulement des Louses,
 // Rituel du Cultiste, Nob qui s'enrage sur les compétences, Lagavulin endormi, Gremlin Leader qui invoque, Heart qui
@@ -26,7 +27,7 @@ const random = (weights: Record<string, number>, maxRepeat = 2): MovePattern => 
 function m(id: string, dofusId: number, hp: [number, number], moves: Record<string, MonsterMove>, pattern: MovePattern,
   powers?: MonsterPower[], extra: Partial<MonsterDef> = {}): MonsterDef {
   const d = monster(dofusId);
-  return { id, name: d.n, hp, res: { ...d.res }, moves, pattern, dofusId, image: monsterImage(d.gfx), level: d.l, powers, ...extra };
+  return { id, name: d.n, hp, res: Object.fromEntries(Object.entries(d.res).map(([el, v]) => [el, capRes(v as number)])) as typeof d.res, moves, pattern, dofusId, image: monsterImage(d.gfx), level: d.l, powers, ...extra };
 }
 
 /** Petite version d'un monstre qui se divise (même illustration, pas de division). */

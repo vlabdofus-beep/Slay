@@ -13,7 +13,7 @@ import { CLASS_START_HP, LIBRARY, rewardPool, starterDeck } from '../data/librar
 import { TIER_SCALE, ENCOUNTERS, encountersOfTier, type Act, type EncounterTier } from '../data/monsters.ts';
 import { GODS, BOON_BY_ID, type GodId } from '../data/gods.ts';
 import { RELICS, RELIC_BY_ID } from '../data/relics.ts';
-import { EVENTS, EVENT_BY_ID } from '../data/events.ts';
+import { EVENTS, EVENT_BY_ID, type EventPage } from '../data/events.ts';
 import { NO_PERKS, type Boon, type PickWhat, type RunOp, type RunPerks } from './boons.ts';
 
 /** Une carte donne-t-elle de l'armure ou du bouclier (y compris sous condition) ? */
@@ -38,6 +38,8 @@ export interface EventVisit {
   result: string;
   /** Ce que le choix a donné, pour le récapitulatif. */
   gains: string[];
+  /** Réponses déjà données qui ont ouvert une scène suivante (indices, page après page). */
+  path: number[];
 }
 
 export interface Reward {
@@ -542,15 +544,24 @@ export class Run {
     const pool = EVENTS.filter((e) => e.act === this.act && !this.eventsSeen.includes(e.id));
     const ev = this.rng.pick(pool.length ? pool : EVENTS.filter((e) => e.act === this.act));
     this.eventsSeen.push(ev.id);
-    this.event = { id: ev.id, chosen: null, result: '', gains: [] };
+    this.event = { id: ev.id, chosen: null, result: '', gains: [], path: [] };
     this.phase = 'evenement';
   }
 
-  /** Un choix d'événement est-il possible ? (kamas suffisants, prix en PV qui ne tue pas, cartes à choisir). */
+  /** Scène en cours de l'événement (la première, ou celle ouverte par les réponses déjà données). */
+  eventPage(): EventPage | null {
+    if (!this.event) return null;
+    let page: EventPage = EVENT_BY_ID[this.event.id];
+    for (const i of this.event.path) page = page.options[i].next!;
+    return page;
+  }
+
+  /** Un choix d'événement est-il possible ? Seuls les prix affichés sont vérifiés (kamas, PV) ; une issue cachée
+   *  ne bloque jamais (une perte de PV cachée laisse au moins 1 PV, des kamas cachés se paient avec ce qu'on a). */
   optionState(i: number): { ok: boolean; why: string } {
-    const ev = this.event ? EVENT_BY_ID[this.event.id] : null;
-    const opt = ev?.options[i];
+    const opt = this.eventPage()?.options[i];
     if (!opt) return { ok: false, why: '' };
+    if ((opt.show ?? 'rien') === 'rien') return { ok: true, why: '' };
     let kamas = 0, hp = 0, max = 0;
     for (const o of opt.ops) {
       if (o.op === 'kamas' && o.n < 0) kamas -= o.n;
@@ -568,9 +579,10 @@ export class Run {
     const v = this.event;
     if (this.phase !== 'evenement' || !v || v.chosen !== null) throw new Error('Pas de choix possible');
     if (!this.optionState(i).ok) throw new Error('Choix impossible');
-    const opt = EVENT_BY_ID[v.id].options[i];
-    v.chosen = i;
+    const opt = this.eventPage()!.options[i];
     v.result = opt.after;
+    if (opt.next) { v.path.push(i); this.runOps(opt.ops); return; }
+    v.chosen = i;
     this.runOps(opt.ops);
   }
 
