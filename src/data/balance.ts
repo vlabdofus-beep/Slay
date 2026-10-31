@@ -18,7 +18,7 @@ export interface BalanceTargets {
   starters: Partial<Record<ClassId, Record<string, number>>>;
   passives: { courroux: { attaques: number; puissance: number }; visee: { attaques: number; multiplicateur: number }; telefrag: { marques: number; pioche: number; parTour: number } };
   scale: Scale;
-  party: Record<1 | 2 | 3 | 4, { hp: number; damage: number; actions: number }>;
+  party: Record<1 | 2 | 3 | 4, { hp: number; damage: number }>;
   gods: GodDef[];
   relics: RelicDef[];
   events: GameEvent[];
@@ -60,7 +60,7 @@ export interface BalanceFile {
   classes: Record<string, { pv: number; deck_depart: Record<string, number> }>;
   passifs: BalanceTargets['passives'];
   echelle_monstres: Record<string, Record<string, { pv: number; degats: number }>>;
-  echelle_joueurs?: Record<string, { pv: number; degats: number; actions: number }>;
+  echelle_joueurs?: Record<string, { pv: number; degats: number }>;
   cartes: Record<string, BalanceCard>;
   monstres: Record<string, BalanceMonster>;
   dieux?: Record<string, BalanceGod>;
@@ -78,7 +78,7 @@ export const HELP = [
   "Garde la forme JSON : guillemets doubles, virgules entre les éléments, pas de virgule après le dernier. En cas d'erreur, le jeu garde ses valeurs par défaut et l'écrit dans la console du navigateur.",
   "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop, Visée du Crâ et Téléfrag du Xélor (marques : ennemis marqués au début du tour, pioche : cartes piochées, parTour : fois par tour).",
   "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
-  "echelle_joueurs : table de 1 à 4 joueurs. pv et degats multiplient l'échelle de la salle. actions = nombre de fois où les monstres jouent dans le round (une fois par joueur). Un joueur seul n'utilise pas cette échelle.",
+  "echelle_joueurs : table de 1 à 4 joueurs qui jouent en même temps. pv et degats multiplient l'échelle de la salle. Les monstres jouent une seule fois, comme en solo. Un joueur seul n'utilise pas cette échelle.",
   "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
   "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 50 au plus), mecaniques, actions et rythme.",
   "Effets — damage : dégâts (amount, element : terre, feu, eau, air, neutre ; hits = nombre de coups ; bonus.per / bonus.n = +n par attaques, puissance, armure, ennemis, statuts, main, lancers, visee, epuisees ; pierce = ignore l'armure).",
@@ -115,7 +115,7 @@ export function exportBalance(t: BalanceTargets, cards: CardDef[], monsters: Mon
   }
   for (const n of [1, 2, 3, 4] as const) {
     const p = t.party[n];
-    out.echelle_joueurs![n] = { pv: p.hp, degats: p.damage, actions: p.actions };
+    out.echelle_joueurs![n] = { pv: p.hp, degats: p.damage };
   }
   for (const c of cards) {
     if (c.token || c.status) continue;
@@ -239,7 +239,6 @@ export function applyBalance(raw: unknown, t: BalanceTargets): string[] {
     if (!v || typeof v !== 'object') { warn.push(`echelle_joueurs.${raw} invalide`); continue; }
     if (isNum(v.pv) && v.pv > 0) row.hp = v.pv; else warn.push(`echelle_joueurs.${raw}.pv invalide`);
     if (isNum(v.degats) && v.degats > 0) row.damage = v.degats; else warn.push(`echelle_joueurs.${raw}.degats invalide`);
-    if (isNum(v.actions) && v.actions >= 1) row.actions = Math.round(v.actions); else warn.push(`echelle_joueurs.${raw}.actions invalide`);
   }
   for (const [id, v] of Object.entries(b.cartes ?? {})) {
     const c = t.cards[id];

@@ -20,7 +20,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 | Ajouter les reliques au fichier d'équilibrage (même format que les dieux) | `src/data/balance.ts`, `src/data/relics.ts`, `tools/export-balance.ts`, `equilibrage.json` | Grok | fait |
 | Ajouter les événements au fichier d'équilibrage (prix, gains, chances) | `src/data/balance.ts`, `src/data/events.ts` | Grok | fait |
 | Réduire l'écart Crâ / Iop (le Crâ passe plus souvent l'acte 2) | `src/data/cards.ts`, `src/data/monsters.ts`, `src/data/bestiary.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | en relecture |
-| Échelle pour 2, 3 et 4 joueurs (PV, dégâts, actions des monstres) | `equilibrage.json`, `src/data/monsters.ts`, `docs/BALANCE.md` | Grok | fait |
+| Échelle pour 2, 3 et 4 joueurs qui jouent en même temps (PV des monstres, dégâts inchangés) | `equilibrage.json`, `src/data/monsters.ts`, `docs/BALANCE.md` | Grok | fait |
 | Parties jouées par des humains : noter difficulté ressentie, cartes trop fortes ou inutiles | `docs/BALANCE.md` | propriétaire | à faire |
 
 ### Contenu
@@ -38,7 +38,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 |---|---|---|---|
 | Zaap plus riche (plus de deux options) | `src/game/run.ts`, `src/ui/app.ts` | | à décider |
 | Niveaux de difficulté après une victoire (façon Ascension) | `src/game/run.ts`, `src/data/monsters.ts` | | à décider |
-| Mode à 2, 3 ou 4 joueurs (chacun son tour ; l'échelle est prête, `scaleForParty`) | `src/core/combat.ts`, `src/game/run.ts`, `src/ui/` | | à décider |
+| Mode à 2, 3 ou 4 joueurs (tout le monde en même temps ; l'échelle est prête, `scaleForParty`) | `src/core/combat.ts`, `src/game/run.ts`, `src/ui/` | | à décider |
 | Bestiaire qui se remplit au fil des rencontres (`known()` est prêt) | `src/ui/bestiary.ts`, sauvegarde du bestiaire | | à décider |
 | Historique des parties, statistiques | `src/ui/`, stockage navigateur | | à décider |
 | Première partie guidée / tutoriel | `src/ui/` | | à décider |
@@ -58,7 +58,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
-- 31/10/2026 : Grok — échelle pour 2, 3 et 4 joueurs dans equilibrage.json (PV ×1,85 / ×2,7 / ×3,55, dégâts ×1,1 / ×1,15 / ×1,2, une action de monstre par joueur). Le combat seul ne change pas.
+- 31/10/2026 : Grok — correction de l'échelle à plusieurs. Les joueurs jouent en même temps : les monstres ne gagnent pas une action par joueur, et leurs dégâts restent ×1. Les PV restent ×1,85 / ×2,7 / ×3,55.
 - 31/10/2026 : Grok — accueil : l'herbe n'est plus un papier peint, les noms sont sur une plaque, le choix (pitch, passif, bouton) est sur une dalle sombre.
 - 31/10/2026 : Grok — 72 bénédictions mesurées (200 runs par classe). Bouclier Féca 18 → 6, Mot de régénération 2 → 1, Horloge pioche 2 → 1. Reliques et événements ajoutés à equilibrage.json. Trois phrases corrigées (Bracelet du Minotoboule, gué des Crocodailles, Shushu).
 - 31/10/2026 : Grok — zones du Crâ −2 dégâts (10 cartes). 600 runs : Iop 37/9/3, Crâ 35/12/2, étages 14,53 contre 14,58. L'écart de boss 2 passe de 7 à 3 points. Visée à 6, PV du Crâ et échelle de l'acte 2 mesurés et écartés.

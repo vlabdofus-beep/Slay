@@ -336,24 +336,25 @@ Boss 1 / boss 2 / victoire : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6),
 
 ## Table à plusieurs joueurs (31/10/2026)
 
-Le mode n'est pas encore jouable. L'échelle est prête dans `echelle_joueurs` (`equilibrage.json`) et `scaleForParty` (`src/data/monsters.ts`). Un combat seul n'en tient pas compte.
+Le mode n'est pas encore jouable. L'échelle est dans `echelle_joueurs` et `scaleForParty`. Un combat seul ne l'utilise pas.
 
-Contrat retenu, parce que les coups des monstres ont une seule cible :
+Les joueurs jouent **en même temps**. Chacun a ses PV, son deck et ses 3 PA, et tout se résout dans la même phase. Les monstres jouent ensuite **une fois**, comme en solo. Pas un tour par joueur, et pas une action de monstre par joueur : une première version le faisait, elle est retirée.
 
-- Chaque joueur a ses PV, son deck et ses 3 PA, et joue son tour.
-- Ensuite les monstres jouent **une fois par joueur** (`actions`). Un coup vise toujours une seule personne : la pression se répartit, elle ne s'empile pas.
-- Les PV suivent le nombre de joueurs, moins 15 %. Le poison, la puissance et la vulnérabilité s'accumulent sur les mêmes monstres : quatre joueurs tuent un peu plus vite que quatre combats séparés.
-- Les dégâts montent peu. Le plus gros coup du jeu, une élite d'acte 3, fait déjà 40 pour 70 PV. Au-delà de ×1,2 il devient une suppression.
+| Joueurs | PV | Dégâts |
+|---|---|---|
+| 1 | ×1 | ×1 |
+| 2 | ×1,85 | ×1 |
+| 3 | ×2,70 | ×1 |
+| 4 | ×3,55 | ×1 |
 
-| Joueurs | PV | Dégâts | Actions des monstres | Plus gros coup (40) | Part des 70 PV |
-|---|---|---|---|---|---|
-| 1 | ×1 | ×1 | 1 | 40 | 57 % |
-| 2 | ×1,85 | ×1,10 | 2 | 44 | 63 % |
-| 3 | ×2,70 | ×1,15 | 3 | 46 | 66 % |
-| 4 | ×3,55 | ×1,20 | 4 | 48 | 69 % |
+Les PV valent un joueur de plus, moins 15 %. Quatre personnes qui frappent avant que le monstre n'agisse tuent un peu plus vite que quatre combats séparés : le poison, la puissance et la vulnérabilité tombent sur les mêmes corps.
 
-Repère de durée, acte 1 salle normale (médiane 65 PV). Un deck de départ du Iop la finit en 4 tours, soit environ 15 PV retirés par tour (24 graines, 96 % de victoires). À deux joueurs la salle passe à 120 PV. Deux tours de cartes à 15 PV chacun la finissent en 4 rounds, comme seul. Chaque round, les monstres frappent deux fois à ×1,1 : la personne visée encaisse à peu près ce qu'elle encaissait seule, l'autre non. À quatre, 231 PV et quatre actions, même ordre de grandeur.
+Les dégâts ne bougent pas. Un coup vise une seule personne. Le plus gros du jeu, une élite d'acte 3, fait déjà 40 pour 70 PV. Le monter frapperait plus fort quelqu'un qui n'a pas eu de phase de plus pour se défendre : tout le monde a déjà joué. La colonne `degats` reste dans le fichier pour un réglage plus tard. Elle ne doit pas servir à compenser le nombre de joueurs.
 
-Ce qu'il ne faut pas faire : multiplier les dégâts par le nombre de joueurs. ×4 sur le coup de 40 fait 160, plus du double des PV d'un Crâ. ×4 sur les PV seulement, sans les actions en plus, laisse le combat trop long à tuer et trop peu dangereux, puisqu'un seul joueur encaisse.
+Repère, acte 1 salle normale (médiane 65 PV). Un Iop avec le deck de départ la finit en 4 tours, environ 15 PV retirés par tour (24 graines, 96 % de victoires), et les monstres frappent 4 fois. À quatre joueurs la salle passe à 231 PV. Quatre fois 15 PV dans la même phase, soit 60, la finissent en 4 rounds aussi. Les monstres frappent toujours 4 fois dans la partie, pas 16. La personne visée encaisse à peu près ce qu'elle encaissait seule. Les autres non : une table est plus à l'aise qu'un joueur seul, et c'est le fait de jouer ensemble, pas un trou dans les PV.
 
-Pour brancher le mode : `scaleForParty(TIER_SCALE[acte][salle], joueurs)` donne les PV, les dégâts, et `actions`. Faire jouer la phase des monstres `actions` fois. Au-delà de 4 joueurs, l'échelle reste celle de 4 : elle n'a pas été mesurée plus loin.
+À deux joueurs, 120 PV et deux fois 15 PV par round : encore 4 rounds.
+
+Ce qu'il ne faut pas faire : multiplier les dégâts par le nombre de joueurs. ×4 sur le coup de 40 fait 160, plus du double des PV d'un Crâ. Ni faire jouer les monstres une fois par joueur : avec des joueurs simultanés, ce serait quatre fois plus de coups pour une seule phase de cartes.
+
+Pour brancher le mode : `scaleForParty(TIER_SCALE[acte][salle], joueurs)` donne les PV et les dégâts à passer au combat. La phase des monstres reste unique. Au-delà de 4 joueurs, on reste à 4.
