@@ -178,7 +178,13 @@ function cloneCombat(c: Combat): Combat {
     if (Array.isArray(v)) { const a: unknown[] = []; memo.set(v, a); for (const x of v) a.push(copy(x)); return a; }
     const o = Object.create(Object.getPrototypeOf(v)) as Record<string, unknown>;
     memo.set(v, o);
-    for (const k of Object.keys(v)) o[k] = copy((v as Record<string, unknown>)[k]);
+    for (const k of Object.keys(v)) {
+      const x = (v as Record<string, unknown>)[k];
+      // Méthodes posées sur l'objet lui-même (enregistrement de la sauvegarde) : liées à l'original,
+      // elles agiraient sur le vrai combat. La copie garde les méthodes de la classe.
+      if (typeof x === 'function' && v === c) continue;
+      o[k] = copy(x);
+    }
     return o;
   };
   const sim = copy(c) as Combat;

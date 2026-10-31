@@ -64,3 +64,20 @@ test('une sauvegarde abîmée est refusée proprement', () => {
   assert.equal(replay({ v: 1, classe: 'iop', seed: 1, gender: 'm', actions: [['enterNode', 'nulle-part']], meta: null as never }), null);
   assert.equal(replay(null as never), null);
 });
+
+test('la prévisualisation ne joue jamais la carte pour de vrai, même avec la sauvegarde branchée', () => {
+  const run = new Run('iop', 21, 'm', { gods: false });
+  const saves: SaveFile[] = [];
+  record(run, (s) => saves.push(s));
+  run.enterNode(run.availableNodes()[0]);
+  const c = run.combat!;
+  const before = JSON.stringify({ hand: c.hand, hp: c.enemies.map((e) => e.hp), pa: c.player.energy });
+  const n = saves.length;
+  for (let i = 0; i < c.hand.length; i++) for (const e of c.living()) c.preview(i, e.uid);
+  assert.equal(JSON.stringify({ hand: c.hand, hp: c.enemies.map((e) => e.hp), pa: c.player.energy }), before);
+  assert.equal(saves.length, n, 'aucune action enregistrée par la prévisualisation');
+  const pv = c.preview(0, c.living()[0].uid)!;
+  const hp0 = c.living()[0].hp;
+  c.playCard(0, c.living()[0].uid);
+  assert.equal(hp0 - c.enemies[0].hp, pv.enemies[c.enemies[0].uid]?.lost ?? 0, 'la prévisualisation dit vrai');
+});
