@@ -1,4 +1,4 @@
-# Instructions pour les IA (et les humains) qui travaillent sur Dofus Slay
+# Instructions pour les IA (et les humains) qui travaillent sur La Main des Douze
 
 Plusieurs IA travaillent sur ce dépôt, chacune de son côté. Ce fichier est le point d'entrée commun : lis-le en entier
 avant de toucher au code, puis lis `docs/FEUILLE_DE_ROUTE.md` pour savoir ce qui est en cours et par qui.

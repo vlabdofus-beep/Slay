@@ -1,4 +1,4 @@
-// Dofus Slay : le jeu (fichiers statiques de dist/) et les salons à plusieurs (worker/index.ts, Durable Objects).
+// La Main des Douze : le jeu (fichiers statiques de dist/) et les salons à plusieurs (worker/index.ts, Durable Objects).
 // Workers Builds lance `npx wrangler deploy` à chaque push sur main : wrangler exécute d'abord la commande
 // de build ci-dessous (installation, puis compilation dans dist/), puis publie dist/ et le worker.
 // Si le build échoue, rien n'est publié : la version en ligne reste la précédente.

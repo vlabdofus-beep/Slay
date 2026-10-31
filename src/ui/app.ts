@@ -702,7 +702,7 @@ function viewTitle(): string {
   return `<main class="title" style="--hue:${HERO_HUE[pick]}">
     <div class="land" data-land aria-hidden="true"></div>
     <header class="logo">
-      <h1 class="logo-word">Dofus Slay</h1>
+      <h1 class="logo-word">La Main des Douze</h1>
       <p class="logo-sub">Un deckbuilder dans le Monde des Douze, d'Amakna aux landes de Brâkmar.</p>
     </header>
     <div class="heroes" role="radiogroup" aria-label="Choisis ta classe">${HEROES.map(hero).join('')}</div>
@@ -1418,7 +1418,7 @@ function viewStyleguide(): string {
     `<figure class="sg-swatch"><span style="background:var(${v})"></span><figcaption><b>${name}</b><code>${v} ${hex}</code></figcaption></figure>`).join('')}</div></div>`).join('');
 
   const type = `<div class="sg-type">
-    <p class="brand-name">Dofus Slay</p><p class="brand-sub">Alegreya Sans italique, sous-titres et lieux</p>
+    <p class="brand-name">La Main des Douze</p><p class="brand-sub">Alegreya Sans italique, sous-titres et lieux</p>
     <h2>Titre d'écran, Berkshire Swash</h2>
     <h3>Titre de section, Berkshire Swash tournesol</h3>
     <p>Texte courant en Alegreya Sans 16, interligne 1,5. Les cartes, les objets et les infobulles l'utilisent aussi, en plus petit.</p>
@@ -1477,7 +1477,7 @@ function viewStyleguide(): string {
 
   ui.run = saved;
   return `<main class="styleguide">
-    <header class="sg-head"><p class="brand-name">Dofus Slay</p><p class="brand-sub">Guide de style : la base visuelle du jeu</p>
+    <header class="sg-head"><p class="brand-name">La Main des Douze</p><p class="brand-sub">Guide de style : la base visuelle du jeu</p>
       <a class="link" href="#">Revenir au jeu</a></header>
     ${sgSection('Couleurs', "L'ardoise et l'or de Dofusle. Chaque écran prend la couleur d'un Dofus primordial ; les éléments colorent les cartes.", swatches)}
     ${sgSection('Typographie', 'Deux familles : Berkshire Swash pour ce qui se lit comme un titre ou un nom, Alegreya Sans pour le reste.', type)}
@@ -1501,7 +1501,7 @@ function viewStyleguide(): string {
 /** En-tête gravé, comme sur Dofusle : nom au centre, lieu et étage en dessous. */
 function brandBar(run: Run): string {
   const where = `Acte ${run.act}, ${actName(run)}${run.stats.floor ? `, étage ${run.stats.floor} sur ${run.map.floors}` : ', au départ'}`;
-  return `<header class="brandbar"><p class="brand-name">Dofus Slay</p><p class="brand-sub">${where}</p><span class="bb-tools">${soundButton('tb-btn')}<button class="tb-btn" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></span></header>`;
+  return `<header class="brandbar"><p class="brand-name">La Main des Douze</p><p class="brand-sub">${where}</p><span class="bb-tools">${soundButton('tb-btn')}<button class="tb-btn" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></span></header>`;
 }
 
 const BX: BxHelpers = {

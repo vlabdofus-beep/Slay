@@ -22,4 +22,4 @@ createServer(async (req, res) => {
     res.writeHead(404); res.end('Introuvable');
   }
 }).on('upgrade', (req, socket) => { if (!upgrade(req, socket)) socket.destroy(); })
-  .listen(port, () => console.log(`Dofus Slay : http://localhost:${port} (dossier ${root})`));
+  .listen(port, () => console.log(`La Main des Douze : http://localhost:${port} (dossier ${root})`));
