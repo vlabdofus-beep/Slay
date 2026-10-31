@@ -1,5 +1,5 @@
 // Peintures de décor hors combat, faites avec les vraies pièces des cartes de Dofus 3 (packs de Dofus Survivors) :
-//  - le paysage de l'accueil, en plein jour ;
+//  - le paysage de l'accueil : le chemin d'une run au crépuscule, d'Amakna à Brâkmar ;
 //  - le plateau de la carte d'un acte : le sol du lieu vu d'au-dessus, semé de ses décors, chemins et cases dégagés.
 import { loadPack, mulberry, type Sheet } from './stage.ts';
 
@@ -35,108 +35,242 @@ function stamp(x: CanvasRenderingContext2D, pk: Sheet, p: Pre, cx: number, base:
   x.restore();
 }
 
-/**
- * Pièces écartées du paysage de l'accueil (repérées par leur position x,y dans la planche du pack) :
- * celles peintes sur leur propre dalle d'herbe (îlots aux bords visibles), l'arche coupée et l'échafaudage.
- * Faites pour être posées sur une carte vue de dessus, debout dans un paysage elles « dépassent ».
- * Le plateau de la carte, lui, les garde toutes.
- */
-const LAND_SKIP: Record<number, string[]> = {
-  8: ['0,0', '938,0', '717,0', '1356,0', '1647,0', '0,349', '1175,349'],
-};
-
 const cache = new Map<string, Promise<HTMLCanvasElement | null>>();
 
-/**
- * Paysage de l'accueil, en plein jour : ciel clair, collines bleutées, sol du lieu, décors en rangs.
- * clear = bandes horizontales (fractions de W) laissées libres au premier plan pour les personnages.
- */
-export function paintLandscape(packId: number, W: number, H: number, seed: number, horizon = 0.5): Promise<HTMLCanvasElement | null> {
-  const key = `land|${packId}|${W}x${H}|${seed}|${horizon}`;
-  if (!cache.has(key)) cache.set(key, loadPack(packId).then((pk) => (pk ? landscape(pk, W, H, seed, horizon, LAND_SKIP[packId] ?? []) : null)));
+// ───────────── Accueil : le chemin d'une run, au crépuscule ─────────────
+// D'Amakna aux landes de Brâkmar : les héros se tiennent dans la prairie au soleil couchant ; un chemin part vers
+// l'horizon, longe la forêt des Abraknydes, passe sous les glaces de Frigost et finit dans la lueur rouge de Brâkmar.
+// Les silhouettes sont les vraies pièces des cartes de Dofus 3, teintes à plat selon leur distance.
+
+/** Palette du crépuscule (voir docs/DESIGN.md, « Accueil »). */
+const DUSK = {
+  zenith: '#1f2b52', mauve: '#6b6a8f', amber: '#e9b47c', gold: '#f7d98c',
+  frigost: '#8b8fb8', brakmar: '#c23a3f', citadel: '#3a2232',
+  forest: '#26393a', hill: '#3d5649', meadowLit: '#b9b45e', meadow: '#6a8838', meadowDeep: '#26401f',
+  path: '#d4b072', pathEdge: '#8a6a3c', frame: '#141f1b',
+};
+/** Pièces utilisées : arbres des Abraknydes (9) et de la jungle (46), glaces de Frigost (55). */
+const TITLE_PACKS = { forest: 9, jungle: 46, ice: 55 } as const;
+const TALL_TREES: [number, number[]][] = [[9, [0, 2, 3, 7, 0]], [46, [1, 2, 1]]];
+
+/** Paysage de l'accueil : peint une fois par taille d'écran (horizon = fraction de la hauteur). */
+export function paintTitle(W: number, H: number, seed: number, horizon = 0.5): Promise<HTMLCanvasElement | null> {
+  const key = `title|${W}x${H}|${seed}|${horizon}`;
+  if (!cache.has(key)) {
+    cache.set(key, Promise.all(Object.values(TITLE_PACKS).map((id) => loadPack(id))).then((list) => {
+      const pk: Record<number, Sheet | null> = {};
+      Object.values(TITLE_PACKS).forEach((id, k) => { pk[id] = list[k]; });
+      return dusk(pk, W, H, seed, horizon);
+    }));
+  }
   return cache.get(key)!;
 }
 
-function landscape(pk: Sheet, W: number, H: number, seed: number, horizon: number, skip: string[]): HTMLCanvasElement {
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
+/** Une pièce de décor peinte à plat d'une seule couleur, avec un liseré de lumière sur son côté soleil. */
+function silhouette(pk: Sheet, p: Pre, sc: number, color: string, rim: string | null, flip: boolean): { c: HTMLCanvasElement; foot: number } {
+  const [rx, ry, rw, rh] = p.r;
+  const w = Math.max(1, Math.round(rw * sc)), h = Math.max(1, Math.round(rh * sc));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
   const x = c.getContext('2d')!;
-  const hz = H * horizon;
-  const rnd = mulberry(seed);
-  const [r, g, b] = (pk.meta.col as number[]) ?? [120, 160, 70];
-  const mix = (k: number, sky: [number, number, number], a = 1) =>
-    `rgba(${Math.round(r * (1 - k) + sky[0] * k)},${Math.round(g * (1 - k) + sky[1] * k)},${Math.round(b * (1 - k) + sky[2] * k)},${a})`;
-  const SKY: [number, number, number] = [168, 214, 236];
+  x.save(); if (flip) { x.translate(w, 0); x.scale(-1, 1); }
+  x.drawImage(pk.img, rx, ry, rw, rh, 0, 0, w, h); x.restore();
+  x.globalCompositeOperation = 'source-in';
+  x.fillStyle = color; x.fillRect(0, 0, w, h);
+  if (rim) {
+    // Le soleil est bas, à gauche : le haut et le flanc gauche des formes s'éclairent
+    const g = x.createLinearGradient(0, 0, w * 0.6, h * 0.5);
+    g.addColorStop(0, rim); g.addColorStop(0.35, 'rgba(0,0,0,0)');
+    x.globalCompositeOperation = 'source-atop';
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+  }
+  const fy = Math.max(...p.f.map((f) => f[1]));
+  return { c, foot: fy * sc };
+}
 
-  // Ciel d'Amakna : bleu franc en haut, voile doré à l'horizon
+function place(x: CanvasRenderingContext2D, s: { c: HTMLCanvasElement; foot: number }, cx: number, base: number): void {
+  x.drawImage(s.c, cx - s.c.width / 2, base - s.foot);
+}
+
+/** Crête irrégulière (somme de sinus) entre deux hauteurs. */
+function ridge(x: CanvasRenderingContext2D, W: number, base: number, amp: number, rnd: () => number, fill: string | CanvasGradient, jag = 1): void {
+  const a = rnd() * 10, b = rnd() * 10, c = rnd() * 10;
+  x.fillStyle = fill;
+  x.beginPath(); x.moveTo(-10, base + amp * 2);
+  for (let px = -10; px <= W + 10; px += 6) {
+    const u = px / W;
+    const y = 0.5 + 0.28 * Math.sin(u * 3.1 + a) + 0.14 * Math.sin(u * 9.7 + b) + 0.08 * jag * Math.abs(Math.sin(u * 31 + c));
+    x.lineTo(px, base - amp * y);
+  }
+  x.lineTo(W + 10, base + amp * 2); x.closePath(); x.fill();
+}
+
+function dusk(pk: Record<number, Sheet | null>, W: number, H: number, seed: number, horizon: number): HTMLCanvasElement {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+  const x = c.getContext('2d')!;
+  x.scale(dpr, dpr);
+  const rnd = mulberry(seed);
+  const hz = H * horizon;
+  const k = Math.min(W / 1440, H / 900) * 1.05;
+  const narrow = W < H;
+  /** Point où le chemin rejoint l'horizon : Brâkmar. */
+  const vx = W * (narrow ? 0.62 : 0.64);
+
+  // Ciel : indigo au zénith, mauve, ambre, or à l'horizon
   const sky = x.createLinearGradient(0, 0, 0, hz);
-  sky.addColorStop(0, '#5fb3e0'); sky.addColorStop(0.6, '#a8d6ec'); sky.addColorStop(1, '#fbe9bf');
+  sky.addColorStop(0, DUSK.zenith); sky.addColorStop(0.42, DUSK.mauve); sky.addColorStop(0.78, DUSK.amber); sky.addColorStop(1, DUSK.gold);
   x.fillStyle = sky; x.fillRect(0, 0, W, hz + 2);
-  const sun = x.createRadialGradient(W * 0.72, hz * 0.92, 0, W * 0.72, hz * 0.92, W * 0.45);
-  sun.addColorStop(0, 'rgba(255,242,200,.85)'); sun.addColorStop(1, 'rgba(255,242,200,0)');
-  x.fillStyle = sun; x.fillRect(0, 0, W, hz);
-  // Nuages : longues nappes aplaties et floues, sous la ligne du titre
-  x.save(); x.filter = `blur(${Math.round(W / 160)}px)`;
-  for (let i = 0; i < 5; i++) {
-    const cx = rnd() * W, cy = hz * (0.45 + rnd() * 0.35), w = W * (0.12 + rnd() * 0.12), h = w * 0.13;
-    x.fillStyle = `rgba(255,255,255,${0.35 + rnd() * 0.25})`;
-    x.beginPath(); x.ellipse(cx, cy, w, h, 0, 0, Math.PI * 2); x.fill();
-    x.beginPath(); x.ellipse(cx - w * 0.3, cy - h * 0.7, w * 0.45, h * 1.1, 0, 0, Math.PI * 2); x.fill();
-    x.beginPath(); x.ellipse(cx + w * 0.25, cy - h * 0.5, w * 0.35, h * 0.9, 0, 0, Math.PI * 2); x.fill();
+  // Premières étoiles, seulement tout en haut
+  for (let i = 0; i < 70; i++) {
+    const sy = Math.pow(rnd(), 1.8) * hz * 0.32;
+    x.fillStyle = `rgba(255,246,220,${(0.15 + rnd() * 0.45) * (1 - sy / (hz * 0.32))})`;
+    x.beginPath(); x.arc(rnd() * W, sy, 0.5 + rnd() * 0.9, 0, Math.PI * 2); x.fill();
+  }
+  // Soleil couchant, à gauche, posé sur les glaces
+  const sx = W * (narrow ? 0.3 : 0.4), sy = hz - H * 0.045;
+  const glow = x.createRadialGradient(sx, sy, 0, sx, sy, W * 0.55);
+  glow.addColorStop(0, 'rgba(255,236,170,.9)'); glow.addColorStop(0.12, 'rgba(255,214,140,.45)'); glow.addColorStop(1, 'rgba(255,200,120,0)');
+  x.fillStyle = glow; x.fillRect(0, 0, W, hz);
+  x.fillStyle = 'rgba(255,244,205,.95)';
+  x.beginPath(); x.arc(sx, sy, H * 0.035, 0, Math.PI * 2); x.fill();
+  // Nuages : quelques longs voiles flous, le dessous doré par le soleil
+  x.save(); x.filter = `blur(${Math.max(2, Math.round(5 * k))}px)`;
+  for (let i = 0; i < 4; i++) {
+    const cy = hz * (0.45 + rnd() * 0.32), cx = W * (0.1 + rnd() * 0.8), w = W * (0.22 + rnd() * 0.2), h = H * (0.004 + rnd() * 0.005);
+    const g = x.createLinearGradient(0, cy - h, 0, cy + h);
+    g.addColorStop(0, 'rgba(130,118,160,.35)'); g.addColorStop(1, 'rgba(255,214,160,.55)');
+    x.fillStyle = g;
+    x.beginPath(); x.ellipse(cx, cy, w / 2, h, 0, 0, Math.PI * 2); x.fill();
   }
   x.restore();
-  // Collines lointaines (perspective aérienne : plus c'est loin, plus c'est bleu)
-  const hills = (amp: number, k: number, lift: number) => {
-    const ph = rnd() * 10, ph2 = rnd() * 10;
-    x.fillStyle = mix(k, SKY);
-    x.beginPath(); x.moveTo(0, hz + 4);
-    for (let px = 0; px <= W + 8; px += 8) {
-      const u = px / W;
-      x.lineTo(px, hz - lift - amp * (0.55 + 0.3 * Math.sin(u * 4.1 + ph) + 0.15 * Math.sin(u * 11.3 + ph2)));
+  // Brâkmar : lueur rouge derrière la citadelle, au bout du chemin
+  const red = x.createRadialGradient(vx, hz, 0, vx, hz, W * 0.16);
+  red.addColorStop(0, 'rgba(226,78,58,.9)'); red.addColorStop(0.35, 'rgba(194,58,63,.4)'); red.addColorStop(1, 'rgba(194,58,63,0)');
+  x.fillStyle = red; x.fillRect(0, hz - W * 0.2, W, W * 0.2 + 4);
+
+  // Frigost : crête lointaine, lavande, dentelée de glaces
+  const ice = pk[TITLE_PACKS.ice];
+  const far = x.createLinearGradient(0, hz - H * 0.16, 0, hz);
+  far.addColorStop(0, '#a2a5c8'); far.addColorStop(1, '#c9b7b4');
+  ridge(x, W, hz - H * 0.015, H * 0.13, rnd, far, 1.6);
+  if (ice) {
+    const spires = [2, 3, 5, 8].map((i) => ice.meta.pre[i] as Pre).filter(Boolean);
+    for (let i = 0; i < (narrow ? 4 : 7); i++) {
+      const p = spires[i % spires.length];
+      const px = W * (0.04 + i * (narrow ? 0.12 : 0.075) + rnd() * 0.03);
+      if (Math.abs(px - vx) < W * 0.06) continue;
+      place(x, silhouette(ice, p, (0.16 + rnd() * 0.1) * k, '#9599c0', 'rgba(255,236,200,.55)', rnd() < 0.5), px, hz - H * 0.06 + rnd() * H * 0.03);
     }
-    x.lineTo(W, hz + 4); x.closePath(); x.fill();
-  };
-  hills(H * 0.13, 0.62, 0); hills(H * 0.08, 0.4, -H * 0.01);
-
-  // Prairie peinte. La dalle du pack est un papier peint de médaillons : on ne la pose pas à l'accueil.
-  const grass = x.createLinearGradient(0, hz, 0, H);
-  grass.addColorStop(0, '#d5e7a4');
-  grass.addColorStop(0.22, '#8fbf4e');
-  grass.addColorStop(0.62, '#62a33a');
-  grass.addColorStop(1, '#4a8628');
-  x.fillStyle = grass;
-  x.fillRect(0, hz, W, H - hz);
-  for (let i = 0; i < 70; i++) {
-    x.fillStyle = rnd() < 0.5 ? `rgba(255,248,210,${0.04 + rnd() * 0.05})` : `rgba(30,70,18,${0.04 + rnd() * 0.05})`;
-    x.beginPath();
-    x.ellipse(rnd() * W, hz + rnd() * (H - hz), 16 + rnd() * 48, 7 + rnd() * 16, 0, 0, Math.PI * 2);
-    x.fill();
   }
-  const haze = x.createLinearGradient(0, hz, 0, hz + H * 0.14);
-  haze.addColorStop(0, 'rgba(251,233,191,.4)'); haze.addColorStop(1, 'rgba(251,233,191,0)');
-  x.fillStyle = haze; x.fillRect(0, hz, W, H * 0.14);
-
-  // Quelques décors, loin du centre où se tiennent les héros. Pas de masse floue dans les coins.
-  const pres = decors(pk).filter((p) => !skip.includes(`${p.r[0]},${p.r[1]}`)).slice(0, 18);
-  if (pres.length) {
-    const k = H / 900;
-    const pick = () => pres[Math.floor(rnd() * Math.min(8, pres.length))];
+  // La citadelle de Brâkmar : tours pointues serrées sur l'horizon, quelques fenêtres rouges, une fumée qui monte
+  {
+    // Silhouette irrégulière : une haute tour centrale, des flèches plus basses et inégales autour
+    const n = narrow ? 5 : 7, unit = W * 0.0065 * (narrow ? 1.5 : 1);
+    const towers = Array.from({ length: n }, (_, i) => {
+      const off = (i - (n - 1) / 2) * unit * (1.3 + rnd() * 0.6);
+      const mid = 1 - Math.abs(i - (n - 1) / 2) / ((n - 1) / 2 + 0.5);
+      const hgt = Math.min(H, W * 0.75) * (0.018 + mid * mid * 0.05 + rnd() * 0.015);
+      return { cx: vx + off, w: unit * (0.7 + rnd() * 0.6), hgt };
+    });
+    x.fillStyle = DUSK.citadel;
+    // Le rocher qui porte la ville
+    x.beginPath(); x.moveTo(vx - unit * n, hz + 2);
+    for (let i = 0; i <= 12; i++) x.lineTo(vx - unit * n + (i / 12) * unit * n * 2, hz - H * (0.006 + 0.01 * Math.sin((i / 12) * Math.PI)) - rnd() * H * 0.004);
+    x.lineTo(vx + unit * n, hz + 2); x.closePath(); x.fill();
+    for (const t of towers) {
+      x.beginPath();
+      x.moveTo(t.cx - t.w / 2, hz + 2); x.lineTo(t.cx - t.w / 2, hz - t.hgt * 0.72);
+      x.lineTo(t.cx - t.w * 0.8, hz - t.hgt * 0.74); x.lineTo(t.cx, hz - t.hgt);
+      x.lineTo(t.cx + t.w * 0.8, hz - t.hgt * 0.74); x.lineTo(t.cx + t.w / 2, hz - t.hgt * 0.72);
+      x.lineTo(t.cx + t.w / 2, hz + 2); x.closePath(); x.fill();
+    }
+    for (const t of towers) for (let w = 0; w < 2; w++) {
+      if (rnd() < 0.35) continue;
+      x.fillStyle = `rgba(255,${90 + Math.round(rnd() * 60)},60,.85)`;
+      x.fillRect(t.cx - 0.6, hz - t.hgt * (0.2 + rnd() * 0.4), 1.2, 1.6);
+    }
+    x.save(); x.filter = `blur(${Math.max(3, Math.round(8 * k))}px)`;
     for (let i = 0; i < 6; i++) {
-      const px = ((i + 0.35 + rnd() * 0.3) / 6) * W;
-      stamp(x, pk, pick(), px, hz + H * 0.012, 0.36 * k, 'saturate(.7) brightness(1.12) opacity(.7)', rnd() < 0.5);
+      x.fillStyle = `rgba(70,46,62,${0.2 - i * 0.028})`;
+      x.beginPath(); x.ellipse(vx + i * W * 0.014, hz - H * (0.12 + i * 0.035), W * (0.01 + i * 0.006), H * 0.018, -0.35, 0, Math.PI * 2); x.fill();
     }
-    // Sur un écran étroit les héros occupent presque toute la largeur : les décors restent dans les coins.
-    const sides = W < 800 ? [0.02, 0.98] : [0.05, 0.12, 0.88, 0.95];
-    for (const side of sides) {
-      stamp(x, pk, pick(), W * side, hz + H * (W < 800 ? 0.22 : 0.14 + rnd() * 0.1), (W < 800 ? 0.42 : 0.62 + rnd() * 0.28) * k, 'none', side > 0.5);
+    x.restore();
+  }
+  // Brume dorée posée sur l'horizon
+  const mist = x.createLinearGradient(0, hz - H * 0.05, 0, hz + H * 0.02);
+  mist.addColorStop(0, 'rgba(247,217,140,0)'); mist.addColorStop(0.7, 'rgba(247,217,140,.35)'); mist.addColorStop(1, 'rgba(247,217,140,0)');
+  x.fillStyle = mist; x.fillRect(0, hz - H * 0.05, W, H * 0.07);
+
+  // Collines des Abraknydes et leur forêt, en contre-jour ; une trouée là où passe le chemin
+  const hillG = x.createLinearGradient(0, hz - H * 0.05, 0, hz + H * 0.06);
+  hillG.addColorStop(0, '#4f6458'); hillG.addColorStop(1, DUSK.hill);
+  ridge(x, W, hz + H * 0.035, H * 0.06, rnd, hillG, 0.4);
+  const trees: { pk: Sheet; p: Pre }[] = [];
+  for (const [id, idx] of TALL_TREES) { const s = pk[id]; if (s) for (const i of idx) if (s.meta.pre[i]) trees.push({ pk: s, p: s.meta.pre[i] as Pre }); }
+  if (trees.length) {
+    const rows: [number, number, string, string][] = [[0.02, 0.15, '#33473f', 'rgba(255,200,130,.35)'], [0.045, 0.21, DUSK.forest, 'rgba(255,190,120,.28)']];
+    for (const [dy, size, col, rim] of rows) {
+      for (let px = -W * 0.02; px < W * 1.02; px += W * (0.014 + rnd() * 0.012)) {
+        if (Math.abs(px - vx) < W * (0.04 + dy * 0.8)) continue;
+        const t = trees[Math.floor(rnd() * trees.length)];
+        place(x, silhouette(t.pk, t.p, (size + rnd() * 0.08) * k, col, rim, rnd() < 0.5), px, hz + H * dy + rnd() * H * 0.012);
+      }
     }
   }
-  const side = x.createLinearGradient(0, 0, W, 0);
-  side.addColorStop(0, 'rgba(18, 36, 22, .22)');
-  side.addColorStop(0.16, 'rgba(18, 36, 22, 0)');
-  side.addColorStop(0.84, 'rgba(18, 36, 22, 0)');
-  side.addColorStop(1, 'rgba(18, 36, 22, .22)');
-  x.fillStyle = side;
-  x.fillRect(0, hz, W, H - hz);
+
+  // Prairie d'Amakna : le haut éclairé par le couchant, le premier plan dans l'ombre
+  const top = hz + H * 0.06;
+  const meadow = x.createLinearGradient(0, top, 0, H);
+  meadow.addColorStop(0, DUSK.meadowLit); meadow.addColorStop(0.3, DUSK.meadow); meadow.addColorStop(1, DUSK.meadowDeep);
+  x.fillStyle = meadow;
+  x.beginPath(); x.moveTo(0, top + H * 0.012);
+  for (let px = 0; px <= W; px += 8) x.lineTo(px, top + H * 0.012 * Math.sin(px / W * 5 + 1) - H * 0.006);
+  x.lineTo(W, H); x.lineTo(0, H); x.closePath(); x.fill();
+  // L'ombre de la forêt sur le haut de la prairie, puis de larges ondulations du terrain
+  const shade = x.createLinearGradient(0, top - H * 0.01, 0, top + H * 0.05);
+  shade.addColorStop(0, 'rgba(40,56,52,.45)'); shade.addColorStop(1, 'rgba(40,56,52,0)');
+  x.fillStyle = shade; x.fillRect(0, top - H * 0.01, W, H * 0.06);
+  for (let i = 0; i < 4; i++) {
+    const y0 = top + (H - top) * (0.22 + i * 0.2), amp = H * 0.02, ph = rnd() * 6;
+    const g = x.createLinearGradient(0, y0 - amp, 0, y0 + H * 0.09);
+    g.addColorStop(0, 'rgba(255,228,150,.10)'); g.addColorStop(0.25, 'rgba(20,40,20,0)'); g.addColorStop(1, 'rgba(20,40,20,.16)');
+    x.fillStyle = g;
+    x.beginPath(); x.moveTo(0, H);
+    for (let px = 0; px <= W; px += 10) x.lineTo(px, y0 + amp * Math.sin(px / W * (3 + i) + ph));
+    x.lineTo(W, H); x.closePath(); x.fill();
+  }
+  // Herbes : petites touches en tirets, plus grandes et plus sombres vers l'avant
+  for (let i = 0; i < (narrow ? 260 : 520); i++) {
+    const u = rnd(), py = top + Math.pow(u, 1.4) * (H - top);
+    const d = (py - top) / (H - top);
+    const len = (2 + d * 9) * k, px = rnd() * W;
+    x.strokeStyle = rnd() < 0.35 ? `rgba(230,226,140,${0.12 + 0.2 * (1 - d)})` : `rgba(28,52,20,${0.1 + 0.25 * d})`;
+    x.lineWidth = 0.8 + d * 1.6;
+    x.beginPath(); x.moveTo(px, py); x.lineTo(px + (rnd() - 0.4) * len * 0.5, py - len); x.stroke();
+  }
+  // Le chemin : large au premier plan, il serpente jusqu'à Brâkmar
+  const path = (w0: number, col: string) => {
+    x.fillStyle = col;
+    x.beginPath();
+    const pts: [number, number, number][] = [];
+    for (let t = 0; t <= 1.0001; t += 0.02) {
+      const py = H + 4 - (H + 4 - (hz + H * 0.03)) * t;
+      const px = W * 0.5 + (vx - W * 0.5) * Math.pow(t, 0.8) + Math.sin(t * Math.PI * 1.6) * W * 0.07 * (1 - t);
+      const half = w0 * Math.pow(1 - t, 1.6) + 1.5;
+      pts.push([px, py, half]);
+    }
+    pts.forEach(([px, py, h], i) => (i ? x.lineTo(px - h, py) : x.moveTo(px - h, py)));
+    for (let i = pts.length - 1; i >= 0; i--) x.lineTo(pts[i][0] + pts[i][2], pts[i][1]);
+    x.closePath(); x.fill();
+  };
+  path(W * 0.11, 'rgba(96,74,42,.55)');
+  const pathG = x.createLinearGradient(0, hz, 0, H);
+  pathG.addColorStop(0, 'rgba(240,206,140,.85)'); pathG.addColorStop(0.35, DUSK.path); pathG.addColorStop(1, '#8f7246');
+  path(W * 0.095, pathG as unknown as string);
+  // Vignette : bords et bas plus sombres, le centre garde la lumière
+  const vig = x.createRadialGradient(W * 0.5, hz, Math.min(W, H) * 0.3, W * 0.5, hz, Math.max(W, H) * 0.85);
+  vig.addColorStop(0, 'rgba(20,16,30,0)'); vig.addColorStop(1, 'rgba(20,16,30,.55)');
+  x.fillStyle = vig; x.fillRect(0, 0, W, H);
   return c;
 }
 

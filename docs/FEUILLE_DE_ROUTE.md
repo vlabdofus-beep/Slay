@@ -67,3 +67,4 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - 31/10/2026 : le Xélor (lot 1) entre en jeu : Téléfrag, ralenti, échéance, 50 cartes, bot ; mesure dans BALANCE.md.
 - 31/10/2026 : les IA fusionnent elles-mêmes leurs demandes quand les tests passent, et préviennent le propriétaire.
 - 31/10/2026 : le Xélor (lot 2) : effets au prochain tour, Rembobinage, Raulebaque, Régulateur ; 58 cartes.
+- 31/10/2026 : Claude — accueil : nouveau fond, le chemin d'une run au crépuscule (Amakna, Abraknydes, Frigost, Brâkmar).

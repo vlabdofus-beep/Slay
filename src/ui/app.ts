@@ -27,7 +27,7 @@ import {
 import { buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
 import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
-import { paintBoard, paintLandscape } from './scene/paint.ts';
+import { paintBoard, paintTitle } from './scene/paint.ts';
 
 // ───────────── état de l'interface ─────────────
 
@@ -599,13 +599,12 @@ function viewTitle(): string {
 }
 
 /** Paysage de l'accueil : peint une fois par taille d'écran, posé derrière les héros. */
-const LAND_PACK = 8;
 function mountLand(): void {
   const host = root.querySelector('[data-land]') as HTMLElement | null;
   if (!host) return;
   const W = Math.ceil(window.innerWidth / 160) * 160, H = Math.ceil(window.innerHeight / 120) * 120;
   const horizon = window.innerWidth < window.innerHeight ? 0.36 : 0.5;
-  void paintLandscape(LAND_PACK, W, H, 17, horizon).then((c) => {
+  void paintTitle(W, H, 17, horizon).then((c) => {
     if (!c || !host.isConnected || host.firstChild === c) return;
     host.replaceChildren(c);
     host.classList.add('on');
