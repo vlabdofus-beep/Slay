@@ -17,6 +17,7 @@ Si le fichier n'est plus un JSON valide (virgule oubliée, guillemet manquant), 
 | `classes` | PV de départ et deck de départ du Iop et du Crâ |
 | `passifs` | Courroux (attaques par tour, puissance gagnée) et Visée (attaques entre deux tirs, multiplicateur) |
 | `echelle_monstres` | Multiplicateurs de PV et de dégâts des monstres par acte et par type de salle |
+| `echelle_joueurs` | Table de 1 à 4 joueurs : PV, dégâts, et nombre d'actions des monstres par round |
 | `dieux` | Les douze dieux (nom, titre, phrase d'accueil) et leurs six bénédictions : effets de combat, stats, avantages de run, effets immédiats |
 | `cartes` | Pour chaque carte : coût en PA, rareté, effets, version améliorée, épuisée / conservée / innée |
 | `monstres` | Pour chaque monstre : PV (avant échelle), résistances en %, mécaniques, actions et leurs effets, rythme, seconde phase |

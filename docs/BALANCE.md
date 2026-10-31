@@ -333,3 +333,27 @@ Premier essai avec Conservation à 1 PA et 5 armure (comme la défense du Iop et
 
 ### Lot 2 (58 cartes, 1000 runs)
 Boss 1 / boss 2 / victoire : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6), Xélor 36 / 12 / 2 % (14,7). Les 8 nouvelles cartes diluent un peu les récompenses du Xélor (−3 points au boss 1 par rapport au lot 1) ; il reste entre le Iop et le Crâ, aucune valeur n'a été retouchée.
+
+## Table à plusieurs joueurs (31/10/2026)
+
+Le mode n'est pas encore jouable. L'échelle est prête dans `echelle_joueurs` (`equilibrage.json`) et `scaleForParty` (`src/data/monsters.ts`). Un combat seul n'en tient pas compte.
+
+Contrat retenu, parce que les coups des monstres ont une seule cible :
+
+- Chaque joueur a ses PV, son deck et ses 3 PA, et joue son tour.
+- Ensuite les monstres jouent **une fois par joueur** (`actions`). Un coup vise toujours une seule personne : la pression se répartit, elle ne s'empile pas.
+- Les PV suivent le nombre de joueurs, moins 15 %. Le poison, la puissance et la vulnérabilité s'accumulent sur les mêmes monstres : quatre joueurs tuent un peu plus vite que quatre combats séparés.
+- Les dégâts montent peu. Le plus gros coup du jeu, une élite d'acte 3, fait déjà 40 pour 70 PV. Au-delà de ×1,2 il devient une suppression.
+
+| Joueurs | PV | Dégâts | Actions des monstres | Plus gros coup (40) | Part des 70 PV |
+|---|---|---|---|---|---|
+| 1 | ×1 | ×1 | 1 | 40 | 57 % |
+| 2 | ×1,85 | ×1,10 | 2 | 44 | 63 % |
+| 3 | ×2,70 | ×1,15 | 3 | 46 | 66 % |
+| 4 | ×3,55 | ×1,20 | 4 | 48 | 69 % |
+
+Repère de durée, acte 1 salle normale (médiane 65 PV). Un deck de départ du Iop la finit en 4 tours, soit environ 15 PV retirés par tour (24 graines, 96 % de victoires). À deux joueurs la salle passe à 120 PV. Deux tours de cartes à 15 PV chacun la finissent en 4 rounds, comme seul. Chaque round, les monstres frappent deux fois à ×1,1 : la personne visée encaisse à peu près ce qu'elle encaissait seule, l'autre non. À quatre, 231 PV et quatre actions, même ordre de grandeur.
+
+Ce qu'il ne faut pas faire : multiplier les dégâts par le nombre de joueurs. ×4 sur le coup de 40 fait 160, plus du double des PV d'un Crâ. ×4 sur les PV seulement, sans les actions en plus, laisse le combat trop long à tuer et trop peu dangereux, puisqu'un seul joueur encaisse.
+
+Pour brancher le mode : `scaleForParty(TIER_SCALE[acte][salle], joueurs)` donne les PV, les dégâts, et `actions`. Faire jouer la phase des monstres `actions` fois. Au-delà de 4 joueurs, l'échelle reste celle de 4 : elle n'a pas été mesurée plus loin.

@@ -199,3 +199,9 @@ Le Xélor a maintenant ses 58 cartes, comme le Crâ.
 - **Rembobinage** (`rewind`) : reprend en main la dernière carte jouée ce tour, qu'elle soit dans la défausse ou épuisée. Rien après un pouvoir, ni en début de tour.
 - **Raulebaque** (`regain`) : soigne les PV perdus pendant le dernier tour des monstres (leurs coups, leurs épines ; pas le poison du joueur au début de son tour). L'érosion divise ce soin comme les autres.
 - **Retour en main** (`returnToHand`) : Régulateur revient en main si la cible était Téléfrag. Comme la marque est consommée par l'attaque, il faut un nouveau Téléfrag pour recommencer.
+
+## Table à plusieurs (préparé, pas jouable)
+
+L'échelle pour 2, 3 et 4 joueurs est dans `equilibrage.json` (`echelle_joueurs`) et s'applique avec `scaleForParty` (`src/data/monsters.ts`). Le combat actuel est toujours celui d'un joueur seul : il n'appelle pas cette fonction.
+
+Chaque joueur jouerait son tour, puis les monstres joueraient une fois par joueur. Les coups restent à une cible. Les coefficients et la raison de ne pas multiplier les dégâts par le nombre de joueurs sont dans `docs/BALANCE.md`.
