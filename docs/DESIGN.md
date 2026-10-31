@@ -206,3 +206,15 @@ Le Xélor a maintenant ses 58 cartes, comme le Crâ.
 L'échelle pour 2, 3 et 4 joueurs est dans `equilibrage.json` (`echelle_joueurs`) et s'applique avec `scaleForParty` (`src/data/monsters.ts`). Le combat actuel est toujours celui d'un joueur seul : il n'appelle pas cette fonction.
 
 Les joueurs jouent en même temps : chacun ses PV, son deck et ses 3 PA, dans la même phase. Les monstres jouent ensuite une fois, comme aujourd'hui. On ne leur donne pas un tour par joueur. Les coefficients sont dans `docs/BALANCE.md`.
+
+## Multijoueur (décisions du 31/10/2026)
+
+Jusqu'à 4 joueurs dans la même run, qui jouent **en même temps** à chaque tour.
+- **Tour** : chaque joueur joue ses cartes avec ses PA, puis se déclare prêt. Quand tous les héros debout sont prêts, la fin de tour de chacun se joue (Courroux, brûlure, défausse), puis les monstres jouent **une fois**.
+- **Les monstres frappent tout le monde** : chaque action d'un monstre touche chaque héros debout. Chacun la vit comme en solo : ses objets, son armure, son ralenti à lui. Les statuts et les cartes que pose un monstre vont à chaque héros. L'action est la même pour tous, le monstre ne joue pas une fois par joueur.
+- **Héros à 0 PV** : hors combat jusqu'à la fin du combat (il ne joue plus, les monstres l'ignorent). Si la table gagne, il revient avec 1 PV. La table perd quand tous les héros tombent. Le Dofus de résurrection marche pour son porteur.
+- **Carte** : la prochaine case se choisit au vote à la majorité.
+- **Récompenses** : chacun choisit ses cartes et ses objets. Kamas individuels.
+- **Chacun pour soi** : pas de carte qui vise un allié pour l'instant. Des cartes à plusieurs, obtenables seulement en multijoueur, viendront plus tard.
+- **Technique** : un salon = un Durable Object Cloudflare (WebSockets). Le serveur garde la graine et le journal des actions, les vérifie en les jouant sur le moteur, les numérote et les renvoie à tous ; chaque navigateur les rejoue dans le même ordre (le moteur est déterministe, comme pour la sauvegarde). Pas d'envoi de l'état complet, pas de pair-à-pair.
+- **Moteur** (étape 1) : `Combat` accepte d'autres héros (dernier paramètre du constructeur). Chaque héros a son `Seat` (PV, piles, objets, règles, passif, compteurs) ; le combat agit pour le héros « en main » (`useSeat`), si bien que tout le code du solo vaut pour chacun. `endTurn()` déclare le héros prêt ; en solo, la phase des monstres suit tout de suite.
