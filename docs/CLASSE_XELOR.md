@@ -1,8 +1,9 @@
 # Proposition : le Xélor, troisième classe
 
-Statut : **lot 1 intégré** (31/10/2026, branche `ia-claude/classe-xelor`) : 50 cartes jouables. Lot 2 à faire.
+Statut : **intégré** (31/10/2026) : lot 1 (50 cartes) puis lot 2 (les 8 cartes ②), 58 cartes en tout.
 Écarts avec la v2 : Conservation coûte 0 PA et donne 3 armure (5 améliorée), mesuré au bot (voir `docs/BALANCE.md`) ;
-Complice et Synchro coûtent 0 (2 PA dans Dofus) ; les dégâts de Synchro sont neutres.
+Complice et Synchro coûtent 0 (2 PA dans Dofus) ; les dégâts de Synchro sont neutres ; Rembobinage amélioré garde
+son épuisement mais rend la carte suivante 1 PA moins chère (une amélioration ne peut pas retirer l'épuisement).
 
 ## L'idée en une phrase
 Le Iop frappe fort, le Crâ prépare ses tirs ; le Xélor **dérègle le temps** : il marque ses ennemis d'un Téléfrag,

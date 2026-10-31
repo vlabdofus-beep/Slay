@@ -22,7 +22,7 @@ import { GOD_BY_ID, BOON_BY_ID } from '../data/gods.ts';
 import { RELIC_BY_ID } from '../data/relics.ts';
 import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
 import {
-  cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
+  cardText, effectText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
 import { buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
 import SKINS from '../data/skins.json' with { type: 'json' };
@@ -157,6 +157,20 @@ function statusChips(st: StatusMap, down = false): string {
         <span class="fxtip${down ? ' down' : ''}" role="tooltip"><b class="fxt">${esc(info.name)} ${v}</b><span class="tip-meta">${GOOD_STATUS.has(id) ? 'Bonus' : 'Malus'}</span><span class="fx-what"><span>${esc(info.help)}</span></span></span></span>`;
     })
     .join('');
+}
+
+/** Xélor : effets qui attendent le début du prochain tour (Prémonition, Faille, Écho Temporel…). */
+function laterChip(c: Combat): string {
+  if (!c.later.length) return '';
+  const lines = c.later.map((l) => {
+    const def = LIBRARY.cards[l.card];
+    const txt = l.effects.map((fx) => effectText({ type: 'later', then: [fx], turns: l.turns }, 'self')).join(' ').replace(/<[^>]+>/g, '');
+    return `<span><b>${esc(def?.name ?? l.card)}</b> : ${esc(txt)}</span>`;
+  }).join('');
+  const n = c.later.length;
+  return `<span class="fxb st good" tabindex="0" aria-label="${esc(`Au prochain tour : ${n} effet${n > 1 ? 's' : ''} en attente`)}">
+    <span class="fxi"><img src="${asset(spellIcon(spell(13293).icon))}" alt="" draggable="false"><b>${n}</b></span>
+    <span class="fxtip" role="tooltip"><b class="fxt">Au prochain tour</b><span class="tip-meta">En attente</span><span class="fx-what">${lines}</span></span></span>`;
 }
 
 const POWER_ICON: Record<string, string> = {
@@ -923,7 +937,7 @@ function arenaHtml(run: Run): string {
         ${hpBar(hp, p.maxHp, block, 'p')}
         ${passiveGauge(run.classe, c, ui.passiveFlash)}
         ${floatsHtml(-1)}
-        <span class="chips">${powerChips(c)}${statusChips(p.status)}</span>
+        <span class="chips">${powerChips(c)}${statusChips(p.status)}${laterChip(c)}</span>
       </div>
       <div class="foes" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
       ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}

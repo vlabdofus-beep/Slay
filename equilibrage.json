@@ -3293,6 +3293,103 @@
           }
         ]
       }
+    },
+    "xelor_clepsydre": {
+      "nom": "Clepsydre",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 10, "element": "eau"},
+        {"type": "status", "status": "ralenti", "amount": 4, "on": "target"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "later", "then": [{"type": "energy", "amount": 1}]}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 14, "element": "eau"},
+          {"type": "status", "status": "ralenti", "amount": 5, "on": "target"},
+          {
+            "type": "if",
+            "cond": "cible_telefrag",
+            "then": [{"type": "later", "then": [{"type": "energy", "amount": 1}]}]
+          }
+        ]
+      }
+    },
+    "xelor_regulateur": {
+      "nom": "Régulateur",
+      "classe": "xelor",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "terre"},
+        {"type": "if", "cond": "cible_telefrag", "then": [{"type": "returnToHand"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "terre"},
+          {"type": "if", "cond": "cible_telefrag", "then": [{"type": "returnToHand"}]}
+        ]
+      }
+    },
+    "xelor_fuite": {
+      "nom": "Fuite du Temps",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "block", "amount": 4}, {"type": "later", "then": [{"type": "block", "amount": 4}]}],
+      "amelioration": {"effets": [{"type": "block", "amount": 6}, {"type": "later", "then": [{"type": "block", "amount": 6}]}]}
+    },
+    "xelor_premonition": {
+      "nom": "Prémonition",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "later", "then": [{"type": "draw", "amount": 2}]}],
+      "amelioration": {"effets": [{"type": "later", "then": [{"type": "draw", "amount": 3}]}]}
+    },
+    "xelor_faille": {
+      "nom": "Faille",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "block", "amount": 12}, {"type": "later", "then": [{"type": "block", "amount": 6}]}],
+      "amelioration": {"effets": [{"type": "block", "amount": 15}, {"type": "later", "then": [{"type": "block", "amount": 8}]}]}
+    },
+    "xelor_rembobinage": {
+      "nom": "Rembobinage",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "rewind"}],
+      "amelioration": {"effets": [{"type": "rewind"}, {"type": "discount", "amount": 1}]},
+      "epuisee": true
+    },
+    "xelor_raulebaque": {
+      "nom": "Raulebaque",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "regain"}],
+      "amelioration": {"effets": [{"type": "regain"}, {"type": "block", "amount": 4}]},
+      "epuisee": true
+    },
+    "xelor_echo_temporel": {
+      "nom": "Écho Temporel",
+      "classe": "xelor",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "later", "then": [{"type": "energy", "amount": 1}], "turns": 2}],
+      "amelioration": {"cout": 0, "effets": [{"type": "later", "then": [{"type": "energy", "amount": 1}], "turns": 2}]},
+      "epuisee": true
     }
   },
   "monstres": {

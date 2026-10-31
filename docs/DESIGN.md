@@ -192,3 +192,10 @@ Proposition complète et historique des choix : `docs/CLASSE_XELOR.md`. Le lot 1
 - **Coûts** : ceux des PA réels de Dofus 3 (sorts importés dans `dofus.json`). Une vingtaine de cartes à 0 PA. Conservation, la défense de départ, garde son coût de sort (0 PA, 3 armure) : avec des cartes de départ toutes à 1 PA, la pioche du passif ne servait à rien.
 - **Gain de PA** : jamais sur le passif. Seuls Dessèchement (rare, si Téléfrag) et Dernière Seconde (rare, PV bas) en donnent ; Pétrification réduit le coût de la carte suivante.
 - **Pouvoirs** « quand tu consommes un Téléfrag » : déclencheur `telefrag_consomme`, jamais tiré sur un objet (`noRoll`). Synchro et Instabilité ne se déclenchent qu'une fois par tour.
+
+### Lot 2 : le temps différé et rembobiné (31/10/2026)
+Le Xélor a maintenant ses 58 cartes, comme le Crâ.
+- **Au prochain tour** (effet `later`) : les effets s'appliquent au début du tour suivant, après la pioche et la remise à zéro de l'armure, dans l'ordre où ils ont été posés. Écho Temporel les répète sur 2 tours. Une pastille « Au prochain tour » sous les PV du héros liste ce qui attend.
+- **Rembobinage** (`rewind`) : reprend en main la dernière carte jouée ce tour, qu'elle soit dans la défausse ou épuisée. Rien après un pouvoir, ni en début de tour.
+- **Raulebaque** (`regain`) : soigne les PV perdus pendant le dernier tour des monstres (leurs coups, leurs épines ; pas le poison du joueur au début de son tour). L'érosion divise ce soin comme les autres.
+- **Retour en main** (`returnToHand`) : Régulateur revient en main si la cible était Téléfrag. Comme la marque est consommée par l'attaque, il faut un nouveau Téléfrag pour recommencer.

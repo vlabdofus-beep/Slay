@@ -23,9 +23,8 @@ function combatWith(hand: string[], classe: ClassId = 'xelor', foes = 1) {
 }
 const idx = (c: Combat, id: string) => c.hand.findIndex((i) => i.id === id);
 
-test('Xélor (lot 1) : 50 cartes, un deck de départ de 10 cartes, des récompenses à lui', () => {
-  // Lot 2 (effets différés, rembobinage) : 8 cartes de plus, pour 58 comme le Crâ.
-  assert.equal(XELOR_CARDS.length + XELOR_INVENTED.length, 50);
+test('Xélor : 58 cartes comme le Crâ, un deck de départ de 10 cartes, des récompenses à lui', () => {
+  assert.equal(XELOR_CARDS.length + XELOR_INVENTED.length, 58);
   assert.equal(starterDeck('xelor').length, 10);
   const pool = rewardPool('xelor');
   assert.ok(pool.includes('xelor_horloge') && !pool.includes('iop_colere') && !pool.includes('xelor_seconde'));
@@ -187,4 +186,92 @@ test('La prévisualisation d\'une carte Xélor ne touche pas au vrai combat', ()
   assert.ok(p);
   assert.equal(e.status.telefrag, 1);
   assert.equal(c.telefragTurn, 0);
+});
+
+// ───── Lot 2 : le temps différé et rembobiné ─────
+
+test('Au prochain tour : Prémonition pioche 2 de plus, Fuite du Temps et Faille donnent leur armure après la remise à zéro', () => {
+  const c = combatWith(['xelor_premonition', 'xelor_fuite', 'xelor_faille']);
+  c.playCard(idx(c, 'xelor_premonition'));
+  c.playCard(idx(c, 'xelor_fuite'));
+  c.playCard(idx(c, 'xelor_faille'));
+  assert.equal(c.player.block, 4 + 12);
+  c.endTurn();
+  assert.equal(c.hand.length, 5 + 2);
+  assert.equal(c.player.block, 4 + 6);
+  assert.equal(c.later.length, 0);
+  c.endTurn();
+  assert.equal(c.hand.length, 5);
+  assert.equal(c.player.block, 0);
+});
+
+test('Écho Temporel : +1 PA au début des 2 prochains tours, pas du troisième', () => {
+  const c = combatWith(['xelor_echo_temporel']);
+  c.playCard(0);
+  const pa: number[] = [];
+  for (let i = 0; i < 3; i++) { c.endTurn(); pa.push(c.player.energy); }
+  assert.deepEqual(pa, [4, 4, 3]);
+});
+
+test('Clepsydre : +1 PA au prochain tour seulement si la cible était Téléfrag', () => {
+  const c = combatWith(['xelor_clepsydre', 'xelor_frappe', 'xelor_clepsydre']);
+  const e = c.enemies[0];
+  c.playCard(idx(c, 'xelor_clepsydre'), e.uid);
+  assert.equal(c.later.length, 0);
+  c.playCard(idx(c, 'xelor_frappe'), e.uid);
+  c.playCard(idx(c, 'xelor_clepsydre'), e.uid);
+  assert.equal(c.later.length, 1);
+  c.endTurn();
+  assert.equal(c.player.energy, 4);
+});
+
+test('Rembobinage reprend la dernière carte jouée ce tour, même épuisée ; rien après un pouvoir ou en début de tour', () => {
+  const c = combatWith(['xelor_horloge', 'xelor_rembobinage', 'xelor_rembobinage', 'xelor_synchro', 'xelor_rembobinage']);
+  const e = c.enemies[0];
+  c.playCard(idx(c, 'xelor_horloge'), e.uid);
+  c.playCard(idx(c, 'xelor_rembobinage'));
+  assert.ok(c.hand.some((i) => i.id === 'xelor_horloge'));
+  assert.ok(!c.discardPile.some((i) => i.id === 'xelor_horloge'));
+  // La carte reprise juste avant (Rembobinage, épuisé) revient elle aussi.
+  c.playCard(idx(c, 'xelor_rembobinage'));
+  assert.equal(c.hand.filter((i) => i.id === 'xelor_rembobinage').length, 2);
+  c.playCard(idx(c, 'xelor_synchro'));
+  const hand = c.hand.length;
+  c.playCard(idx(c, 'xelor_rembobinage'));
+  assert.equal(c.hand.length, hand - 1);
+});
+
+test('Raulebaque regagne les PV perdus pendant le dernier tour des monstres', () => {
+  const c = combatWith(['xelor_raulebaque']);
+  c.player.block = 0;
+  c.hand = [];
+  const hp = c.player.hp;
+  c.endTurn();
+  assert.equal(c.lostEnemyTurn, 12);
+  c.hand.push(newCard('xelor_raulebaque'));
+  c.playCard(idx(c, 'xelor_raulebaque'));
+  assert.equal(c.player.hp, hp);
+});
+
+test('Régulateur revient en main si la cible était Téléfrag', () => {
+  const c = combatWith(['xelor_frappe', 'xelor_regulateur']);
+  const e = c.enemies[0];
+  c.playCard(idx(c, 'xelor_regulateur'), e.uid);
+  assert.ok(!c.hand.some((i) => i.id === 'xelor_regulateur'));
+  const c2 = combatWith(['xelor_frappe', 'xelor_regulateur']);
+  const e2 = c2.enemies[0];
+  c2.playCard(idx(c2, 'xelor_frappe'), e2.uid);
+  c2.playCard(idx(c2, 'xelor_regulateur'), e2.uid);
+  assert.ok(c2.hand.some((i) => i.id === 'xelor_regulateur'));
+  assert.equal(e2.status.telefrag ?? 0, 0);
+});
+
+test('La prévisualisation d\'un effet différé ou d\'un rembobinage ne touche pas au vrai combat', () => {
+  const c = combatWith(['xelor_horloge', 'xelor_premonition', 'xelor_rembobinage']);
+  c.playCard(idx(c, 'xelor_horloge'), c.enemies[0].uid);
+  c.preview(idx(c, 'xelor_premonition'));
+  c.preview(idx(c, 'xelor_rembobinage'));
+  assert.equal(c.later.length, 0);
+  assert.ok(c.discardPile.some((i) => i.id === 'xelor_horloge'));
+  assert.equal(c.lastPlayed?.inst.id, 'xelor_horloge');
 });
