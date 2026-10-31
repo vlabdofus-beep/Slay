@@ -44,7 +44,7 @@ export interface BotResult {
 const isStrike = (id: string) => { const d = LIBRARY.cards[id]; return d.rarity === 'base' && d.type === 'attaque' && !d.spellId && !d.token; };
 
 /** Choix en attente : retirer d'abord les malédictions et les cartes de base, améliorer au hasard, prendre la première carte. */
-function resolvePending(run: Run, rng: Rng): void {
+export function resolvePending(run: Run, rng: Rng): void {
   const p = run.pending!;
   if (p.kind === 'card') { run.chooseCard(rng.pick(p.options)); return; }
   if (p.kind === 'item') { run.chooseItem(chooseItem(LIBRARY, ITEMS, run.itemEffects, run.deck, run.equipment, p.options) ?? p.options[0]); return; }

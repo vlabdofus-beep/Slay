@@ -38,10 +38,10 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 | Tâche | Fichiers | Qui | Statut |
 |---|---|---|---|
 | 1. Combat à plusieurs héros : tours simultanés, les monstres jouent une fois et frappent tous les héros, héros hors combat à 0 PV | `src/core/combat.ts`, `src/core/party.test.ts` | Claude | fait |
-| 2. Run à plusieurs : carte votée à la majorité, récompenses, objets, marchand et kamas à chacun, retour à 1 PV après un combat gagné, dieux et événements | `src/game/run.ts`, `src/game/save.ts` | Claude | à faire |
+| 2. Run à plusieurs : carte votée à la majorité, récompenses, objets, marchand et kamas à chacun, retour à 1 PV après un combat gagné, dieux et événements | `src/game/run.ts`, `src/game/party.ts`, `src/sim/party.ts` | Claude | fait |
 | 3. Échelle mesurée (PV ×2,5 / ×3,6 / ×5,5, dégâts ×1). La passer au combat quand la run à plusieurs existera | `src/data/monsters.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | mesure faite |
-| 4. Salon en ligne : Worker et Durable Object Cloudflare, WebSockets, journal d'actions ordonné par le serveur, reconnexion, minuteur | `worker/`, `wrangler.jsonc` | | à faire |
-| 5. Interface : créer ou rejoindre un salon, plusieurs héros sur la scène, « Prêt », minuteur, vote de la carte | `src/ui/` | | à faire |
+| 4. Salon en ligne : Worker et Durable Object Cloudflare, WebSockets, journal d'actions ordonné par le serveur, reconnexion, minuteur | `worker/`, `wrangler.jsonc` | Claude | en cours |
+| 5. Interface : créer ou rejoindre un salon, plusieurs héros sur la scène, « Prêt », minuteur, vote de la carte | `src/ui/` | Claude | en cours |
 | 6. Cartes à plusieurs, obtenables seulement en multijoueur (plus tard) | `src/data/cards.ts` | | à décider |
 
 ### Systèmes (à valider avec le propriétaire avant de commencer)
@@ -69,6 +69,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Claude — multijoueur, étape 2 : la partie à plusieurs (`src/game/party.ts`) : une run par joueur, carte et combats communs, vote à la majorité, journal d'actions rejouable ; bot à plusieurs (`src/sim/party.ts`, `botParty`).
 - 31/10/2026 : Grok — stats fixes des objets. Un commun Terre passe de +1 à +2–3, un légendaire de +2 à +9–12, les PV d'un mythique de +12 à +32–42. L'effet tiré ne change pas. Les monstres ne sont pas retouchés : à mesurer ensuite.
 - 31/10/2026 : Grok — échelle recalée sur le draft (les monstres frappent tout le monde). PV ×2,5 / ×3,6 / ×5,5 pour 2, 3 et 4 joueurs. Dégâts inchangés. L'ancienne échelle rendait les élites d'acte 2 trop faciles.
 - 31/10/2026 : Claude — multijoueur, étape 1 : le combat accepte plusieurs héros (tours simultanés, monstres qui frappent tout le monde, héros hors combat). Le solo ne change pas (mêmes résultats au bot, graine par graine).
