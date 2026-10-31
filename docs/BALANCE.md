@@ -325,7 +325,7 @@ Les 18 reliques et les 45 événements sont dans `equilibrage.json` (sections `r
 
 ## Le Xélor (31/10/2026, 1000 runs, lot 1)
 
-Mesure avec le bot (graines 1 à 1000, objets, boss 1 / boss 2 / victoire, étage moyen) : Iop 39 / 9 / 3 % (14,8), Crâ 35 / 13 / 3 % (14,8), Xélor 39 / 12 / 2 % (15,2). Le Xélor se place entre les deux.
+Mesure avec le bot (graines 1 à 1000, objets, boss 1 / boss 2 / victoire, étage moyen) : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6), Xélor 39 / 12 / 2 % (15,2), après la fusion de la passe de Grok sur les bénédictions, reliques et événements. Le Xélor se place entre les deux.
 
 Le bot pose le Téléfrag avant d'attaquer (la marque vaut plus quand une attaque reste en main) : sur 200 combats de départ contre deux Bouftous, le passif pioche 0,59 fois par tour, presque chaque fois que la Frappe de Xélor est en main.
 
