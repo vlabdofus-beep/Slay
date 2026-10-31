@@ -105,6 +105,29 @@ function value(c: Combat, a: Move): number {
       case 'discount':
         v += w * 2.5 * fx.amount;
         break;
+      case 'later': {
+        // Un effet différé vaut un peu moins qu'immédiat ; l'armure du tour suivant vaut contre l'attaque d'après.
+        const before = v;
+        for (const t of fx.then) {
+          if (t.type === 'block') v += 0.5 * t.amount;
+          else if (t.type === 'draw') v += 1.8 * t.amount;
+          else if (t.type === 'energy') v += 2.8 * t.amount;
+        }
+        v = before + (v - before) * w * (fx.turns ?? 1);
+        break;
+      }
+      case 'rewind': {
+        // Vaut surtout pour une carte chère : la rejouer coûtera ses PA de nouveau.
+        const last = c.lastPlayed;
+        v += last ? w * (2 + 3 * c.cardDef(last.inst).cost) : -2;
+        break;
+      }
+      case 'regain':
+        v += w * 0.8 * Math.min(c.lostEnemyTurn, missingHp);
+        break;
+      case 'returnToHand':
+        v += w * 3;
+        break;
       case 'spread':
         for (const e of targets) v += w * 0.8 * (e.status[fx.status] ?? 0) * Math.max(0, c.living().length - 1);
         break;

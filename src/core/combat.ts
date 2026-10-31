@@ -246,6 +246,15 @@ export class Combat {
   telefragTurn = 0;
   telefragCombat = 0;
   telefragDraws = 0;
+  /** Xélor : effets à appliquer au début des prochains tours (Prémonition, Faille, Écho Temporel…). */
+  later: { effects: Effect[]; turns: number; card: string }[] = [];
+  /** Dernière carte jouée ce tour et la pile où elle est allée (Rembobinage). */
+  lastPlayed: { inst: CardInstance; pile: 'discard' | 'exhaust' } | null = null;
+  /** PV perdus pendant le tour des monstres en cours ou le dernier (Raulebaque). */
+  lostEnemyTurn = 0;
+  private enemyPhase = false;
+  /** La carte en cours revient en main (Régulateur). */
+  private backToHand = false;
 
   /** Sablier : PA gardé du tour précédent ; pioche à main vide déjà faite ce tour. */
   private leftover = 0;
@@ -505,6 +514,7 @@ export class Combat {
     if (def.type === 'attaque' && this.rules.has('premier_double') && this.turnAttacks === 0) twice = true;
     // Téléfrag : seules les marques posées avant cette carte sont consommées par elle.
     const marked = new Set(this.living().filter((e) => (e.status.telefrag ?? 0) > 0));
+    this.backToHand = false;
     const hits = this.resolveEffects(def, target);
     if (twice && this.outcome === 'ongoing') {
       const again = target && target.dead ? undefined : target;
@@ -520,9 +530,11 @@ export class Combat {
       for (const e of used) delete e.status.telefrag;
       if (used.length) this.onTelefrag(used.length, target);
     }
-    if (def.type === 'pouvoir') { /* un pouvoir reste en jeu : il ne retourne pas dans le deck de ce combat */ }
-    else if (def.exhaust) this.exhaustPile.push(inst);
-    else this.discardPile.push(inst);
+    if (def.type === 'pouvoir') { /* un pouvoir reste en jeu : il ne retourne pas dans le deck de ce combat */ this.lastPlayed = null; }
+    else if (this.backToHand && this.hand.length < MAX_HAND) { this.hand.push(inst); this.lastPlayed = null; }
+    else if (def.exhaust) { this.exhaustPile.push(inst); this.lastPlayed = { inst, pile: 'exhaust' }; }
+    else { this.discardPile.push(inst); this.lastPlayed = { inst, pile: 'discard' }; }
+    this.backToHand = false;
     if (def.type === 'attaque') this.turnAttacks++;
     this.prevType = def.type;
     this.playedById[def.id] = (this.playedById[def.id] ?? 0) + 1;
@@ -588,6 +600,8 @@ export class Combat {
       this.hand = keep;
     }
     for (const e of this.enemies) e.m.lostThisTurn = 0;
+    this.lostEnemyTurn = 0;
+    this.enemyPhase = true;
 
     // Chaque monstre : le poison le ronge au début de son tour (il peut en mourir avant d'agir),
     // il agit, puis la brûlure le consume à la fin de son tour (son armure du tour l'absorbe).
@@ -607,6 +621,7 @@ export class Combat {
       if (this.checkEnd()) return;
     }
 
+    this.enemyPhase = false;
     this.endOfRound();
     if (this.checkEnd()) return;
 
@@ -740,6 +755,17 @@ export class Combat {
     this.emptyDrawn = false;
     const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('pioche_plus') ? 1 : 0);
     this.drawCards(target);
+    this.lastPlayed = null;
+    // Effets « au prochain tour » (Xélor), dans l'ordre où ils ont été posés.
+    if (!first && this.later.length) {
+      const due = this.later;
+      this.later = [];
+      for (const l of due) {
+        this.log.push(`Au début du tour : ${this.lib.cards[l.card]?.name ?? l.card}`);
+        this.runEffects(l.effects, this.lib.cards[l.card], [], undefined, new Set());
+        if (l.turns > 1) this.later.push({ ...l, turns: l.turns - 1 });
+      }
+    }
     // Téléfrag (Xélor) : des ennemis au hasard, de préférence sans marque, en reçoivent une.
     if (this.classe === 'xelor') for (let i = 0; i < PASSIVE_VALUES.telefrag.marques; i++) {
       const free = this.living().filter((e) => !e.status.telefrag);
@@ -870,6 +896,7 @@ export class Combat {
     if (foe) this.onEnemyHurt(foe, lost, !!o.dot);
     if (t === this.player && lost > 0) {
       this.hpLostThisCombat += lost;
+      if (this.enemyPhase) this.lostEnemyTurn += lost;
       this.emit('hpLost', { amount: lost });
     }
     // Renvoi de dommages (sur les coups uniquement, sans chaîne de renvois)
@@ -1070,6 +1097,27 @@ export class Combat {
           break;
         case 'discount':
           this.fxDiscount(fx.amount);
+          break;
+        case 'later':
+          this.later.push({ effects: fx.then, turns: fx.turns ?? 1, card: def.id });
+          break;
+        case 'rewind': {
+          const last = this.lastPlayed;
+          if (!last || this.hand.length >= MAX_HAND) break;
+          const pile = last.pile === 'discard' ? this.discardPile : this.exhaustPile;
+          const k = pile.indexOf(last.inst);
+          if (k < 0) break;
+          pile.splice(k, 1);
+          this.hand.push(last.inst);
+          this.lastPlayed = null;
+          this.log.push(`Rembobinage : ${this.cardDef(last.inst).name} revient en main`);
+          break;
+        }
+        case 'regain':
+          if (this.lostEnemyTurn > 0) this.heal(this.lostEnemyTurn);
+          break;
+        case 'returnToHand':
+          this.backToHand = true;
           break;
         case 'spread':
           for (const e of targets) {

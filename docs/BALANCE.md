@@ -330,3 +330,6 @@ Mesure avec le bot (graines 1 à 1000, objets, boss 1 / boss 2 / victoire, étag
 Le bot pose le Téléfrag avant d'attaquer (la marque vaut plus quand une attaque reste en main) : sur 200 combats de départ contre deux Bouftous, le passif pioche 0,59 fois par tour, presque chaque fois que la Frappe de Xélor est en main.
 
 Premier essai avec Conservation à 1 PA et 5 armure (comme la défense du Iop et du Crâ) : Xélor 11 / 3 / 0 % (8,3 étages). Toutes les cartes de départ coûtaient 1 PA : avec 3 PA et 5 cartes en main, la carte piochée par le passif ne se jouait jamais. Conservation reprend le coût de son sort (2 PA dans Dofus, donc 0) avec 3 armure (5 améliorée).
+
+### Lot 2 (58 cartes, 1000 runs)
+Boss 1 / boss 2 / victoire : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6), Xélor 36 / 12 / 2 % (14,7). Les 8 nouvelles cartes diluent un peu les récompenses du Xélor (−3 points au boss 1 par rapport au lot 1) ; il reste entre le Iop et le Crâ, aucune valeur n'a été retouchée.

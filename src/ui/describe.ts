@@ -112,6 +112,19 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
         : `La cible subit tout de suite les dégâts de son ${STATUS_INFO[fx.status].name.toLowerCase()}, et le statut reste en place.`;
     case 'discount':
       return `Ta prochaine carte coûte <b>${fx.amount}</b> PA de moins.`;
+    case 'later': {
+      // Le texte des effets différés se lit sans les valeurs du tour en cours.
+      const inner = fx.then.map((t) => effectText(t, 'self', null, cardElement, def).replace(/\.$/, '')).filter(Boolean);
+      const body = inner.map((t, i) => (i === 0 ? t : t.charAt(0).toLowerCase() + t.slice(1))).join(', ');
+      const n = fx.turns ?? 1;
+      return `${body} ${n > 1 ? `au début de tes <b>${n}</b> prochains tours` : 'au début de ton prochain tour'}.`;
+    }
+    case 'rewind':
+      return 'Reprends en main la dernière carte jouée ce tour (pas un pouvoir).';
+    case 'regain':
+      return `Regagne les PV perdus pendant le dernier tour des monstres${c ? ` (<b>${c.lostEnemyTurn}</b>)` : ''}.`;
+    case 'returnToHand':
+      return 'Cette carte revient dans ta main.';
     case 'exhaustHand':
       return 'Épuise les autres cartes de ta main.';
     case 'addCard': {

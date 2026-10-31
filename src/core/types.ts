@@ -84,6 +84,14 @@ export type Effect =
   | { type: 'exhaustHand' }
   /** Ta prochaine carte coûte n PA de moins (ce tour). */
   | { type: 'discount'; amount: number }
+  /** Xélor : au début de ton prochain tour (ou de tes `turns` prochains tours), applique `then` (effets sur toi). */
+  | { type: 'later'; then: Effect[]; turns?: number }
+  /** Xélor : reprends en main la dernière carte jouée ce tour (pas un pouvoir). */
+  | { type: 'rewind' }
+  /** Xélor : regagne les PV perdus pendant le dernier tour des monstres. */
+  | { type: 'regain' }
+  /** Xélor : cette carte revient dans ta main au lieu d'aller à la défausse. */
+  | { type: 'returnToHand' }
   /** Xélor : consomme le Téléfrag de chaque cible qui en porte un, et lui applique `then`. */
   | { type: 'consume'; then: Effect[] };
 

@@ -299,6 +299,8 @@ const pierce = (amount: number, element: Element): Effect => ({ type: 'damage', 
 const spend = (what: 'puissance' | 'visee'): Effect => ({ type: 'spend', what });
 const echo = (count = 1): Effect => ({ type: 'echo', count });
 const discount = (amount: number): Effect => ({ type: 'discount', amount });
+/** Au début de ton prochain tour (ou de tes `turns` prochains tours). */
+const later = (then: Effect[], turns?: number): Effect => (turns && turns > 1 ? { type: 'later', then, turns } : { type: 'later', then });
 const spread = (s: StatusId): Effect => ({ type: 'spread', status: s });
 const detonate = (s: StatusId): Effect => ({ type: 'detonate', status: s });
 const create = (card: string, count: number): Effect => ({ type: 'addCard', card, count, pile: 'hand' });
@@ -330,6 +332,8 @@ export const XELOR_CARDS: CardDef[] = [
     effects: [dmg(7, 'eau'), block(4), tf()], upgrade: [dmg(10, 'eau'), block(5), tf()] }),
   fromSpell({ id: 'xelor_petrification', spell: 13290, type: A, target: 'enemy', rarity: 'commune',
     effects: [dmg(11, 'eau'), slow(4), siT(discount(1))], upgrade: [dmg(15, 'eau'), slow(5), siT(discount(1))] }),
+  fromSpell({ id: 'xelor_clepsydre', spell: 13298, type: A, target: 'enemy', rarity: 'rare',
+    effects: [dmg(10, 'eau'), slow(4), siT(later([energy(1)]))], upgrade: [dmg(14, 'eau'), slow(5), siT(later([energy(1)]))] }),
   fromSpell({ id: 'xelor_permutation', spell: 13285, type: A, target: 'enemy', rarity: 'rare', effects: [drain(11, 'eau'), tf()], upgrade: [drain(15, 'eau'), tf()] }),
   fromSpell({ id: 'xelor_flou_temporel', spell: 13246, type: C, target: 'all_enemies', rarity: 'commune',
     effects: [slow(3, 'all_enemies')], upgrade: [slow(4, 'all_enemies')] }),
@@ -346,6 +350,8 @@ export const XELOR_CARDS: CardDef[] = [
   // Terre : coups lourds et aiguilles
   fromSpell({ id: 'xelor_aiguille', spell: 13244, type: A, target: 'enemy', rarity: 'commune',
     effects: [status('poison', 3, 'target'), siT(dmg(5, 'terre'))], upgrade: [status('poison', 4, 'target'), siT(dmg(7, 'terre'))] }),
+  fromSpell({ id: 'xelor_regulateur', spell: 13248, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(7, 'terre'), siT({ type: 'returnToHand' })], upgrade: [dmg(10, 'terre'), siT({ type: 'returnToHand' })] }),
   fromSpell({ id: 'xelor_engrenage', spell: 13299, type: A, target: 'all_enemies', rarity: 'commune',
     effects: [dmg(5, 'terre'), tf('all_enemies')], upgrade: [dmg(7, 'terre'), tf('all_enemies')] }),
   fromSpell({ id: 'xelor_horloge', spell: 13256, type: A, target: 'enemy', rarity: 'commune',
@@ -370,6 +376,10 @@ export const XELOR_CARDS: CardDef[] = [
   fromSpell({ id: 'xelor_astrolabe', spell: 13282, type: C, target: 'enemy', rarity: 'commune', effects: [tf(), draw(1)], upgrade: [tf(), draw(1), block(3)] }),
   fromSpell({ id: 'xelor_espace_temps', spell: 13297, type: C, target: 'enemy', rarity: 'commune',
     effects: [tf(), status('renvoi', 3, 'self')], upgrade: [tf(), status('renvoi', 5, 'self')] }),
+  fromSpell({ id: 'xelor_fuite', spell: 13251, type: C, target: 'self', rarity: 'commune',
+    effects: [block(4), later([block(4)])], upgrade: [block(6), later([block(6)])] }),
+  fromSpell({ id: 'xelor_premonition', spell: 13293, type: C, target: 'self', rarity: 'commune',
+    effects: [later([draw(2)])], upgrade: [later([draw(3)])] }),
   fromSpell({ id: 'xelor_paradoxe', spell: 13250, type: C, target: 'enemy', rarity: 'commune', effects: [spread('ralenti')], upgrade: [slow(2), spread('ralenti')] }),
   fromSpell({ id: 'xelor_desynchronisation', spell: 13296, type: C, target: 'all_enemies', rarity: 'commune', exhaust: true,
     effects: [tf('all_enemies')], upgrade: [tf('all_enemies'), draw(1)] }),
@@ -377,6 +387,12 @@ export const XELOR_CARDS: CardDef[] = [
     effects: [tf(), status('vulnerabilite', 1, 'target')], upgrade: [tf(), status('vulnerabilite', 2, 'target')] }),
   fromSpell({ id: 'xelor_vingt_cinquieme_heure', spell: 14650, type: C, target: 'all_enemies', rarity: 'rare', exhaust: true, upgradeCost: 0,
     effects: [{ type: 'consume', then: [status('etourdi', 1, 'target')] }], upgrade: [{ type: 'consume', then: [status('etourdi', 1, 'target')] }] }),
+  fromSpell({ id: 'xelor_faille', spell: 13295, type: C, target: 'self', rarity: 'rare',
+    effects: [block(12), later([block(6)])], upgrade: [block(15), later([block(8)])] }),
+  fromSpell({ id: 'xelor_rembobinage', spell: 13243, type: C, target: 'self', rarity: 'rare', exhaust: true,
+    effects: [{ type: 'rewind' }], upgrade: [{ type: 'rewind' }, discount(1)] }),
+  fromSpell({ id: 'xelor_raulebaque', spell: 13262, type: C, target: 'self', rarity: 'rare', exhaust: true,
+    effects: [{ type: 'regain' }], upgrade: [{ type: 'regain' }, block(4)] }),
   fromSpell({ id: 'xelor_momification', spell: 13260, type: C, target: 'self', rarity: 'rare', exhaust: true,
     effects: [status('esquive', 1, 'self')], upgrade: [status('esquive', 1, 'self'), draw(1)] }),
   // Pouvoirs
@@ -477,6 +493,9 @@ export const XELOR_INVENTED: CardDef[] = [
     lore: 'Le sable tombe d\'un coup, et l\'échéance reste due.' }),
   invented({ id: 'xelor_arret_temps', name: 'Arrêt du Temps', classe: 'xelor', cost: 2, type: C, element: 'neutre', target: 'all_enemies', rarity: 'rare', icon: xIcon(13246), exhaust: true,
     effects: [slow(10, 'all_enemies')], upgrade: [slow(14, 'all_enemies')] }),
+  invented({ id: 'xelor_echo_temporel', name: 'Écho Temporel', classe: 'xelor', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'rare', icon: xIcon(13282), exhaust: true,
+    effects: [later([energy(1)], 2)], upgrade: [later([energy(1)], 2)], upgradeCost: 0,
+    lore: 'Le Xélor emprunte au tour d\'après. Il rend toujours, à l\'heure.' }),
   invented({ id: 'xelor_derniere_seconde', name: 'Dernière Seconde', classe: 'xelor', cost: 0, type: C, element: 'neutre', target: 'self', rarity: 'rare', icon: xIcon(13262), exhaust: true,
     effects: [draw(1), when('pv_bas', energy(2))], upgrade: [draw(2), when('pv_bas', energy(2))] }),
   invented({ id: 'xelor_horloge_interne', name: 'Horloge Interne', classe: 'xelor', cost: 1, type: P, element: 'neutre', target: 'self', rarity: 'commune', icon: xIcon(13258),
