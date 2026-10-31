@@ -204,4 +204,4 @@ Le Xélor a maintenant ses 58 cartes, comme le Crâ.
 
 L'échelle pour 2, 3 et 4 joueurs est dans `equilibrage.json` (`echelle_joueurs`) et s'applique avec `scaleForParty` (`src/data/monsters.ts`). Le combat actuel est toujours celui d'un joueur seul : il n'appelle pas cette fonction.
 
-Chaque joueur jouerait son tour, puis les monstres joueraient une fois par joueur. Les coups restent à une cible. Les coefficients et la raison de ne pas multiplier les dégâts par le nombre de joueurs sont dans `docs/BALANCE.md`.
+Les joueurs jouent en même temps : chacun ses PV, son deck et ses 3 PA, dans la même phase. Les monstres jouent ensuite une fois, comme aujourd'hui. On ne leur donne pas un tour par joueur. Les coefficients sont dans `docs/BALANCE.md`.
