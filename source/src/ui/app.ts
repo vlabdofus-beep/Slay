@@ -7,7 +7,7 @@ import { lootChance, prospFactor } from '../core/offers.ts';
 import type { MapNode } from '../core/map.ts';
 import type { CardDef, CardInstance, ClassId, Element, ItemDef, StatusMap } from '../core/types.ts';
 import { ELEMENTS, SLOTS } from '../core/types.ts';
-import { DOFUS } from '../data/dofus.ts';
+import { DOFUS, itemIcon } from '../data/dofus.ts';
 import { ITEMS } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
 import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
@@ -135,7 +135,7 @@ function statusChips(st: StatusMap, down = false): string {
 const POWER_ICON: Record<string, string> = {
   carapace: 'fx/armure.webp', epines: 'fx/renvoi.webp', colere: 'fx/puissance.webp', enroulement: 'fx/bouclier.webp',
   rituel: 'fx/regle.webp', spores: 'fx/vulnerabilite.webp', explosion: 'fx/degats_zone.webp', division: 'fx/poison.webp',
-  voleur: 'fx/kamas.webp', gardien: 'fx/bouclier.webp', regeneration: 'fx/soin.webp', esquive: 'fx/esquive.webp',
+  voleur: 'ui/kama.svg', gardien: 'fx/bouclier.webp', regeneration: 'fx/soin.webp', esquive: 'fx/esquive.webp',
   cameleon: 'fx/erosion.webp', rage: 'ui/combat.webp', sommeil: 'fx/reduction.webp', plafond: 'ui/defense.webp', artefact: 'fx/regle.webp',
 };
 
@@ -448,7 +448,10 @@ const NODE_ICON: Record<MapNode['type'], string> = {
   marchand: uiIcon('marchand'),
 } as Record<MapNode['type'], string>;
 const actName = (run: Run) => ACTS[run.act - 1].name;
-const KAMAS = (n: number) => `<span class="kamas">${uiIcon('kamas', 'k-ico')}${n}</span>`;
+/** Icône officielle de la pièce de kama (objet Dofus « Pièce de Kama géante »), repli dessiné en local. */
+const KAMA_ICON = itemIcon(24920);
+const kamaIco = (cls = 'k-ico') => `<img class="${cls}" src="${KAMA_ICON}" alt="" draggable="false" onerror="this.onerror=null;this.src='${asset('ui/kama.svg')}'">`;
+const KAMAS = (n: number) => `<span class="kamas">${kamaIco()}${n}</span>`;
 const eggIcon = (id: string, cls = 'egg-ico') => {
   const local = asset(`dofus/${EGG_BY_ID[id].icon}.webp`);
   // Icône officielle de Dofus 3 ; l'icône locale ne sert que si DofusDB est injoignable.
@@ -721,7 +724,7 @@ function viewReward(run: Run): string {
   return `<main class="rewardview">
     <section class="reward">
       <h2 class="with-ico">${uiIcon(r.itemSource === 'elite' ? 'coffre-rare' : 'coffre', 'h-ico')}Victoire</h2>
-      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}. Tu ramasses ${KAMAS(r.kamas)} kamas.${r.stolen ? ` Des voleurs se sont enfuis avec ${r.stolen} kamas.` : ''}</p>
+      <p class="muted">Il te reste ${run.hp} PV sur ${run.maxHp}. Tu ramasses ${KAMAS(r.kamas)}.${r.stolen ? ` Des voleurs se sont enfuis avec ${KAMAS(r.stolen)}.` : ''}</p>
       <h3>${r.cardTaken ? 'Carte ajoutée au deck' : 'Ajoute une carte à ton deck'}</h3>
       <div class="row cards">${cards}</div>
       ${items ? `<h3>${r.itemTaken ? 'Objet équipé' : 'Choisis un objet'}</h3><p class="muted small">Prospection ${r.prospection}. La stat d'un objet est fixe ; son effet a été tiré pour cette run.</p><div class="row items">${items}</div>` : `<p class="muted small">Pas d'objet cette fois (prospection ${r.prospection}).</p>`}
@@ -790,7 +793,7 @@ function viewEnd(run: Run): string {
       <h2 class="with-ico">${won ? uiIcon('victoire', 'h-ico') : ''}${won ? 'Le Minotoror est tombé' : 'Défaite'}</h2>
       <p>${won ? 'Les trois actes sont terminés : Amakna, la forêt des Abraknydes et les landes de Brâkmar.' : `Tu es tombé à l'acte ${run.act} (${esc(actName(run))}), étage ${run.stats.floor}.`}</p>
       ${run.dofus.length ? `<p class="egg-row">${run.dofus.map((id) => `<span title="${esc(EGG_BY_ID[id].name)}">${eggIcon(id)}</span>`).join('')}</p>` : ''}
-      <p class="muted">${run.stats.combats} combats gagnés, dont ${run.stats.elites} élites. Deck de ${run.deck.length} cartes, ${Object.keys(run.equipment).length} objets équipés, ${run.stats.kamas} kamas gagnés.</p>
+      <p class="muted">${run.stats.combats} combats gagnés, dont ${run.stats.elites} élites. Deck de ${run.deck.length} cartes, ${Object.keys(run.equipment).length} objets équipés, ${KAMAS(run.stats.kamas)} gagnés.</p>
       <button class="primary" data-act="title">Nouvelle partie</button>
     </section>
     ${sheet(run)}
@@ -899,7 +902,7 @@ function viewStyleguide(): string {
     `<span class="sg-back">${cardBack()}</span>`,
   ].join('');
   const frameLabels = ['Base : bronze', 'Commune : argent', 'Rare : or', 'Améliorée : reflet', 'Dos de la pioche'];
-  const icons = ['combat', 'elite', 'zaap', 'marchand', 'kamas', 'repos', 'ameliorer', 'forge', 'coffre', 'coffre-rare', 'deck', 'journal', 'defense', 'buff', 'debuff', 'victoire', 'dofus']
+  const icons = ['combat', 'elite', 'zaap', 'marchand', 'repos', 'ameliorer', 'forge', 'coffre', 'coffre-rare', 'deck', 'journal', 'defense', 'buff', 'debuff', 'victoire', 'dofus']
     .map((n) => `<figure class="sg-icon">${uiIcon(n, 'h-ico')}<figcaption>${n}</figcaption></figure>`).join('');
   const nums = (['terre', 'feu', 'eau', 'air', 'neutre', 'soin', 'armure'] as const)
     .map((el, i) => `<span class="sg-num"><span class="num n-${el}" style="animation:none;position:static;transform:none">${el === 'soin' ? '+6' : el === 'armure' ? 'Bloqué' : `−${8 + i}`}</span><small>${el}</small></span>`).join('');

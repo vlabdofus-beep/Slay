@@ -765,7 +765,7 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 
 /* ───────── kamas, marchand, Dofus ───────── */
 .kamas { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; color: #f3d67a; white-space: nowrap; }
-.k-ico { width: 18px; height: 18px; object-fit: contain; }
+.k-ico { width: 20px; height: 20px; object-fit: contain; }
 .prosp .kamas { font: 700 1.2rem var(--title); margin-right: .3rem; }
 .tb-kamas .kamas { font-size: .95rem; }
 .wares { align-items: flex-start; }
