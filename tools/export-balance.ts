@@ -24,7 +24,9 @@ if (existsSync(FILE) && !process.argv.includes('--reset')) {
     const have = (cur[sec] ??= {} as never) as Record<string, unknown>;
     for (const [k, v] of Object.entries(fresh[sec])) if (!(k in have)) { have[k] = v; added++; }
   }
-  cur.passifs ??= fresh.passifs;
+  // Passifs : un passif absent (nouvelle classe) est ajouté, ceux déjà présents restent tels quels.
+  const pas = (cur.passifs ??= fresh.passifs) as unknown as Record<string, unknown>;
+  for (const [k, v] of Object.entries(fresh.passifs)) if (!(k in pas)) { pas[k] = v; added++; }
   cur.echelle_monstres ??= fresh.echelle_monstres;
   // Dieux : un dieu ou une bénédiction absents sont ajoutés, ceux déjà présents restent tels quels.
   const gods = (cur.dieux ??= {});

@@ -178,7 +178,8 @@ function monsterHay(e: MonsterEntry): string {
   }
   return h;
 }
-const CLASS_WORDS: Record<string, string> = { iop: 'iop', cra: 'crâ cra', neutre: 'arme armes neutre' };
+const CLASS_WORDS: Record<string, string> = { iop: 'iop', cra: 'crâ cra', xelor: 'xélor xelor', neutre: 'arme armes neutre' };
+const CLASS_LABEL: Record<string, string> = { iop: 'Iop', cra: 'Crâ', xelor: 'Xélor' };
 function cardHay(c: CardDef): string {
   const k = 'c:' + c.id + (bx.up ? '+' : '');
   let h = hayCache.get(k);
@@ -208,7 +209,7 @@ interface EffectLine { group: string; html: string; text: string }
 function effectLines(h: BxHelpers): EffectLine[] {
   const out: EffectLine[] = [];
   for (const [id, s] of Object.entries(STATUS_INFO)) out.push({ group: 'Statuts', text: `${s.name} ${s.help}`, html: `<img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span>` });
-  for (const cl of Object.keys(PASSIVES) as ClassId[]) { const p = PASSIVES[cl]!; out.push({ group: 'Passifs de classe', text: `${p.name} ${cl === 'iop' ? 'Iop' : 'Crâ'} ${p.text}`, html: `${h.passiveBadge(cl)}<span><b>${esc(p.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(p.text)}</span>` }); }
+  for (const cl of Object.keys(PASSIVES) as ClassId[]) { const p = PASSIVES[cl]!; out.push({ group: 'Passifs de classe', text: `${p.name} ${CLASS_LABEL[cl]} ${p.text}`, html: `${h.passiveBadge(cl)}<span><b>${esc(p.name)}</b> (${CLASS_LABEL[cl]}) ${esc(p.text)}</span>` }); }
   for (const t of TRIGGERS.filter((x) => !x.noRoll)) out.push({ group: "Déclencheurs d'objets", text: t.text, html: esc(t.text) });
   for (const r of Object.values(RULES)) out.push({ group: 'Règles légendaires', text: r, html: esc(r) });
   for (const r of Object.values(DOFUS_RULES)) out.push({ group: 'Règles des Dofus', text: r, html: esc(r) });
@@ -308,16 +309,16 @@ function viewCards(h: BxHelpers): string {
     && (!bx.classe || (bx.classe === 'statut' ? !!c.status : c.classe === bx.classe && !c.status))
     && (!bx.type || c.type === bx.type) && (!bx.rarity || c.rarity === bx.rarity) && (!bx.el || c.element === bx.el) && hit(cardHay(c)));
   const filters = `<div class="bx-filters">
-    ${chips('classe', [['', 'Toutes'], ['iop', 'Iop'], ['cra', 'Crâ'], ['neutre', 'Armes'], ['statut', 'Statut']])}
+    ${chips('classe', [['', 'Toutes'], ['iop', 'Iop'], ['cra', 'Crâ'], ['xelor', 'Xélor'], ['neutre', 'Armes'], ['statut', 'Statut']])}
     ${chips('type', [['', 'Tous types'], ...Object.entries(TYPE_NAMES)])}
     ${chips('rarity', [['', 'Toutes raretés'], ...Object.entries(CARD_RARITY)])}
     ${chips('el', [['', 'Tous éléments'], ...ELEMENTS.map((el): [string, string] => [el, ELEMENT_NAMES[el]])])}
     <button class="bx-chip${bx.up ? ' on' : ''}" aria-pressed="${bx.up}" data-act="bx-up">Version améliorée</button>
   </div>`;
-  const sections = (['iop', 'cra', 'neutre'] as const).map((cl) => {
+  const sections = (['iop', 'cra', 'xelor', 'neutre'] as const).map((cl) => {
     const cards = list.filter((c) => c.classe === cl && !c.status);
     if (!cards.length) return '';
-    const title = cl === 'neutre' ? 'Armes, toutes classes' : cl === 'iop' ? 'Iop' : 'Crâ';
+    const title = cl === 'neutre' ? 'Armes, toutes classes' : CLASS_LABEL[cl];
     const passive = cl !== 'neutre' && PASSIVES[cl] ? `<p class="bx-passive">${h.passiveBadge(cl)}<span><b>${esc(PASSIVES[cl]!.name)}</b>, passif de classe : ${esc(PASSIVES[cl]!.text)}</span></p>` : '';
     return `<h3 class="bx-group">${title} <span class="muted">${cards.length}</span></h3>${passive}<div class="bx-cgrid">${cards.map((c) => cardOf(c, h)).join('')}</div>`;
   }).join('');
@@ -381,7 +382,7 @@ function viewGods(h: BxHelpers): string {
 
 function viewEffects(h: BxHelpers): string {
   const statuses = Object.entries(STATUS_INFO).filter(([, s]) => hit(`${s.name} ${s.help}`)).map(([id, s]) => `<li><img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span></li>`).join('');
-  const passives = (Object.keys(PASSIVES) as ClassId[]).filter((cl) => hit(`${PASSIVES[cl]!.name} ${cl} ${PASSIVES[cl]!.text}`)).map((cl) => `<li>${h.passiveBadge(cl)}<span><b>${esc(PASSIVES[cl]!.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(PASSIVES[cl]!.text)}</span></li>`).join('');
+  const passives = (Object.keys(PASSIVES) as ClassId[]).filter((cl) => hit(`${PASSIVES[cl]!.name} ${cl} ${PASSIVES[cl]!.text}`)).map((cl) => `<li>${h.passiveBadge(cl)}<span><b>${esc(PASSIVES[cl]!.name)}</b> (${CLASS_LABEL[cl]}) ${esc(PASSIVES[cl]!.text)}</span></li>`).join('');
   const triggers = TRIGGERS.filter((t) => match(t.text)).map((t) => `<li>${esc(t.text)}${t.el ? '' : ''}</li>`).join('');
   const rewards = REWARDS.filter((r) => r.id !== 'visee').map((r) => {
     const t = TRIGGERS.find((x) => x.kind === 'card') ?? TRIGGERS[0];

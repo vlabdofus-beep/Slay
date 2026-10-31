@@ -12,7 +12,9 @@ import type { Rng } from './rng.ts';
 import type { CardDef, Element, ItemRarity, StatusId } from './types.ts';
 
 export type EventId =
-  | 'combatStart' | 'turnStart' | 'turnEnd' | 'cardPlayed' | 'enemyKilled' | 'hpLost' | 'blockGained' | 'combatWon';
+  | 'combatStart' | 'turnStart' | 'turnEnd' | 'cardPlayed' | 'enemyKilled' | 'hpLost' | 'blockGained' | 'combatWon'
+  /** Xélor : une carte vient de consommer un ou plusieurs Téléfrag (une fois par carte). */
+  | 'telefragConsumed';
 
 /** Contexte d'un événement de combat. */
 export interface EvCtx {
@@ -72,7 +74,7 @@ export interface RewardDef {
 export const DEFAULT_PER_TURN = 3;
 export const perTurn = (r: RewardDef) => r.perTurn ?? DEFAULT_PER_TURN;
 /** Déclencheurs qui peuvent survenir plusieurs fois dans un tour (la limite par tour se lit alors sur l'objet). */
-const REPEATABLE: EventId[] = ['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'];
+const REPEATABLE: EventId[] = ['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained', 'telefragConsumed'];
 
 // ───────────── déclencheurs ─────────────
 
@@ -127,6 +129,8 @@ export const TRIGGERS: TriggerDef[] = [
     test: (_c, x) => x.card?.type === 'attaque' && !!x.target && (x.target.status.poison ?? 0) > 0 },
   { id: 'cible_vulnerable', event: 'cardPlayed', kind: 'card', freq: 2.0, text: 'Quand tu attaques un ennemi vulnérable',
     test: (_c, x) => x.card?.type === 'attaque' && !!x.target && (x.target.status.vulnerabilite ?? 0) > 0 },
+  // Réservé aux pouvoirs du Xélor : jamais tiré sur un objet.
+  { id: 'telefrag_consomme', event: 'telefragConsumed', kind: 'card', noRoll: true, freq: 2, text: 'Quand tu consommes un Téléfrag' },
   { id: 'victoire', event: 'combatWon', kind: 'won', freq: 1.5, loot: true, lootFreq: 1, text: 'À la fin d\'un combat gagné' },
   { id: 'victoire_intacte', event: 'combatWon', kind: 'won', freq: 0.3, loot: true, text: 'À la fin d\'un combat gagné sans perdre de PV',
     test: (c) => c.hpLostThisCombat === 0 },
@@ -179,6 +183,10 @@ export const REWARDS: RewardDef[] = [
   // Réservées aux pouvoirs de classe : jamais tirées sur un objet.
   { id: 'perte_pv', value: -2, ok: () => false, text: (n) => `perds ${n} PV`, apply: (c, n) => c.fxLoseHp(n) },
   { id: 'visee', value: 4, ok: () => false, text: (n) => `Visée +${n}`, apply: (c, n) => c.fxCharge(n) },
+  { id: 'telefrag', value: 4, ok: () => false, text: (n) => (n > 1 ? `pose un Téléfrag sur ${n} ennemis au hasard` : 'pose un Téléfrag sur un ennemi au hasard'),
+    apply: (c, n) => { for (let i = 0; i < n; i++) { const free = c.living().filter((e) => !e.status.telefrag); if (free.length) c.fxStatus(c.rng.pick(free), 'telefrag', 1); } } },
+  { id: 'ralenti_zone', value: 2, ok: () => false, text: (n) => `applique ${n} ralenti à tous les ennemis`,
+    apply: (c, n) => { for (const e of c.living()) c.fxStatus(e, 'ralenti', n); } },
   { id: 'prospection', value: 1, max: 60, loot: true, ok: (t) => !!t.loot, text: (n) => `+${n} prospection au prochain combat`,
     apply: (c, n) => { c.prospection.next += n; } },
   { id: 'prospection_run', value: 4, max: 30, loot: true, ok: (t) => !!t.loot, text: (n) => `+${n} prospection pour le reste de la run`,

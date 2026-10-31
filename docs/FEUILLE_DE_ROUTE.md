@@ -5,7 +5,7 @@ Le tableau de bord partagé entre le propriétaire du projet et les IA qui y tra
 puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relecture, fait.
 
 ## Où en est le jeu (31/10/2026)
-- 2 classes jouables : Iop (Courroux) et Crâ (Visée). 3 actes de 12 étages + boss, carte façon Slay.
+- 3 classes jouables : Iop (Courroux), Crâ (Visée) et Xélor (Téléfrag, 50 cartes sur 58, lot 2 à venir). 3 actes de 12 étages + boss, carte façon Slay.
 - 121 cartes, ~150 monstres aux résistances de Dofus (plafond 50 %), 132 objets à effet tiré par partie, 18 Dofus.
 - 12 dieux et 72 bénédictions (sanctuaire en début d'acte), 45 événements à l'aveugle, 18 reliques, 3 malédictions.
 - Prévisualisation des dégâts, sauvegarde automatique, son (coupé par défaut), bestiaire complet avec recherche.
@@ -27,8 +27,9 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 |---|---|---|---|
 | Illustrations des cartes sans image (elles affichent leurs initiales) : trouver l'icône de sort Dofus la plus proche ou une illustration adaptée | `src/data/cards.ts` (champ `icon`), `public/assets` | | à faire |
 | Relire les 45 événements et les phrases d'ambiance des bénédictions (ton, fautes, cohérence avec les effets) | `src/data/events.ts`, `src/data/gods.ts`, `src/data/relics.ts` | | à faire |
-| Concevoir une 3e classe sur le papier : passif, deck de départ, ~35 cartes, dans l'esprit du dieu (le code prévoit Eniripsa, Xélor, Osamodas) | `docs/` (proposition), puis `src/data/cards.ts` | | à faire |
-| Intégrer la 3e classe (passif dans le moteur, écran d'accueil, animations) | `src/core/classes.ts`, `src/ui/`, `tools/import-survivors-assets.mjs` | | à faire |
+| Concevoir une 3e classe sur le papier : passif, deck de départ, ~35 cartes, dans l'esprit du dieu (le code prévoit Eniripsa, Xélor, Osamodas) | `docs/CLASSE_XELOR.md` (proposition), puis `src/data/cards.ts` | Claude (Xélor) | fait |
+| Intégrer la 3e classe (passif dans le moteur, écran d'accueil, animations) | `src/core/classes.ts`, `src/ui/`, `tools/import-survivors-assets.mjs` | Claude (Xélor) | lot 1 fait |
+| Xélor, lot 2 : effets « au prochain tour », rembobinage, PV perdus regagnés, retour en main, puis les 8 cartes ② de `docs/CLASSE_XELOR.md` | `src/core/combat.ts`, `src/data/cards.ts` | Claude (Xélor) | à faire |
 | Voix des autres classes et sons des monstres | `src/ui/sound.ts`, `public/game/sfx` | | à faire |
 
 ### Systèmes (à valider avec le propriétaire avant de commencer)
@@ -59,3 +60,5 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - 31/10/2026 : Grok — zones du Crâ −2 dégâts (10 cartes). 600 runs : Iop 37/9/3, Crâ 35/12/2, étages 14,53 contre 14,58. L'écart de boss 2 passe de 7 à 3 points. Visée à 6, PV du Crâ et échelle de l'acte 2 mesurés et écartés.
 - 31/10/2026 : Grok — écart Crâ / Iop mesuré (37/8/3 contre 35/16/5). Visée à 6 écartée (trop dur pour l'acte 1). Poison de zone du Crâ baissé, trois zones du Iop relevées, huit monstres ramenés vers la médiane de leur salle.
 - 31/10/2026 : dépôt réorganisé (sources à la racine, build par Cloudflare), AGENTS.md et feuille de route créés.
+- 31/10/2026 : le Xélor (lot 1) entre en jeu : Téléfrag, ralenti, échéance, 50 cartes, bot ; mesure dans BALANCE.md.
+- 31/10/2026 : les IA fusionnent elles-mêmes leurs demandes quand les tests passent, et préviennent le propriétaire.

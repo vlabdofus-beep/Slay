@@ -40,13 +40,16 @@ export interface BotResult {
   diedAt: string | null;
 }
 
+/** Coup d'arme du deck de départ (Coup d'épée, Coup d'arc, Coup de baguette) : la première carte qu'on retire. */
+const isStrike = (id: string) => { const d = LIBRARY.cards[id]; return d.rarity === 'base' && d.type === 'attaque' && !d.spellId && !d.token; };
+
 /** Choix en attente : retirer d'abord les malédictions et les cartes de base, améliorer au hasard, prendre la première carte. */
 function resolvePending(run: Run, rng: Rng): void {
   const p = run.pending!;
   if (p.kind === 'card') { run.chooseCard(rng.pick(p.options)); return; }
   if (p.kind === 'item') { run.chooseItem(chooseItem(LIBRARY, ITEMS, run.itemEffects, run.deck, run.equipment, p.options) ?? p.options[0]); return; }
   const c = run.pickCandidates(p.what);
-  const bad = c.find((x) => LIBRARY.cards[x.id].curse) ?? c.find((x) => x.id.endsWith('coup_epee') || x.id.endsWith('coup_arc'));
+  const bad = c.find((x) => LIBRARY.cards[x.id].curse) ?? c.find((x) => isStrike(x.id));
   run.resolvePick((p.what === 'remove' || p.what === 'transform') && bad ? bad.uid : rng.pick(c).uid);
 }
 
@@ -113,7 +116,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
     if (run.phase === 'marchand') {
       const shop = run.shop!;
       // Retirer une carte de base, puis un objet qui améliore l'équipement, puis une carte rare.
-      const basic = run.deck.find((c) => c.id.endsWith('coup_epee') || c.id.endsWith('coup_arc'));
+      const basic = run.deck.find((c) => isStrike(c.id));
       if (basic && !shop.removed && run.kamas >= shop.removePrice) run.removeCard(basic.uid);
       if (!o.noItems) {
         const affordable = shop.items.filter((x) => !x.sold && x.price <= run.kamas).map((x) => x.id);

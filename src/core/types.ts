@@ -18,10 +18,16 @@ export type ClassId = 'iop' | 'cra' | 'eniripsa' | 'xelor' | 'osamodas';
  *  - renvoi : chaque coup reçu renvoie N dégâts à l'attaquant
  *  - erosion : armure et soins reçus divisés par 2
  *  - esquive : chaque charge annule entièrement un coup reçu
- *  - etourdi : saute sa prochaine action (les boss doivent en cumuler 2) */
+ *  - etourdi : saute sa prochaine action (les boss doivent en cumuler 2)
+ *  - telefrag : marque du Xélor (0 ou 1) ; consommée quand une attaque du joueur touche l'ennemi
+ *  - ralenti : retrait de PA ; la prochaine action du monstre inflige N dégâts de moins au total (ne s'additionne pas :
+ *    le plus fort l'emporte),
+ *    puis le ralenti disparaît à la fin de son tour
+ *  - echeance : à la fin de son prochain tour, le monstre subit N dégâts Feu (l'armure absorbe), puis l'échéance disparaît */
 export type StatusId =
   | 'puissance' | 'faiblesse' | 'vulnerabilite' | 'brulure'
-  | 'poison' | 'bouclier' | 'renvoi' | 'erosion' | 'esquive' | 'etourdi';
+  | 'poison' | 'bouclier' | 'renvoi' | 'erosion' | 'esquive' | 'etourdi'
+  | 'telefrag' | 'ralenti' | 'echeance';
 export type StatusMap = Partial<Record<StatusId, number>>;
 
 /** Pour un effet de statut : 'target' = la cible de la carte (ou le joueur pour un monstre),
@@ -29,15 +35,18 @@ export type StatusMap = Partial<Record<StatusId, number>>;
 export type StatusTarget = 'target' | 'self' | 'all_enemies';
 
 /** Ce qui fait grossir une valeur de carte : « +3 dégâts par attaque déjà jouée ce tour »… */
-export type ScaleId = 'attaques' | 'puissance' | 'armure' | 'ennemis' | 'statuts' | 'main' | 'lancers' | 'visee' | 'epuisees';
+export type ScaleId = 'attaques' | 'puissance' | 'armure' | 'ennemis' | 'statuts' | 'main' | 'lancers' | 'visee' | 'epuisees'
+  /** Xélor : ennemis marqués d'un Téléfrag maintenant ; Téléfrag consommés ce tour. */
+  | 'telefrag' | 'telefrag_tour';
 /** Condition d'un effet de carte, évaluée au moment où l'effet se résout (dans l'ordre de la carte). */
 export type CondId =
   | 'cible_morte' | 'cible_blessee' | 'cible_vulnerable' | 'cible_empoisonnee' | 'cible_brule'
-  | 'pv_bas' | 'apres_attaque' | 'apres_competence' | 'premiere_carte' | 'main_vide';
+  | 'pv_bas' | 'apres_attaque' | 'apres_competence' | 'premiere_carte' | 'main_vide'
+  | 'cible_telefrag' | 'cible_ralentie';
 export interface Bonus { per: ScaleId; n: number }
 /** Un effet de pouvoir : même grammaire que les objets (déclencheur × récompense), ou une règle. */
 export type GrantFx =
-  | { kind: 'roll'; parts: { trigger: string; reward: string; amount: number }[] }
+  | { kind: 'roll'; parts: { trigger: string; reward: string; amount: number; limit?: number }[] }
   | { kind: 'rule'; rule: string };
 
 export type Effect =
@@ -72,7 +81,11 @@ export type Effect =
   /** La cible subit tout de suite les dégâts de son statut (poison : sans protection), sans qu'il diminue. */
   | { type: 'detonate'; status: StatusId }
   /** Épuise toutes les autres cartes de la main. */
-  | { type: 'exhaustHand' };
+  | { type: 'exhaustHand' }
+  /** Ta prochaine carte coûte n PA de moins (ce tour). */
+  | { type: 'discount'; amount: number }
+  /** Xélor : consomme le Téléfrag de chaque cible qui en porte un, et lui applique `then`. */
+  | { type: 'consume'; then: Effect[] };
 
 export type CardType = 'attaque' | 'competence' | 'pouvoir';
 export type CardTarget = 'enemy' | 'all_enemies' | 'self';

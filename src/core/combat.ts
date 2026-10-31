@@ -60,7 +60,7 @@ export interface Enemy extends Entity {
 }
 
 const MAX_FOES = 5;
-const DEBUFFS: StatusId[] = ['faiblesse', 'vulnerabilite', 'brulure', 'poison', 'erosion', 'etourdi'];
+const DEBUFFS: StatusId[] = ['faiblesse', 'vulnerabilite', 'brulure', 'poison', 'erosion', 'etourdi', 'ralenti', 'echeance', 'telefrag'];
 const power = <K extends MonsterPower['kind']>(e: Enemy, k: K) =>
   e.def.powers?.find((p) => p.kind === k) as Extract<MonsterPower, { kind: K }> | undefined;
 
@@ -242,6 +242,11 @@ export class Combat {
   /** Déclenchements de chaque objet depuis le début du combat (l'interface les fait briller). */
   fired: Record<string, number> = {};
 
+  /** Xélor : Téléfrag consommés ce tour et ce combat, pioches du passif déjà données ce tour. */
+  telefragTurn = 0;
+  telefragCombat = 0;
+  telefragDraws = 0;
+
   /** Sablier : PA gardé du tour précédent ; pioche à main vide déjà faite ce tour. */
   private leftover = 0;
   private emptyDrawn = false;
@@ -315,6 +320,8 @@ export class Combat {
       case 'lancers': return cardId ? this.playedById[cardId] ?? 0 : 0;
       case 'visee': return this.aim;
       case 'epuisees': return this.exhaustPile.length;
+      case 'telefrag': return this.living().filter((e) => (e.status.telefrag ?? 0) > 0).length;
+      case 'telefrag_tour': return this.telefragTurn;
     }
   }
 
@@ -347,7 +354,7 @@ export class Combat {
   usage(src: string): { used: number; limit: number } | null {
     let used = 0, limit = 0;
     for (const list of Object.values(this.handlers)) for (const h of list ?? []) {
-      if (h.src !== src || !['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained'].includes(h.trigger.event) || h.trigger.single) continue;
+      if (h.src !== src || !['cardPlayed', 'enemyKilled', 'hpLost', 'blockGained', 'telefragConsumed'].includes(h.trigger.event) || h.trigger.single) continue;
       used = Math.max(used, h.used);
       limit = Math.max(limit, h.limit);
     }
@@ -388,10 +395,15 @@ export class Combat {
       if (ex && note === 'Explose !') damage = this.enemyHit(e, ex.dmg, 'feu'), hits = 1;
       return { name: note, damage, hits, element: null, stunned: false, note };
     }
+    let slow = e.status.ralenti ?? 0;
     if (!stunned) for (const fx of move.effects) {
       if (fx.type === 'damage' || fx.type === 'drain') {
         const n = fx.type === 'damage' ? (fx.hits ?? 1) : 1;
-        damage += n * this.enemyHit(e, fx.amount, fx.element);
+        for (let h = 0; h < n; h++) {
+          const d = this.enemyHit(e, fx.amount, fx.element), cut = Math.min(slow, d);
+          slow -= cut;
+          damage += d - cut;
+        }
         hits += n;
         element = fx.element;
       }
@@ -491,6 +503,8 @@ export class Combat {
     }
     if (def.type === 'attaque' && this.rules.has('critique') && this.rng.next() < 0.25) { this.dmgMul *= 2; this.log.push('Coup critique !'); }
     if (def.type === 'attaque' && this.rules.has('premier_double') && this.turnAttacks === 0) twice = true;
+    // Téléfrag : seules les marques posées avant cette carte sont consommées par elle.
+    const marked = new Set(this.living().filter((e) => (e.status.telefrag ?? 0) > 0));
     const hits = this.resolveEffects(def, target);
     if (twice && this.outcome === 'ongoing') {
       const again = target && target.dead ? undefined : target;
@@ -500,6 +514,12 @@ export class Combat {
       }
     }
     this.dmgMul = 1;
+    // Téléfrag (Xélor) : une attaque qui touche un ennemi marqué consomme la marque.
+    if (def.type === 'attaque') {
+      const used = [...hits].filter((e) => marked.has(e) && (e.status.telefrag ?? 0) > 0);
+      for (const e of used) delete e.status.telefrag;
+      if (used.length) this.onTelefrag(used.length, target);
+    }
     if (def.type === 'pouvoir') { /* un pouvoir reste en jeu : il ne retourne pas dans le deck de ce combat */ }
     else if (def.exhaust) this.exhaustPile.push(inst);
     else this.discardPile.push(inst);
@@ -580,6 +600,10 @@ export class Combat {
       this.enemyAct(e);
       if (this.checkEnd()) return;
       this.tickBurn(e);
+      if (this.checkEnd()) return;
+      // Fin de son tour : le ralenti s'efface, l'échéance tombe.
+      delete e.status.ralenti;
+      this.tickDeadline(e);
       if (this.checkEnd()) return;
     }
 
@@ -682,7 +706,10 @@ export class Combat {
       this.log.push(`${e.def.name} annule l'effet (artefact)`);
       return;
     }
-    this.addStatus(e, id, n);
+    // Ralenti : ne s'additionne pas, le plus fort l'emporte. Téléfrag : présent ou non.
+    if (id === 'ralenti') e.status.ralenti = Math.max(e.status.ralenti ?? 0, n);
+    else if (id === 'telefrag') e.status.telefrag = 1;
+    else this.addStatus(e, id, n);
     if (id === 'brulure' && this.rules.has('brule_empoisonne')) this.addStatus(e, 'poison', n);
   }
 
@@ -705,12 +732,19 @@ export class Combat {
     this.prevType = null;
     this.turnEl = ZERO_EL();
     this.tripleDone = false;
+    this.telefragTurn = 0;
+    this.telefragDraws = 0;
     for (const list of Object.values(this.handlers)) for (const h of list ?? []) if (!h.once) h.used = 0;
     if (this.rules.has('sablier') && !first) this.player.energy += this.leftover;
     this.leftover = 0;
     this.emptyDrawn = false;
     const target = HAND_SIZE - (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('pioche_plus') ? 1 : 0);
     this.drawCards(target);
+    // Téléfrag (Xélor) : des ennemis au hasard, de préférence sans marque, en reçoivent une.
+    if (this.classe === 'xelor') for (let i = 0; i < PASSIVE_VALUES.telefrag.marques; i++) {
+      const free = this.living().filter((e) => !e.status.telefrag);
+      if (free.length) this.statusOnEnemy(this.rng.pick(free), 'telefrag', 1);
+    }
     this.emit('turnStart');
   }
 
@@ -944,6 +978,8 @@ export class Combat {
       case 'apres_competence': return this.prevType === 'competence';
       case 'premiere_carte': return this.turnCards === 0;
       case 'main_vide': return this.hand.length === 0;
+      case 'cible_telefrag': return !!target && !target.dead && (target.status.telefrag ?? 0) > 0;
+      case 'cible_ralentie': return !!target && !target.dead && (target.status.ralenti ?? 0) > 0;
     }
   }
 
@@ -1032,6 +1068,9 @@ export class Combat {
         case 'echo':
           this.echo += fx.count;
           break;
+        case 'discount':
+          this.fxDiscount(fx.amount);
+          break;
         case 'spread':
           for (const e of targets) {
             const n = e.status[fx.status] ?? 0;
@@ -1051,8 +1090,33 @@ export class Combat {
           this.exhaustPile.push(...this.hand);
           this.hand = [];
           break;
+        case 'consume': {
+          let n = 0;
+          for (const e of [...targets]) {
+            if (e.dead || !(e.status.telefrag ?? 0)) continue;
+            delete e.status.telefrag;
+            n++;
+            this.runEffects(fx.then, def, [e], e, hit);
+          }
+          if (n) this.onTelefrag(n, target);
+          break;
+        }
       }
     }
+  }
+
+  /** Xélor : des Téléfrag viennent d'être consommés (passif, puis pouvoirs « quand tu consommes un Téléfrag »). */
+  private onTelefrag(n: number, target: Enemy | undefined): void {
+    this.telefragTurn += n;
+    this.telefragCombat += n;
+    const v = PASSIVE_VALUES.telefrag;
+    if (this.classe === 'xelor' && this.telefragDraws < v.parTour && v.pioche > 0) {
+      this.telefragDraws++;
+      this.fired['classe'] = (this.fired['classe'] ?? 0) + 1;
+      this.drawCards(v.pioche);
+      this.log.push(`Téléfrag : pioche ${v.pioche}`);
+    }
+    this.emit('telefragConsumed', { target, amount: n });
   }
 
   private enemyAct(e: Enemy): void {
@@ -1107,7 +1171,11 @@ export class Combat {
         case 'drain': {
           const hits = fx.type === 'damage' ? (fx.hits ?? 1) : 1;
           for (let h = 0; h < hits; h++) {
-            const lost = this.applyHit(this.player, this.enemyHit(e, fx.amount, fx.element), { attacker: e });
+            // Ralenti : retiré du total de l'action, coup après coup.
+            let d = this.enemyHit(e, fx.amount, fx.element);
+            const slow = Math.min(e.status.ralenti ?? 0, d);
+            if (slow > 0) { d -= slow; e.status.ralenti! -= slow; }
+            const lost = this.applyHit(this.player, d, { attacker: e });
             if (fx.type === 'drain') e.hp = Math.min(e.maxHp, e.hp + erode(lost));
             const th = power(e, 'voleur');
             if (th && lost > 0) e.m.stolen += th.n;
@@ -1164,6 +1232,17 @@ export class Combat {
     if (!(mine && this.rules.has('brulure_tenace'))) t.status.brulure = burn - 1;
     this.srcElement = null;
     if (mine) this.markIfDead(t as Enemy);
+  }
+
+  /** Échéance (Xélor) : à la fin du tour du monstre, il subit les dégâts Feu annoncés (l'armure absorbe), puis elle disparaît. */
+  private tickDeadline(e: Enemy): void {
+    const n = e.status.echeance ?? 0;
+    if (n <= 0 || e.dead) return;
+    delete e.status.echeance;
+    this.srcElement = 'feu';
+    this.applyHit(e, n, { dot: true });
+    this.srcElement = null;
+    this.markIfDead(e);
   }
 
   /** Fin de round : usure des durées (faiblesse, vulnérabilité, érosion, renvoi). */
