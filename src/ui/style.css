@@ -1045,7 +1045,7 @@ body[data-screen="title"] { background: #4e8a2c; }
   display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: start;
   padding: clamp(.8rem, 3vh, 1.8rem) 1.2rem .8rem; text-align: center;
 }
-.land { position: fixed; inset: 0; z-index: -1; background: linear-gradient(#5fb3e0, #a8d6ec 42%, #f3e7c4 50%, #6aa63a 50%, #3d7424); }
+.land { position: fixed; inset: 0; z-index: -1; background: linear-gradient(#1f2b52, #6b6a8f 22%, #e9b47c 40%, #f7d98c 50%, #a7b957 53%, #5f8a34 66%, #2f4f22); }
 .land canvas { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .6s ease-out; }
 .land.on canvas { opacity: 1; }
 
@@ -1053,11 +1053,11 @@ body[data-screen="title"] { background: #4e8a2c; }
 .logo-word {
   margin: 0; font: 400 clamp(3rem, min(7.2vw, 10vh), 5.6rem)/.95 var(--title); letter-spacing: .01em;
   background: linear-gradient(180deg, #fffaf0 12%, #ffe7a6 55%, #e8b03a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 2px 0 rgba(92, 58, 12, .4)) drop-shadow(0 10px 24px rgba(18, 42, 30, .28));
+  filter: drop-shadow(0 2px 0 rgba(92, 58, 12, .4)) drop-shadow(0 10px 28px rgba(14, 16, 40, .45));
 }
 .logo-sub {
-  margin: 0; max-width: 42ch; text-wrap: balance; font: italic 500 1.02rem/1.3 var(--font); color: #1e3828;
-  text-shadow: 0 1px 0 rgba(255, 248, 225, .65);
+  margin: 0; max-width: 42ch; text-wrap: balance; font: italic 500 1.02rem/1.3 var(--font); color: #f4e6cc;
+  text-shadow: 0 1px 2px rgba(20, 22, 48, .7);
 }
 
 .heroes { align-self: end; display: flex; gap: clamp(.35rem, 3vw, 3.2rem); justify-content: center; width: 100%; margin: 0; }
