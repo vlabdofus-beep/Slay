@@ -624,11 +624,11 @@ function enemyHtml(e: Enemy, targeting: boolean): string {
   const cam = e.def.powers?.some((p) => p.kind === 'cameleon') && e.m.lastEl;
   return `<button class="enemy hastip${dead ? ' dead' : ''}${can ? ' targetable' : ''}${ui.hit.has(e.uid) ? ' hit' : ''}${ui.lunge.has(e.uid) ? ' lunge' : ''}" data-uid="${e.uid}" ${can ? 'data-act="target"' : 'tabindex="-1"'} aria-label="${esc(e.def.name)}">
     ${dead || e.dead ? '' : `<span class="intent i-${it.kind}" title="${esc(`${e.def.moves[e.moveId].name} : ${moveDetail(e, c)}`)}">${intentIcon(it.kind)}${esc(it.label)}</span>`}
+    ${e.def.powers?.length && !(dead || e.dead) ? `<span class="chips powers">${powerBadges(e, c)}</span>` : ''}
     ${pic(e.def.image, e.def.name, 'enemy-pic')}
     ${floatsHtml(e.uid)}
     <span class="enemy-under">
       <span class="enemy-name">${esc(e.def.name)}</span>
-      ${e.def.powers?.length ? `<span class="chips powers">${powerBadges(e, c)}</span>` : ''}
       ${hpBar(hp, e.maxHp, block, `e${e.uid}`)}
       <span class="chips">${statusChips(e.status)}</span>
     </span>

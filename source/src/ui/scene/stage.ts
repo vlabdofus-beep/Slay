@@ -9,13 +9,20 @@ import { animLength, animOf, buildCharacter, buildSpells, drawAnim, shotTime, ty
 
 /** Géométrie commune au canvas et au DOM (fractions de la fenêtre). */
 export const STAGE = { horizon: 0.5, ground: 0.66, playerX: 0.22, playerH: 0.3 };
-/** Disposition de la scène : en portrait, le sol remonte et le personnage rapetisse. */
+/** Disposition de la scène. Le sol est placé pour que tout ce qui est sous les combattants (nom, PV, statuts)
+ *  reste au-dessus de la main de cartes : on réserve en bas la hauteur de la main, puis celle de ces infos. */
 export function layoutStage(): void {
   const W = window.innerWidth, H = window.innerHeight;
   const portrait = W < H * 0.85;
+  const narrow = W <= 720;
+  const hand = narrow ? 215 : 300;      // hauteur visible de la main (cartes et leur léger soulèvement)
+  const info = narrow ? 80 : 128;        // nom, mécaniques, PV et statuts sous un monstre
+  const groundPx = Math.min(H * (portrait ? 0.56 : 0.66), H - hand - info);
+  const ground = Math.max(0.42, groundPx / H);
+  const room = Math.max(0.12, ground - 110 / H); // hauteur disponible au-dessus du sol, sous la barre du haut
   Object.assign(STAGE, portrait
-    ? { horizon: 0.42, ground: 0.56, playerX: 0.2, playerH: Math.min(0.24, (0.42 * W) / H) }
-    : { horizon: 0.5, ground: 0.66, playerX: 0.22, playerH: Math.min(0.3, (0.24 * W) / H) });
+    ? { horizon: ground - 0.14, ground, playerX: 0.2, playerH: Math.min(0.24, (0.42 * W) / H, room) }
+    : { horizon: ground - 0.16, ground, playerX: 0.22, playerH: Math.min(0.3, (0.24 * W) / H, room) });
 }
 layoutStage();
 
