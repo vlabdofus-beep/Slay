@@ -37,14 +37,14 @@ Les exports eux-mêmes restent hors du dépôt (`reference/` est ignoré par git
 - Valeurs des cartes Iop et Cra alignées sur le tableau ci-dessus. Corrections : Épée divine 5×2 → 4×2,
   Couper/Flèche harcelante 3 → 4, zones renforcées (Tempête 10, Dispersion 9, Pluie 7 + brûlure 3),
   Colère de Iop 24 sans Exhaust, Flèche destructrice 12 → 10.
-- **Cartes de base neutres** (sauf la signature) : en v0, l'Iop de départ (tout en Terre) ne battait jamais le boss,
+- **Cartes de base neutres** (sauf la signature) : en v0, le Iop de départ (tout en Terre) ne battait jamais le boss,
   qui résiste à la Terre. Les voies élémentaires se construisent désormais par les récompenses.
 - Monstres d'Amakna refaits sur les repères (8 monstres, 2 élites, 1 boss, 11 rencontres). Chaque élément est la faiblesse
   de 2 monstres et la résistance de 2 autres.
 - **Coefficient de difficulté de l'acte 1 : ×0,9** depuis l'arrivée des items (×0,75 avant), provisoire. À ×1, le bot meurt au premier
   élite : il n'a ni relique de départ, ni items, ni potions (supprimées par conception), et il prend ses cartes au hasard.
   On remontera vers ×1 quand les items et panoplies existeront.
-- Cra à 75 PV (au lieu de 70) : l'écart avec l'Iop venait surtout des PV.
+- Cra à 75 PV (au lieu de 70) : l'écart avec le Iop venait surtout des PV.
 
 ## Résultats de simulation sans items (×0,75, 500 runs, bot glouton, cartes au hasard) — historique
 
@@ -57,7 +57,7 @@ PV perdus par combat avec le deck de départ : faible 2–10, normal 10–18, é
 
 À surveiller :
 - Le **boss est un mur** (92 % l'atteignent, 31 % le battent). Leviers : ses PV, la récompense d'élite, les items.
-- Le Cra reste derrière l'Iop contre le boss.
+- Le Cra reste derrière le Iop contre le boss.
 - Le bot est volontairement simple : un humain fait nettement mieux. Ces chiffres servent à comparer des réglages, pas à fixer la difficulté finale.
 
 ## Items et panoplies (v1)
@@ -79,7 +79,7 @@ deux voies au palier 1 dans 59–70 % des runs ; voie multi (prisme ≥ 2) dans 
 
 Lecture :
 - Les items comblent l'absence de potions et de relique de départ : à coefficient égal, ils transforment l'acte.
-- Le Cra rattrape presque l'Iop une fois équipé.
+- Le Cra rattrape presque le Iop une fois équipé.
 - **Aucune panoplie 4 pièces dans l'acte 1** : avec 3 offres communes, c'est impossible. Les bonus 4 pièces deviennent
   un objectif des actes 2–3, sauf si on augmente la cadence.
 - Paliers 2+ rares, mais le bot prend ses cartes au hasard : un joueur qui suit une voie les atteindra bien plus souvent.
@@ -94,9 +94,9 @@ a rendu le jeu plus facile : on a pu remonter à **×1**, c'est-à-dire les vale
 | Iop (80 PV) | 47 % | 24 % |
 | Crâ (70 PV) | 55 % | 40 % |
 
-- Crâ remis à 70 PV : avec ses vrais sorts, il était passé devant l'Iop.
+- Crâ remis à 70 PV : avec ses vrais sorts, il était passé devant le Iop.
 - La voie multi (Microplie 2+ pièces ou prisme) apparaît dans ~15 % des runs du bot.
-- Reste à surveiller : l'Iop est un peu derrière le Crâ ; toujours aucune panoplie 4 pièces dans l'acte 1.
+- Reste à surveiller : le Iop est un peu derrière le Crâ ; toujours aucune panoplie 4 pièces dans l'acte 1.
 
 ## Endpoints Spire Codex utiles pour la suite
 `/api/characters` (PV et decks de départ), `/api/acts` (structure de la carte), `/api/runs/stats/...`

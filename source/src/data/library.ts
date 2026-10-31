@@ -8,7 +8,7 @@ export const LIBRARY: Library = {
   monsters: Object.fromEntries(MONSTERS.map((m) => [m.id, m])),
 };
 
-// Cra : 70 → 75 quand il était derrière l'Iop, puis retour à 70 avec les vrais sorts (drain, cartes à 0 PA),
+// Cra : 70 → 75 quand il était derrière le Iop, puis retour à 70 avec les vrais sorts (drain, cartes à 0 PA),
 // qui l'ont fait passer devant. Voir docs/BALANCE.md.
 export const CLASS_START_HP: Partial<Record<ClassId, number>> = { iop: 80, cra: 70 };
 

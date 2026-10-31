@@ -103,7 +103,7 @@ var ns=["terre","feu","eau","air"],Xe={terre:"Terre",feu:"Feu",eau:"Eau",air:"Ai
       <span class="class-passive">${Ca(e)}<span><b>${x(he[e].name)}</b> ${x(he[e].text)}</span></span>
       <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${n("m","Homme")}${n("f","Femme")}</div>
       ${Fo(e,r)}
-      <button class="primary" data-act="new-run" data-classe="${e}">Jouer ${e==="iop"?"l'Iop":"le Cr\xE2"}</button>
+      <button class="primary" data-act="new-run" data-classe="${e}">Jouer ${e==="iop"?"le Iop":"le Cr\xE2"}</button>
     </div>`};return`<main class="title">
     <h1 class="brand-name big">Dofus Slay</h1>
     <p class="brand-sub">Un deckbuilder dans le Monde des Douze</p>

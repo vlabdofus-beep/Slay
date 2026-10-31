@@ -363,7 +363,7 @@ function viewTitle(): string {
       <span class="class-passive">${passiveBadge(id)}<span><b>${esc(PASSIVES[id]!.name)}</b> ${esc(PASSIVES[id]!.text)}</span></span>
       <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
       ${colorRow(id, g)}
-      <button class="primary" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? "l'Iop" : 'le Crâ'}</button>
+      <button class="primary" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? 'le Iop' : 'le Crâ'}</button>
     </div>`;
   };
   return `<main class="title">
