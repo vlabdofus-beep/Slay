@@ -63,9 +63,10 @@ Node 22.18 ou plus (les fichiers .ts s'exécutent directement, sans compilation)
 |---|---|
 | `src/core` | Moteur : `combat.ts` (combat, statuts, règles, prévisualisation), `effects.ts` (déclencheurs × récompenses des objets, règles légendaires et divines), `map.ts`, `offers.ts`, `rng.ts`, `types.ts` |
 | `src/data` | Contenu : `cards.ts`, `monsters.ts` + `bestiary.ts` (monstres et rencontres), `items.ts`, `eggs.ts` (Dofus), `gods.ts` (12 dieux, 72 bénédictions), `relics.ts`, `events.ts` (45 événements), `statusCards.ts` (statuts et malédictions), `balance.ts` (lecture et validation d'equilibrage.json) |
-| `src/game` | Partie : `run.ts` (carte, combats, récompenses, marchand, Zaap, dieux, événements, opérations de run), `boons.ts` (bénédictions et reliques, textes), `save.ts` (sauvegarde) |
+| `src/game` | Partie : `run.ts` (carte, combats, récompenses, marchand, Zaap, dieux, événements, opérations de run), `party.ts` (partie à plusieurs), `boons.ts` (bénédictions et reliques, textes), `save.ts` (sauvegarde) |
 | `src/ui` | Interface : `app.ts` (écrans, rendu, interactions), `describe.ts` (textes d'effets), `bestiary.ts`, `sound.ts`, `style.css`, `scene/` (rendu WebGL des personnages Dofus 3, décors peints) |
-| `src/sim` | Bot (`bot.ts`, `policy.ts`, `itemPolicy.ts`) et simulations (`run.ts`, `calibrate.ts`) |
+| `src/sim` | Bot (`bot.ts`, `policy.ts`, `itemPolicy.ts`, `party.ts` à plusieurs) et simulations (`run.ts`, `calibrate.ts`) |
+| `worker` | Serveur Cloudflare : `index.ts` (sert le jeu, salons en Durable Objects), `salon.ts` (logique du salon, testée sous Node) |
 | `public/assets` | Icônes, polices, illustrations des dieux (versionnés) |
 | `public/game` | Animations, décors, effets de sorts, musiques et voix, importés de Dofus Survivors (versionnés, lourds : ne pas les régénérer sans raison) |
 

@@ -8,7 +8,7 @@
   "scripts": {
     "build": "node tools/build-site.mjs dist",
     "preview": "node tools/build-site.mjs dist && node tools/serve.mjs dist",
-    "test": "node --test src/core/*.test.ts src/game/*.test.ts",
+    "test": "node --test src/core/*.test.ts src/game/*.test.ts worker/*.test.ts",
     "typecheck": "tsc",
     "sim": "node src/sim/run.ts",
     "balance:export": "node tools/export-balance.ts"

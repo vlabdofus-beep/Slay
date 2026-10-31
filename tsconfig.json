@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src", "worker/salon.ts", "worker/salon.test.ts"]
 }

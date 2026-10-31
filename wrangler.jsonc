@@ -1,15 +1,23 @@
-// Dofus Slay : site 100 % statique (Workers Static Assets), pas de code serveur.
+// Dofus Slay : le jeu (fichiers statiques de dist/) et les salons à plusieurs (worker/index.ts, Durable Objects).
 // Workers Builds lance `npx wrangler deploy` à chaque push sur main : wrangler exécute d'abord la commande
-// de build ci-dessous (installation, puis compilation dans dist/), puis publie dist/.
+// de build ci-dessous (installation, puis compilation dans dist/), puis publie dist/ et le worker.
 // Si le build échoue, rien n'est publié : la version en ligne reste la précédente.
 // Le nom doit correspondre au nom du Worker dans le tableau de bord Cloudflare.
 {
   "name": "slay",
   "compatibility_date": "2025-09-01",
+  "main": "worker/index.ts",
   "build": {
     "command": "npm install --no-audit --no-fund && npm run build"
   },
+  // Les fichiers existants sont servis directement ; le reste (/salon/…) passe par le worker.
   "assets": {
-    "directory": "./dist"
-  }
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  // Un salon = un Durable Object (stockage SQLite, disponible sur l'offre gratuite).
+  "durable_objects": {
+    "bindings": [{ "name": "SALONS", "class_name": "SalonDO" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SalonDO"] }]
 }
