@@ -24,7 +24,8 @@ export type Pending =
   | { kind: 'card'; options: string[] }
   | { kind: 'item'; options: string[] };
 
-export interface GodVisit { id: GodId; offer: string[]; taken: string | null }
+/** Le dieu de l'acte : une case « sanctuaire » au pied de la carte, à visiter avant la première case. */
+export interface GodVisit { id: GodId; offer: string[]; taken: string | null; visited: boolean }
 export interface EventVisit {
   id: string;
   /** Option choisie, et ce qui s'est passé (texte du résultat). */
@@ -221,6 +222,7 @@ export class Run {
   /** Nœuds où le joueur peut aller maintenant. */
   availableNodes(): string[] {
     if (this.phase !== 'map') return [];
+    if (this.god && !this.god.visited) return ['dieu'];
     if (this.position === null) return this.map.starts;
     return this.map.nodes[this.position].next;
   }
@@ -229,6 +231,7 @@ export class Run {
 
   enterNode(id: string): void {
     if (!this.availableNodes().includes(id)) throw new Error(`Nœud ${id} inaccessible`);
+    if (id === 'dieu') { this.god!.visited = true; this.phase = 'dieu'; return; }
     const node = this.map.nodes[id];
     this.position = id;
     this.path.push(id);
@@ -498,8 +501,7 @@ export class Run {
     const left = GODS.filter((g) => !this.godsSeen.includes(g.id));
     const god = rng.pick(left.length ? left : GODS);
     this.godsSeen.push(god.id);
-    this.god = { id: god.id, offer: rng.shuffle(god.boons.map((b) => b.id)).slice(0, 3), taken: null };
-    this.phase = 'dieu';
+    this.god = { id: god.id, offer: rng.shuffle(god.boons.map((b) => b.id)).slice(0, 3), taken: null, visited: false };
   }
 
   takeBoon(id: string): void {

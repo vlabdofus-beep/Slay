@@ -12,8 +12,10 @@ export interface GodDef {
   name: string;
   /** Titre : « dieu de la Force »… */
   title: string;
-  /** Identifiant de classe (icône dans assets/classes). */
+  /** Identifiant de classe (icône dans assets/classes, apparence animée look_<breed><gender>). */
   breed: number;
+  /** Apparence : Crâ, Eniripsa et Sacrieur sont des déesses. */
+  gender: 'm' | 'f';
   color: string;
   /** Ce que dit le dieu en apparaissant. */
   greeting: string;
@@ -28,7 +30,7 @@ const rule = (r: RuleId): ItemEffect => ({ kind: 'rule', rule: r });
 
 export const GODS: GodDef[] = [
   {
-    id: 'iop', name: 'Iop', title: 'dieu de la Force', breed: 8, color: '#e5483b',
+    id: 'iop', name: 'Iop', title: 'dieu de la Force', breed: 8, gender: 'm', color: '#e5483b',
     greeting: 'Réfléchir, c\'est perdre du temps. Prends ma force et cogne.',
     boons: [
       { id: 'iop_colere', name: 'Colère de Iop', effects: [on('debut_combat', 'puissance', 2)], lore: 'La rage monte avant même le premier coup.' },
@@ -40,7 +42,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'cra', name: 'Crâ', title: 'déesse de l\'Arc', breed: 9, color: '#7dbb2e',
+    id: 'cra', name: 'Crâ', title: 'déesse de l\'Arc', breed: 9, gender: 'f', color: '#7dbb2e',
     greeting: 'Un seul trait, au bon endroit. Le reste n\'est que du bruit.',
     boons: [
       { id: 'cra_oeil', name: 'Œil de Crâ', effects: [on('premiere_carte', 'vulnerabilite', 1)], lore: 'Elle voit la faille avant de tirer.' },
@@ -52,7 +54,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'eniripsa', name: 'Eniripsa', title: 'déesse des Soins', breed: 7, color: '#e9789c',
+    id: 'eniripsa', name: 'Eniripsa', title: 'déesse des Soins', breed: 7, gender: 'f', color: '#e9789c',
     greeting: 'Les mots soignent, mon enfant. Écoute bien les miens.',
     boons: [
       { id: 'eni_mot', name: 'Mot de régénération', effects: [on('debut_tour', 'soin', 2)], lore: 'Un murmure à chaque aube.' },
@@ -64,7 +66,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'ecaflip', name: 'Écaflip', title: 'dieu de la Chance', breed: 6, color: '#f0b739',
+    id: 'ecaflip', name: 'Écaflip', title: 'dieu de la Chance', breed: 6, gender: 'm', color: '#f0b739',
     greeting: 'Pile, tu gagnes. Face… on verra bien. Allez, tente ta chance !',
     boons: [
       { id: 'eca_pile', name: 'Pile ou face', now: [{ op: 'chance', p: 0.5, win: [{ op: 'kamas', n: 250 }], lose: [{ op: 'kamas', n: 40 }], winText: 'Pile ! La bourse déborde.', loseText: 'Face. Une petite pièce de consolation.' }], lore: 'La pièce tourne, tourne encore…' },
@@ -76,7 +78,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'enutrof', name: 'Enutrof', title: 'dieu de l\'Argent', breed: 3, color: '#c99a45',
+    id: 'enutrof', name: 'Enutrof', title: 'dieu de l\'Argent', breed: 3, gender: 'm', color: '#c99a45',
     greeting: 'Hé hé… Tout trésor a un prix, petit. Mais pour toi, je fais une ristourne.',
     boons: [
       { id: 'enu_pelle', name: 'Pelle du prospecteur', stats: { prospection: 40 }, lore: 'Elle sent l\'or à trois lieues.' },
@@ -88,7 +90,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'sram', name: 'Sram', title: 'dieu des Ombres', breed: 4, color: '#8a7bd1',
+    id: 'sram', name: 'Sram', title: 'dieu des Ombres', breed: 4, gender: 'm', color: '#8a7bd1',
     greeting: 'Tu ne m\'as pas vu arriver. C\'est bien. Eux non plus ne te verront pas.',
     boons: [
       { id: 'sram_venin', name: 'Venin tenace', effects: [rule('poison_tenace')], lore: 'Le poison ne s\'oublie pas.' },
@@ -100,7 +102,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'xelor', name: 'Xélor', title: 'dieu du Temps', breed: 5, color: '#4c8fd6',
+    id: 'xelor', name: 'Xélor', title: 'dieu du Temps', breed: 5, gender: 'm', color: '#4c8fd6',
     greeting: 'Tic. Tac. J\'ai tout le temps du monde. Toi, un peu moins. Prends-en un peu.',
     boons: [
       { id: 'xel_sablier', name: 'Sablier', effects: [rule('sablier')], lore: 'Le sable qui n\'a pas coulé attend son heure.' },
@@ -112,7 +114,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'sacrieur', name: 'Sacrieur', title: 'dieu du Sang', breed: 11, color: '#c43c3c',
+    id: 'sacrieur', name: 'Sacrieur', title: 'déesse du Sang', breed: 11, gender: 'f', color: '#c43c3c',
     greeting: 'Saigne, et deviens plus fort. La douleur est un cadeau.',
     boons: [
       { id: 'sac_sang', name: 'Sang bouillant', effects: [rule('sang')], lore: 'Chaque blessure nourrit la suivante.' },
@@ -124,7 +126,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'feca', name: 'Féca', title: 'dieu de la Protection', breed: 1, color: '#d9a441',
+    id: 'feca', name: 'Féca', title: 'dieu de la Protection', breed: 1, gender: 'm', color: '#d9a441',
     greeting: 'Personne ne tombe tant que je veille. Tiens-toi derrière mon bouclier.',
     boons: [
       { id: 'fec_glyphe', name: 'Glyphe de garde', effects: [rule('armure_persistante')], lore: 'Le glyphe garde la moitié de ta défense.' },
@@ -136,7 +138,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'osamodas', name: 'Osamodas', title: 'dieu des Bêtes', breed: 2, color: '#5aa7a0',
+    id: 'osamodas', name: 'Osamodas', title: 'dieu des Bêtes', breed: 2, gender: 'm', color: '#5aa7a0',
     greeting: 'Les bêtes savent qui est le maître. Elles te suivront, si tu sais tenir le fouet.',
     boons: [
       { id: 'osa_fouet', name: 'Fouet', effects: [rule('faiblesse_forte')], lore: 'Un claquement, et la bête baisse la tête.' },
@@ -148,7 +150,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'sadida', name: 'Sadida', title: 'dieu de la Nature', breed: 10, color: '#6aa84f',
+    id: 'sadida', name: 'Sadida', title: 'dieu de la Nature', breed: 10, gender: 'm', color: '#6aa84f',
     greeting: 'La forêt t\'a vu passer. Elle a décidé de t\'aider. N\'abîme pas ses arbres.',
     boons: [
       { id: 'sad_ronces', name: 'Ronces', effects: [on('debut_combat', 'renvoi', 4)], lore: 'Qui touche à la ronce s\'y pique.' },
@@ -160,7 +162,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'pandawa', name: 'Pandawa', title: 'dieu de l\'Ivresse', breed: 12, color: '#7a9a5a',
+    id: 'pandawa', name: 'Pandawa', title: 'dieu de l\'Ivresse', breed: 12, gender: 'm', color: '#7a9a5a',
     greeting: 'Hips ! Un petit verre de lait de bambou avant d\'y aller ? Ça donne du courage !',
     boons: [
       { id: 'pan_ivresse', name: 'Ivresse', effects: [rule('etourdi_fragile')], lore: 'Celui qui titube tombe plus fort.' },

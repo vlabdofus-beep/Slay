@@ -23,7 +23,7 @@ import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
 import {
   cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
-import { buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
+import { animLength, buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
 import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
 import { paintBoard, paintLandscape } from './scene/paint.ts';
@@ -545,6 +545,46 @@ function startPreviews(): void {
   previewRaf = requestAnimationFrame(loop);
 }
 
+/** « de Sram », « d'Eniripsa »… mais « de Iop » (on dit « le Iop »). */
+const deName = (n: string) => (/^[AEIOUÉÈ]/.test(n) && n !== 'Iop' ? `d'${n}` : `de ${n}`);
+
+/**
+ * Le dieu en personne, sous l'apparence de sa classe (apparences de Dofus 3) : à son arrivée il lance un sort dans
+ * une gerbe de lumière, puis attend. Un seul personnage chargé à la fois, rendu à la résolution réelle du canvas.
+ */
+const godChars: Record<string, Character | null | 'loading'> = {};
+let godRaf = 0, godSince = 0, godKey = '';
+function startGod(): void {
+  const cv = root.querySelector<HTMLCanvasElement>('canvas[data-god]');
+  if (!cv) return;
+  const key = cv.dataset.god!;
+  if (key !== godKey) { godKey = key; godSince = 0; }
+  if (!(key in godChars)) {
+    godChars[key] = 'loading';
+    const breed = parseInt(key, 10), g = key.endsWith('f') ? 'f' : 'm';
+    void buildCharacter(breed, g, {}).then((c) => { godChars[key] = c; });
+  }
+  if (godRaf) return;
+  const loop = () => {
+    const c = root.querySelector<HTMLCanvasElement>('canvas[data-god]');
+    if (!c) { godRaf = 0; return; }
+    godRaf = requestAnimationFrame(loop);
+    const ch = godChars[c.dataset.god!];
+    if (!ch || ch === 'loading') return;
+    const now = performance.now() / 1000;
+    if (!godSince) godSince = now;
+    c.parentElement!.classList.add(now - godSince < 1.4 ? 'arrived' : 'settled');
+    const css = c.clientWidth || 260, dpr = Math.min(3, window.devicePixelRatio || 1), size = Math.round(css * dpr);
+    if (c.width !== size) { c.width = size; c.height = size; }
+    const x = c.getContext('2d')!;
+    x.clearRect(0, 0, c.width, c.height);
+    const t = now - godSince, cast = reduceMotion() ? 0 : animLength(ch, 'cast');
+    const [anim, at] = t < cast ? ['cast', t] : ['idle', t - cast];
+    drawAnim(x, ch, anim, at, c.width / 2, c.height * 0.9, c.height * 0.66);
+  };
+  godRaf = requestAnimationFrame(loop);
+}
+
 const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', marchand: 'Marchand', evenement: 'Événement', boss: 'Boss' };
 /** Icônes officielles de l'interface Dofus (modes de Dofusle, objets de Dofus Survivors). */
 const uiIcon = (name: string, cls = 'ui-ico') => `<img class="${cls}" src="${asset(`ui/${name}.webp`)}" alt="" draggable="false">`;
@@ -622,14 +662,16 @@ function mapLayout(run: Run) {
   const m = run.map;
   const W = 126, H = 78, GUTTER = 74, TOP = 190, BOTTOM = 84, BOSS_Y = 72;
   const pos = (n: MapNode) => ({ x: GUTTER + n.col * W, y: n.type === 'boss' ? BOSS_Y : TOP + (m.floors - 1 - n.floor) * H });
-  return { pos, width: GUTTER * 2 + (m.cols - 1) * W, height: TOP + (m.floors - 2) * H + BOTTOM, TOP, H };
+  // Sanctuaire du dieu de l'acte : au pied de la carte, sous le premier étage, au centre.
+  const shrine = run.god ? { x: GUTTER + ((m.cols - 1) * W) / 2, y: TOP + (m.floors - 1) * H + 10 } : null;
+  return { pos, shrine, width: GUTTER * 2 + (m.cols - 1) * W, height: TOP + (m.floors - 2) * H + BOTTOM + (shrine ? H + 26 : 0), TOP, H };
 }
 /** Lieu peint sous la carte de chaque acte (packs de Dofus 3). */
 const ACT_BOARD: Record<number, number> = { 1: 8, 2: 46, 3: 66 };
 
 function viewMap(run: Run): string {
   const m = run.map;
-  const { pos, width, height, TOP, H } = mapLayout(run);
+  const { pos, shrine, width, height, TOP, H } = mapLayout(run);
   const avail = new Set(run.availableNodes());
   const visited = new Set(run.path);
   const step = (a: string, b: string) => run.path.indexOf(b) === run.path.indexOf(a) + 1 && run.path.includes(a);
@@ -638,6 +680,12 @@ function viewMap(run: Run): string {
     const cls = visited.has(id) && step(n.id, id) ? 'walked' : n.id === run.position && avail.has(id) ? 'next' : run.position === null && avail.has(id) ? 'next' : '';
     return { a, b, cls };
   }));
+  // Du sanctuaire vers les cases de départ
+  if (shrine && run.god) for (const id of m.starts) {
+    const b = pos(m.nodes[id]);
+    const cls = run.path[0] === id ? 'walked' : run.god.visited && run.position === null ? 'next' : '';
+    segs.push({ a: shrine, b, cls });
+  }
   // Chemins : un sentier de terre (bord sombre + cœur clair) pour la route prise et les prochains pas, des pointillés ailleurs
   const line = (s: (typeof segs)[number], cls: string) => `<line x1="${s.a.x}" y1="${s.a.y}" x2="${s.b.x}" y2="${s.b.y}" class="${cls}"/>`;
   const lines = segs.map((sg) => line(sg, `edge ${sg.cls}`)).join('') + segs.map((sg) => line(sg, `core ${sg.cls}`)).join('');
@@ -658,9 +706,22 @@ function viewMap(run: Run): string {
       ${nodeTip(run, n)}
     </div>`;
   }).join('');
+  const god = run.god ? GOD_BY_ID[run.god.id] : null;
+  const shrineHtml = shrine && god && run.god ? (() => {
+    const open = avail.has('dieu');
+    const taken = run.god.taken ? BOON_BY_ID[run.god.taken] : null;
+    return `<div class="node-wrap t-dieu s-${open ? 'avail' : 'done'}" style="left:${shrine.x}px;top:${shrine.y}px;--god:${god.color}" ${open ? '' : 'tabindex="0"'}>
+      <button class="node t-dieu s-${open ? 'avail' : 'done'}" ${open ? 'data-act="go" data-id="dieu"' : 'aria-disabled="true" tabindex="-1"'} aria-label="Sanctuaire ${esc(deName(god.name))}${open ? ', accessible' : ''}">
+        <img class="god-node-ico" src="${asset(`classes/${god.breed}.png`)}" alt=""></button>
+      <span class="shrine-plate">Sanctuaire ${esc(deName(god.name))}</span>
+      <div class="tip tip-right tip-down" role="tooltip"><p class="tip-head"><b>${esc(god.name)}, ${esc(god.title)}</b><span>Départ</span></p>
+        <p class="tip-text">${open ? `${esc(god.name)} t'attend au pied de la carte : une bénédiction pour toute la run, au choix parmi trois.` : taken ? `Bénédiction reçue : ${esc(taken.name)}.` : 'Tu es reparti sans bénédiction.'}</p></div>
+    </div>`;
+  })() : '';
   const floors = Array.from({ length: m.floors - 1 }, (_, i) => i + 1)
     .map((f) => `<span class="floor-no${f === run.stats.floor ? ' current' : ''}" style="top:${TOP + (m.floors - 1 - f) * H}px">${f}</span>`).join('');
-  const hint = run.position === null ? 'Choisis ta première case en bas de la carte.' : 'Choisis ta prochaine case. Survole-la pour voir ce qui t\'y attend.';
+  const hint = avail.has('dieu') && god ? `Commence par le sanctuaire ${deName(god.name)}, au pied de la carte.`
+    : run.position === null ? 'Choisis ta première case en bas de la carte.' : 'Choisis ta prochaine case. Survole-la pour voir ce qui t\'y attend.';
   return `<main class="mapview">
     <section class="map-wrap">
       <header class="map-head">
@@ -671,8 +732,8 @@ function viewMap(run: Run): string {
         <div class="map-board" data-board aria-hidden="true"></div>
         <svg class="trails" width="${width}" height="${height}" aria-hidden="true">${lines}</svg>
         ${floors}
-        ${run.position === null ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 42}px">Départ</span>` : ''}
-        ${nodes}
+        ${run.position === null && !shrine ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 42}px">Départ</span>` : ''}
+        ${nodes}${shrineHtml}
       </div></div>
       <ul class="legend">${(['combat', 'elite', 'evenement', 'zaap', 'marchand'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
     </section>
@@ -684,13 +745,17 @@ function viewMap(run: Run): string {
 function mountBoard(run: Run): void {
   const host = root.querySelector('[data-board]') as HTMLElement | null;
   if (!host) return;
-  const { pos, width, height } = mapLayout(run);
+  const { pos, shrine, width, height } = mapLayout(run);
   const m = run.map;
   const nodes = Object.values(m.nodes).map((n) => ({ ...pos(n), r: n.type === 'boss' ? 64 : 34 }));
   const segs = Object.values(m.nodes).flatMap((n) => n.next.map((id) => {
     const a = pos(n), b = pos(m.nodes[id]);
     return [a.x, a.y, b.x, b.y] as [number, number, number, number];
   }));
+  if (shrine) {
+    nodes.push({ ...shrine, r: 56 });
+    for (const id of m.starts) { const b = pos(m.nodes[id]); segs.push([shrine.x, shrine.y, b.x, b.y]); }
+  }
   void paintBoard(ACT_BOARD[run.act] ?? 8, { W: width, H: height, nodes, segs }, run.seed * 31 + run.act).then((c) => {
     if (!c || !host.isConnected) return;
     if (host.firstChild !== c) host.replaceChildren(c);
@@ -964,8 +1029,12 @@ function viewGod(run: Run): string {
   return `<main class="godview">
     <section class="god" style="--god:${g.color}">
       <div class="god-head">
-        <span class="god-halo"><img src="${asset(`classes/${g.breed}.png`)}" alt=""></span>
-        <div><p class="god-kicker">Acte ${run.act}, ${esc(actName(run))}</p><h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
+        <div class="god-stage" aria-hidden="true">
+          <span class="god-rays"></span><span class="god-glyph"></span>
+          <canvas class="god-canvas" data-god="${g.breed}${g.gender}" width="520" height="520"></canvas>
+          <img class="god-sym" src="${asset(`classes/${g.breed}.png`)}" alt="">
+        </div>
+        <div><p class="god-kicker">Sanctuaire ${esc(deName(g.name))}, acte ${run.act}</p><h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
         <blockquote>« ${esc(g.greeting)} »</blockquote></div>
       </div>
       <p class="muted">${esc(g.name)} t'offre une bénédiction pour toute la run. Choisis-en une parmi trois.</p>
@@ -1261,6 +1330,7 @@ function render(): void {
   else stage.hide();
   if (!run) { startPreviews(); mountLand(); }
   if (run?.phase === 'map') mountBoard(run);
+  if (run?.phase === 'dieu') startGod();
   if (run?.phase === 'map') {
     const here = root.querySelector('.node.s-avail') as HTMLElement | null;
     here?.scrollIntoView({ block: 'center' });

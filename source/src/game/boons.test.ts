@@ -50,6 +50,9 @@ test('15 événements par acte, art et effets valides, reliques valides', () => 
 
 test('un dieu au début de chaque acte, jamais deux fois le même ; la bénédiction compte en combat', () => {
   const run = new Run('iop', 3);
+  assert.equal(run.phase, 'map');
+  assert.deepEqual(run.availableNodes(), ['dieu'], 'le sanctuaire avant la première case');
+  run.enterNode('dieu');
   assert.equal(run.phase, 'dieu');
   const id = run.god!.offer[0];
   run.takeBoon(id);
@@ -61,6 +64,7 @@ test('un dieu au début de chaque acte, jamais deux fois le même ; la bénédic
   }
   assert.equal(run.phase, 'map');
   assert.deepEqual(run.boons, [id]);
+  assert.deepEqual(run.availableNodes(), run.map.starts);
   assert.ok(run.blessings().length === 1);
 });
 

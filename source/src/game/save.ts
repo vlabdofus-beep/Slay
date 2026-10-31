@@ -77,6 +77,8 @@ export function replay(s: SaveFile): { run: Run; drift: boolean } | null {
     const run = new Run(s.classe, s.seed, s.gender);
     for (const [name, ...args] of s.actions) {
       const a = args.map((x) => (x === null ? undefined : x));
+      // Sauvegardes d'avant le sanctuaire : le dieu s'ouvrait seul au début de l'acte.
+      if ((name === 'takeBoon' || name === 'leaveGod') && run.phase === 'map' && run.availableNodes()[0] === 'dieu') run.enterNode('dieu');
       if (name.startsWith('c.')) {
         const c = run.combat as unknown as Record<string, Fn> | null;
         if (!c) throw new Error(`Pas de combat pour ${name}`);

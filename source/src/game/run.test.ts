@@ -131,7 +131,8 @@ test('butin : les élites donnent toujours un objet (jamais commun), la prospect
     const run = new Run('iop', seed);
     while (run.phase !== 'defeat' && run.phase !== 'victory') {
       if (stepExtra(run)) continue;
-      if (run.phase === 'map') {
+      if (run.phase === 'map' && run.availableNodes()[0] === 'dieu') run.enterNode('dieu');
+      else if (run.phase === 'map') {
         const next = run.availableNodes().map((id) => run.map.nodes[id]);
         run.enterNode((next.find((n) => n.type === 'elite') ?? next[0]).id);
       } else if (run.phase === 'combat') {

@@ -38,6 +38,10 @@ for (const b of BREEDS) {
   copy(join(src, `anims/sp_${b}.js`), `public/game/anims/sp_${b}.js`);
   for (const g of ['m', 'f']) copy(join(src, `anims/look_${b}${g}.js`), `public/game/anims/look_${b}${g}.js`);
 }
+// Apparences des dieux (écran du dieu au début de chaque acte) : une seule apparence par dieu, sans sorts.
+// Féca, Osamodas, Enutrof, Sram, Xélor, Écaflip, Sadida, Pandawa ; Eniripsa et Sacrieur sont des déesses.
+const GOD_LOOKS = ['1m', '2m', '3m', '4m', '5m', '6m', '7f', '10m', '11f', '12m'];
+for (const l of GOD_LOOKS) copy(join(src, `anims/look_${l}.js`), `public/game/anims/look_${l}.js`);
 // Décors
 for (const id of MAP_PACKS) copy(join(src, `maps/${id}.js`), `public/game/maps/${id}.js`);
 

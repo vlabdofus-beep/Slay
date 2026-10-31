@@ -71,6 +71,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
       continue;
     }
     if (run.phase === 'map') {
+      if (run.availableNodes()[0] === 'dieu') { run.enterNode('dieu'); continue; }
       const next = run.availableNodes().map((id) => run.map.nodes[id]);
       // Chemin : zaap si les PV sont bas, élite si les PV sont hauts, sinon au hasard.
       const low = run.hp < run.maxHp * 0.5;
