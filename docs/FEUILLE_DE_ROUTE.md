@@ -22,6 +22,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 | Réduire l'écart Crâ / Iop (le Crâ passe plus souvent l'acte 2) | `src/data/cards.ts`, `src/data/monsters.ts`, `src/data/bestiary.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | en relecture |
 | Échelle pour 2, 3 et 4 joueurs qui jouent en même temps (PV des monstres, dégâts inchangés) | `equilibrage.json`, `src/data/monsters.ts`, `docs/BALANCE.md` | Grok | fait |
 | Donner aux objets une stat fixe qui se voit, sans compter l'effet tiré | `src/data/items.ts`, `docs/BALANCE.md` | Grok | fait |
+| Reprendre les PV et dégâts des monstres après les stats d'objets | `equilibrage.json`, `src/data/monsters.ts`, `docs/BALANCE.md` | Grok | fait |
 | Parties jouées par des humains : noter difficulté ressentie, cartes trop fortes ou inutiles | `docs/BALANCE.md` | propriétaire | à faire |
 
 ### Contenu
@@ -69,6 +70,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Grok — monstres relevés après les stats d'objets. Acte 1 ×1,15 PV et ×1,08 dégâts, acte 2 ×1,35 et ×1,22, acte 3 ×1,50 et ×1,32. 72 runs : Iop 40/13/1 (14,9), Crâ 33/14/4 (13,6), Xélor 36/10/3 (14,3), contre 38/8/2, 34/12/3 et 36/12/2 avant les objets.
 - 31/10/2026 : Claude — multijoueur, étape 2 : la partie à plusieurs (`src/game/party.ts`) : une run par joueur, carte et combats communs, vote à la majorité, journal d'actions rejouable ; bot à plusieurs (`src/sim/party.ts`, `botParty`).
 - 31/10/2026 : Grok — stats fixes des objets. Un commun Terre passe de +1 à +2–3, un légendaire de +2 à +9–12, les PV d'un mythique de +12 à +32–42. L'effet tiré ne change pas. Les monstres ne sont pas retouchés : à mesurer ensuite.
 - 31/10/2026 : Grok — échelle recalée sur le draft (les monstres frappent tout le monde). PV ×2,5 / ×3,6 / ×5,5 pour 2, 3 et 4 joueurs. Dégâts inchangés. L'ancienne échelle rendait les élites d'acte 2 trop faciles.
