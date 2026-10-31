@@ -27,8 +27,8 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 |---|---|---|---|
 | Illustrations des cartes sans image (elles affichent leurs initiales) : trouver l'icône de sort Dofus la plus proche ou une illustration adaptée | `src/data/cards.ts` (champ `icon`), `public/assets` | | à faire |
 | Relire les 45 événements et les phrases d'ambiance des bénédictions (ton, fautes, cohérence avec les effets) | `src/data/events.ts`, `src/data/gods.ts`, `src/data/relics.ts` | | à faire |
-| Concevoir une 3e classe sur le papier : passif, deck de départ, ~35 cartes, dans l'esprit du dieu (le code prévoit Eniripsa, Xélor, Osamodas) | `docs/` (proposition), puis `src/data/cards.ts` | | à faire |
-| Intégrer la 3e classe (passif dans le moteur, écran d'accueil, animations) | `src/core/classes.ts`, `src/ui/`, `tools/import-survivors-assets.mjs` | | à faire |
+| Concevoir une 3e classe sur le papier : passif, deck de départ, ~35 cartes, dans l'esprit du dieu (le code prévoit Eniripsa, Xélor, Osamodas) | `docs/CLASSE_XELOR.md` (proposition), puis `src/data/cards.ts` | Claude (Xélor) | en relecture |
+| Intégrer la 3e classe (passif dans le moteur, écran d'accueil, animations) | `src/core/classes.ts`, `src/ui/`, `tools/import-survivors-assets.mjs` | Claude (Xélor) | à faire |
 | Voix des autres classes et sons des monstres | `src/ui/sound.ts`, `public/game/sfx` | | à faire |
 
 ### Systèmes (à valider avec le propriétaire avant de commencer)
