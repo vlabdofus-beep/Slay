@@ -282,3 +282,27 @@ Rencontres trop loin de la médiane de leur salle (PV ou coup), ramenées vers e
 | Corbac Chef | 56–60 PV | 70–76 |
 | Corbac Dressé | 46–50 PV, plongeon 16 | 58–64, plongeon 20 |
 
+## Zones du Crâ (31/10/2026, 600 runs)
+
+La passe du 31/10 (poison −1, trois zones du Iop +1, huit monstres) ne fermait pas l'acte 2. Sur 600 runs, graines 1 à 600, boss 1 / boss 2 / victoire : Iop 37 / 9 / 3 % (étage moyen 14,53), Crâ 39 / 16 / 4 % (étage moyen 15,63). L'écart est d'environ 0,8 étage, concentré sur les salles à plusieurs ennemis. Aucune rencontre précise n'en est la cause.
+
+Ce qui a été mesuré et écarté, parce que l'acte 1 paie trop ou que l'acte 2 ne bouge pas : Visée à 6 attaques, Courroux à +2 puissance, PV du Crâ à 66 ou 68, PV des couloirs de l'acte 2 ×0,85, poison de toutes les cartes du Crâ −1. Baisser toutes les zones du Crâ de 2 dégâts est le seul levier qui remet les étages au même niveau sans casser l'acte 1.
+
+Après cette baisse (Visée toujours à 5, même échelle de monstres), 600 runs : Iop 37 / 9 / 3 % (14,53), Crâ 35 / 12 / 2 % (14,58). L'acte 1 reste proche. L'écart de boss 2 passe de 7 points à 3. Les victoires se rejoignent (3 % et 2 %). Les sorts de zone passent sous le repère 8 / 14 : c'est voulu, le repère compte un seul impact, pas une salle de l'acte 2.
+
+| Carte | Dégâts avant | Après |
+|---|---|---|
+| Pluie de Flèches | 8 / 11 | 6 / 9 |
+| Œil de Taupe (drain) | 6 / 10 | 4 / 8 |
+| Flèche Explosive | 14 / 20 | 12 / 18 |
+| Carreaux Destructeurs | 12 / 16 | 10 / 14 |
+| Flèche de Dispersion | 7 / 10 | 5 / 8 |
+| Flèche Ralentissante | 10 / 14 | 8 / 12 |
+| Flèche de Barrage | 6 / 8 | 4 / 6 |
+| Flèche Éclatante | 6 / 8 | 4 / 6 |
+| Flèche Massacrante | 9 / 12 | 7 / 10 |
+| Pluie Empoisonnée | 8 / 10 | 6 / 8 |
+
+Le poison, la brûlure et l'armure de ces cartes ne changent pas. L'amélioration reste au moins +30 % ou +2.
+
+
