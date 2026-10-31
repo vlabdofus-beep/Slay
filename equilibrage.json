@@ -36,22 +36,22 @@
   },
   "echelle_monstres": {
     "1": {
-      "faible": {"pv": 1.11, "degats": 1.1},
-      "normal": {"pv": 1.18, "degats": 1.1},
-      "elite": {"pv": 0.97, "degats": 1},
-      "boss": {"pv": 1.13, "degats": 1}
+      "faible": {"pv": 1.277, "degats": 1.188},
+      "normal": {"pv": 1.357, "degats": 1.188},
+      "elite": {"pv": 1.116, "degats": 1.08},
+      "boss": {"pv": 1.299, "degats": 1.08}
     },
     "2": {
-      "faible": {"pv": 1.144, "degats": 1.43},
-      "normal": {"pv": 1.144, "degats": 1.265},
-      "elite": {"pv": 0.942, "degats": 1.155},
-      "boss": {"pv": 1.03, "degats": 1.1}
+      "faible": {"pv": 1.544, "degats": 1.745},
+      "normal": {"pv": 1.544, "degats": 1.543},
+      "elite": {"pv": 1.272, "degats": 1.409},
+      "boss": {"pv": 1.391, "degats": 1.342}
     },
     "3": {
-      "faible": {"pv": 0.774, "degats": 1.045},
-      "normal": {"pv": 0.88, "degats": 1.1},
-      "elite": {"pv": 1.012, "degats": 1.1},
-      "boss": {"pv": 1.021, "degats": 1.1}
+      "faible": {"pv": 1.161, "degats": 1.379},
+      "normal": {"pv": 1.32, "degats": 1.452},
+      "elite": {"pv": 1.518, "degats": 1.452},
+      "boss": {"pv": 1.531, "degats": 1.452}
     }
   },
   "echelle_joueurs": {

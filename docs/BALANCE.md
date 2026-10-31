@@ -373,4 +373,16 @@ Exemples : Artefact Eau (commun, niv. 1) +2 Eau, Bottes du Monarque (commun, niv
 
 Les monstres ne bougent pas dans cette passe. La stat fixe pèse maintenant autant que l'effet, parfois plus sur un deck qui joue l'élément.
 
-Bot glouton, dieux et objets, graines 1 à 160 (Xélor : 80). Boss 1 / boss 2 / victoire, étage moyen : Iop 65 / 34 / 10 % (22,5), Crâ 52 / 38 / 18 % (20,9), Xélor 58 / 35 / 14 % (21,9). Avant, sur 1 000 runs : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6), Xélor 36 / 12 / 2 % (14,7). L'acte 2 et les victoires ont plus que doublé. La difficulté des monstres est à reprendre.
+Bot glouton, dieux et objets, graines 1 à 160 (Xélor : 80). Boss 1 / boss 2 / victoire, étage moyen : Iop 65 / 34 / 10 % (22,5), Crâ 52 / 38 / 18 % (20,9), Xélor 58 / 35 / 14 % (21,9). Avant, sur 1 000 runs : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6), Xélor 36 / 12 / 2 % (14,7). L'acte 2 et les victoires ont plus que doublé.
+
+## Monstres après les stats d'objets (31/10/2026)
+
+Les PV et les dégâts de l'échelle montent pour revenir à ces taux d'avant. Pas le même coefficient partout : l'acte 1 n'avait gagné qu'un cran, l'acte 3 beaucoup plus.
+
+| Acte | PV | Dégâts |
+|---|---|---|
+| 1 | ×1,15 | ×1,08 |
+| 2 | ×1,35 | ×1,22 |
+| 3 | ×1,50 | ×1,32 |
+
+Bot glouton, 72 graines, dieux et objets. Boss 1 / boss 2 / victoire, étage : Iop 40 / 13 / 1 % (14,9), Crâ 33 / 14 / 4 % (13,6), Xélor 36 / 10 / 3 % (14,3). La cible était 38 / 8 / 2 (14,6), 34 / 12 / 3 (14,6) et 36 / 12 / 2 (14,7). Le boss 1 et l'étage y sont. Le boss 2 du Iop reste un peu au-dessus (13 contre 8), celui du Xélor un peu en dessous (10 contre 12).
