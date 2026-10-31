@@ -132,3 +132,14 @@ Pour l'instant tout est visible. `known()` dans `bestiary.ts` est l'endroit où 
 ## Visuels des Dofus (31/10/2026)
 
 Les 18 Dofus utilisent leur icône officielle de Dofus 3 : identifiants d'image relevés dans les données du client (`items.json` et `fr.json` publiés par dofusdude/dofus3-main, objets de type 23), servis par DofusDB comme les autres objets. Les anciennes répliques recolorées ne servent plus que de repli si DofusDB ne répond pas.
+
+## Direction artistique « le pays peint » (31/10/2026)
+
+L'accueil et la carte sont les premières images du jeu : ils se posent désormais sur le vrai monde de Dofus 3, en plein jour, au lieu d'un fond d'ardoise étoilé.
+
+- **Typographie** : Berkshire Swash (calligraphie de conte, un peu farceuse comme l'univers d'Ankama) pour le logo, les titres, les noms ; Alegreya Sans (humaniste, chaleureuse, bons accents français) pour le texte. Polices libres (OFL), servies depuis `public/assets/fonts`.
+- **Palette** : laine de Bouftou `#fff3d6` (texte), encre des contours `#10201a`, tournesol d'Astrub `#f0b739`, sous-bois `#14231d` / mousse `#1b2e26` pour les fonds ; rouge Iop `#e5483b` et vert Crâ `#7dbb2e` pour ce qui appartient à chaque classe.
+- **Signature** : les éléments forts portent un contour d'encre épais et une ombre franche décalée, comme des autocollants de carnet d'aventurier (logo, plateau de la carte, cases, boutons « Jouer »). Le reste reste sobre.
+- **Accueil** : paysage peint avec les pièces du pack « champs d'Astrub » (ciel, collines en perspective aérienne, décors en rangs) ; les deux héros se tiennent dans le décor, une plaque sombre sous chacun.
+- **Carte** : plateau peint au sol du lieu de l'acte (champs d'Astrub, jungle, landes), semé de ses décors hors des cases et des chemins ; route prise et prochains pas en sentier de terre, le reste en pointillés ; cases en médaillons crème cerclés d'encre.
+- Code : `src/ui/scene/paint.ts` (peintures), `viewTitle`, `viewMap`, `mountLand`, `mountBoard` dans `src/ui/app.ts`.

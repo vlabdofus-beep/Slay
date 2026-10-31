@@ -25,7 +25,7 @@ const BREED: Record<string, number> = { iop: 8, cra: 9 };
 
 // ───────────── chargement de scripts (packs de cartes, effets) ─────────────
 
-interface Sheet { meta: { [k: string]: any }; img: HTMLImageElement; ready: boolean }
+export interface Sheet { meta: { [k: string]: any }; img: HTMLImageElement; ready: boolean }
 const packs: Record<number, Sheet> = {};
 const packWait: Record<number, ((s: Sheet | null) => void)[]> = {};
 const fxReg: Record<number, Sheet> = {};
@@ -61,7 +61,7 @@ function addScript(src: string, onerror?: () => void): void {
   document.head.appendChild(sc);
 }
 
-function loadPack(id: number): Promise<Sheet | null> {
+export function loadPack(id: number): Promise<Sheet | null> {
   const p = packs[id];
   if (p?.ready) return Promise.resolve(p);
   return new Promise((res) => {
@@ -134,7 +134,7 @@ export const ENCOUNTER_PACK: Record<string, number> = {
   kaskargo: 177, maitre_corbac: 133, dragon_cochon: 97, koulosse: 89, minotoror: 94,
 };
 
-function mulberry(seed: number) {
+export function mulberry(seed: number) {
   let s = seed >>> 0;
   return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }

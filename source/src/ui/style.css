@@ -8,18 +8,27 @@
 @font-face { font-family: 'Philosopher'; font-weight: 700; font-display: swap; src: url('/assets/fonts/philosopher-700.woff2') format('woff2'); }
 @font-face { font-family: 'Philosopher'; font-style: italic; font-weight: 400; font-display: swap; src: url('/assets/fonts/philosopher-400-italic.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-weight: 100 900; font-display: swap; src: url('/assets/fonts/inter-latin-var.woff2') format('woff2'); }
+/* Identité : Berkshire Swash (titres, calligraphie de conte) et Alegreya Sans (texte, humaniste et chaleureux). OFL. */
+@font-face { font-family: 'Berkshire Swash'; font-weight: 400; font-display: swap; src: url('/assets/fonts/berkshire-swash.woff') format('woff'); }
+@font-face { font-family: 'Alegreya Sans'; font-weight: 400; font-display: swap; src: url('/assets/fonts/alegreya-sans-400.woff') format('woff'); }
+@font-face { font-family: 'Alegreya Sans'; font-weight: 400; font-style: italic; font-display: swap; src: url('/assets/fonts/alegreya-sans-400-italic.woff') format('woff'); }
+@font-face { font-family: 'Alegreya Sans'; font-weight: 500; font-display: swap; src: url('/assets/fonts/alegreya-sans-500.woff') format('woff'); }
+@font-face { font-family: 'Alegreya Sans'; font-weight: 600 700; font-display: swap; src: url('/assets/fonts/alegreya-sans-700.woff') format('woff'); }
+@font-face { font-family: 'Alegreya Sans'; font-weight: 800 900; font-display: swap; src: url('/assets/fonts/alegreya-sans-800.woff') format('woff'); }
 
 :root {
-  --bg: #172129;            /* encre de Brâkmar */
-  --panel: #1f2c35;         /* pierre d'Astrub */
-  --panel-2: #283a45;
-  --panel-deep: #131c23;
-  --line: #3a4d58;
-  --line-soft: rgba(217, 173, 87, 0.16);
-  --gold: #d9ad57;          /* feuille d'or */
-  --gold-2: #f0d28e;
-  --text: #efe3c8;          /* vélin */
-  --muted: #9fae9f;
+  --bg: #14231d;            /* sous-bois d'Amakna, à la nuit */
+  --panel: #1b2e26;         /* mousse */
+  --panel-2: #243b31;
+  --panel-deep: #0f1b16;
+  --line: #34503f;
+  --line-soft: rgba(240, 183, 57, 0.18);
+  --gold: #f0b739;          /* tournesol des champs d'Astrub */
+  --gold-2: #ffd66b;
+  --text: #fff3d6;          /* laine de Bouftou */
+  --muted: #a9bfa6;
+  --ink: #10201a;           /* encre des contours (logo, plateau, cases) */
+  --sky: #5fb3e0;
   --pv: #b8473b;
   --armure: #8fb6c9;
   --ok: #7fc28f;
@@ -41,8 +50,8 @@
 
   --accent: var(--gold);
   --accent-ink: #1d1508;
-  --title: 'Philosopher', 'Trebuchet MS', serif;
-  --font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --title: 'Berkshire Swash', 'Georgia', serif;
+  --font: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
   --radius: 14px;
   color-scheme: dark;
 }
@@ -54,20 +63,20 @@ body[data-screen="marchand"] { --accent: var(--ocre); --accent-ink: #2a1904; }
 body[data-screen="dofus"] { --accent: var(--gold); --accent-ink: #2a1904; }
 body[data-screen="victory"] { --accent: var(--gold); }
 body[data-screen="defeat"] { --accent: var(--ebene); --accent-ink: #1e140b; }
-body, .class-pick {
+body {
   --accent-deep: color-mix(in srgb, var(--accent) 62%, #000);
   --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
   --accent-text: color-mix(in srgb, var(--accent) 72%, #fff);
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font: 15px/1.55 var(--font); overflow-x: hidden; }
+html { -webkit-text-size-adjust: 100%; font-synthesis: none; }
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font: 16px/1.5 var(--font); overflow-x: hidden; }
 .bg {
   position: fixed; inset: 0; z-index: -1;
   background:
     radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
-    linear-gradient(rgba(23, 33, 41, 0.72), rgba(23, 33, 41, 0.97) 55%),
+    linear-gradient(rgba(20, 35, 29, 0.78), rgba(20, 35, 29, 0.97) 55%),
     url('/assets/ui/background.jpg') center top / cover no-repeat;
   transition: background .6s;
 }
@@ -77,7 +86,7 @@ body[data-screen="title"] .bg {
     linear-gradient(rgba(23, 33, 41, 0.35), rgba(23, 33, 41, 0.9) 70%),
     url('/assets/ui/background.jpg') center / cover no-repeat;
 }
-h1, h2, h3 { font-family: var(--title); font-weight: 700; margin: 0; line-height: 1.15; }
+h1, h2, h3 { font-family: var(--title); font-weight: 400; margin: 0; line-height: 1.15; }
 h2 { font-size: 1.8rem; }
 h3 { font-size: 1.12rem; margin: 1.4rem 0 .6rem; color: var(--gold-2); }
 p { margin: .3rem 0; max-width: 70ch; }
@@ -106,7 +115,7 @@ button:disabled { cursor: not-allowed; }
 .brandbar { display: flex; flex-direction: column; align-items: center; padding: 16px 16px 4px; }
 
 /* ───────── cadres : pierre gravée, double filet, biseau ───────── */
-.sheet, .reward, .zaap, .end, .shop, .dofus-choice, .modal-box, .map-scroll, .class-pick, .item, .option, .log, .tip {
+.sheet, .reward, .zaap, .end, .shop, .dofus-choice, .modal-box, .item, .option, .log, .tip {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 45%), var(--panel);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
   box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 5px var(--line-soft), 0 12px 30px rgba(5, 10, 14, 0.45);
@@ -114,7 +123,7 @@ button:disabled { cursor: not-allowed; }
 }
 .primary, .end-turn, .active, .forge-el, .bar, .slot { border-radius: 3px; }
 @supports (corner-shape: bevel) {
-  .sheet, .reward, .zaap, .end, .shop, .dofus-choice, .modal-box, .map-scroll, .class-pick, .item, .option, .log, .tip { border-radius: 12px; corner-shape: bevel; }
+  .sheet, .reward, .zaap, .end, .shop, .dofus-choice, .modal-box, .item, .option, .log, .tip { border-radius: 12px; corner-shape: bevel; }
   .primary, .end-turn, .active, .forge-el, .slot { border-radius: 7px; corner-shape: bevel; }
 }
 
@@ -143,35 +152,10 @@ button:disabled { cursor: not-allowed; }
 .bar-label { position: relative; display: block; text-align: center; font-size: .82rem; font-weight: 700; line-height: 20px; text-shadow: 0 1px 1px rgba(0, 0, 0, .6); }
 .shield { display: inline-block; margin-left: .4rem; padding: 0 .35rem; border-radius: 3px; background: var(--armure); color: #102028; font-size: .78rem; text-shadow: none; }
 
-/* ───────── écran titre ───────── */
-.title { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: .6rem; padding: 3rem 1.5rem; text-align: center; }
-.lead { font-size: 1.08rem; max-width: 46ch; margin-top: 1rem; }
-.fine { font-size: .8rem; color: var(--muted); margin-top: 2rem; }
-.class-row { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1.5rem; }
-.class-pick {
-  width: 270px; padding: 0 1.2rem 1.3rem; display: grid; justify-items: center; gap: .35rem; text-align: center;
-  transition: transform .2s, border-color .2s, box-shadow .2s;
-}
-.class-pick:hover, .class-pick:focus-within {
-  transform: translateY(-3px); border-color: var(--accent);
-  box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 5px var(--line-soft), 0 16px 36px rgba(5, 10, 14, 0.55), 0 0 24px var(--accent-soft);
-}
-.class-stage {
-  position: relative; width: 220px; height: 220px; margin-top: -40px; display: grid; place-items: end center;
-  background: radial-gradient(48% 14% at 50% 90%, rgba(0, 0, 0, .55), transparent 70%), radial-gradient(50% 50% at 50% 70%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
-}
-.class-preview { width: 220px; height: 220px; position: absolute; inset: 0; }
-.class-symbol { width: 72px; height: 72px; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .55)); align-self: center; transition: opacity .3s; }
-.class-stage.ready .class-symbol { position: absolute; right: -6px; top: 34px; width: 40px; height: 40px; opacity: .9; }
 .gender { display: inline-flex; margin: .5rem 0 .6rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--panel-deep); }
 .gender button { border: 0; background: none; color: var(--muted); padding: .3rem .9rem; border-radius: 999px; cursor: pointer; font: 600 .85rem var(--body, inherit); }
 .gender button.on { background: color-mix(in srgb, var(--accent) 70%, var(--panel)); color: var(--text); }
 .gender button:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 1px; }
-.class-pick .primary { width: 100%; margin-top: 0; }
-.class-name { font-family: var(--title); font-size: 1.7rem; font-weight: 700; }
-.class-hp { color: var(--accent-text); font-weight: 700; font-size: .9rem; }
-.class-pitch { font-size: .9rem; color: var(--muted); }
-
 /* ───────── mises en page avec fiche ───────── */
 .mapview, .rewardview, .zaapview, .endview, .shopview, .dofusview { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.5rem; padding: 1rem 1.5rem 2rem; max-width: 1280px; margin: 0 auto; }
 
@@ -222,17 +206,17 @@ button:disabled { cursor: not-allowed; }
 .node-wrap { position: absolute; width: 0; height: 0; z-index: 1; }
 .node-wrap:hover, .node-wrap:focus-within, .node-wrap:focus { z-index: 6; outline: none; }
 .node {
-  --ring: #8c7448; --ink: var(--gold-2); --s: 46px;
+  --ring: #8c7448; --glyph: var(--gold-2); --s: 46px;
   position: absolute; left: 0; top: 0; transform: translate(-50%, -50%);
-  width: var(--s); height: var(--s); border-radius: 50%; padding: 0; display: grid; place-items: center; color: var(--ink);
+  width: var(--s); height: var(--s); border-radius: 50%; padding: 0; display: grid; place-items: center; color: var(--glyph);
   background: radial-gradient(circle at 35% 28%, #34495a, var(--panel) 55%, var(--panel-deep));
   border: 2px solid var(--ring);
   box-shadow: inset 0 0 0 3px rgba(13, 20, 25, .85), inset 0 0 0 4px color-mix(in srgb, var(--ring) 45%, transparent), 0 6px 14px rgba(5, 10, 14, .6);
   transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
-.node.t-elite { --ring: var(--pourpre); --ink: #ffb39c; --s: 54px; }
-.node.t-zaap { --ring: var(--turquoise); --ink: #8fe3dd; --s: 50px; }
-.node.t-marchand { --ring: var(--ocre); --ink: #ffd27a; --s: 50px; }
+.node.t-elite { --ring: var(--pourpre); --glyph: #ffb39c; --s: 54px; }
+.node.t-zaap { --ring: var(--turquoise); --glyph: #8fe3dd; --s: 50px; }
+.node.t-marchand { --ring: var(--ocre); --glyph: #ffd27a; --s: 50px; }
 .node.t-boss { --ring: var(--gold); --s: 92px; border-width: 3px; background: radial-gradient(circle at 40% 30%, #3c5262, var(--panel) 60%, var(--panel-deep)); }
 .node .ui-ico { width: 66%; height: 66%; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .6)); }
 .node svg { width: 48%; height: 48%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -1027,3 +1011,144 @@ body.boss-entering #stage, body.boss-entering #app { animation: shake .45s ease 
 .color-reset:not(:disabled):hover { color: var(--gold-2); border-color: var(--gold); }
 .color-reset:disabled { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .swatch { transition: none; } }
+
+/* ═══════════ Direction artistique : « le pays peint » ═══════════
+   Les menus se posent sur le vrai monde de Dofus 3, en plein jour. Une seule audace par écran :
+   le logo à l'accueil, le plateau peint sur la carte. Les éléments forts portent un contour d'encre
+   et une ombre franche décalée, comme les autocollants d'un carnet d'aventurier ; le reste reste sobre. */
+
+/* ───────── accueil ───────── */
+body[data-screen="title"] .bg { display: none; }
+body[data-screen="title"] { background: #4e8a2c; }
+.title {
+  position: relative; min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; justify-items: center;
+  padding: clamp(1.2rem, 4vh, 2.6rem) 1.5rem 1.4rem; gap: 0; text-align: center;
+}
+.land { position: fixed; inset: 0; z-index: -1; background: linear-gradient(#5fb3e0, #a8d6ec 45%, #fbe9bf 50%, #6aa63a 50%, #3f7a24); }
+.land canvas { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .6s ease-out; }
+.land.on canvas { opacity: 1; }
+
+.logo { display: grid; justify-items: center; }
+.logo-word {
+  display: grid; justify-items: center; margin: 0; line-height: .82;
+  font: 400 clamp(3.6rem, min(9vw, 13vh), 7.6rem)/.82 var(--title); color: #fff3d6;
+  transform: rotate(-4deg);
+}
+.logo-word span {
+  display: block;
+  -webkit-text-stroke: .11em var(--ink); paint-order: stroke fill;
+  text-shadow: 0 .09em 0 var(--ink), 0 .16em .25em rgba(16, 32, 26, .35);
+}
+.logo-word span:last-child { margin: -.02em 0 0 1.1em; }
+.logo-sub {
+  margin: 1.5rem 0 0; max-width: 40ch; font: italic 500 1.12rem/1.35 var(--font); color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 248, 225, .6);
+}
+
+.heroes { align-self: end; display: flex; gap: clamp(1.5rem, 8vw, 9rem); justify-content: center; flex-wrap: wrap; margin-top: .5rem; }
+.hero-pick { width: 320px; display: grid; justify-items: center; text-align: left; }
+.hero-stage { position: relative; width: 300px; height: min(300px, 30vh); margin-bottom: -14px; display: grid; place-items: end center; }
+.hero-stage::after { /* ombre au sol */
+  content: ''; position: absolute; left: 22%; right: 22%; bottom: 2px; height: 22px; z-index: -1;
+  background: radial-gradient(closest-side, rgba(16, 32, 26, .55), transparent);
+}
+.hero-canvas { width: min(300px, 30vh); height: min(300px, 30vh); display: block; }
+.hero-plate {
+  width: 100%; padding: .85rem 1.1rem 1rem; border-radius: 18px;
+  background: rgba(16, 32, 26, .86); border: 1px solid rgba(255, 243, 214, .14);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.hero-name { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; font: 400 2.3rem/1 var(--title); color: #fff3d6; }
+.hero-hp { font: 700 .95rem var(--font); color: var(--hue); }
+.hero-pitch { margin: .35rem 0 0; font-size: .98rem; color: #d9e6d2; }
+.hero-passive { display: flex; gap: .6rem; align-items: flex-start; margin: .7rem 0 0; font-size: .92rem; line-height: 1.35; color: var(--muted); }
+.hero-passive b { color: #fff3d6; }
+.hero-passive .fxb { flex: none; }
+.hero-look { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; margin: .7rem 0 .8rem; }
+.hero-look .gender { margin: 0; }
+.hero-look .colors { margin: 0; }
+.hero-pick .gender button.on { background: var(--hue); color: var(--ink); }
+
+/* Bouton principal : autocollant d'encre, ombre franche, s'enfonce au clic */
+.play {
+  width: 100%; cursor: pointer; padding: .7rem 1rem .75rem; border-radius: 14px;
+  font: 400 1.45rem/1 var(--title); color: var(--ink); background: var(--hue, var(--gold));
+  border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink);
+  transition: transform .08s, box-shadow .08s, filter .15s;
+}
+.play:hover { filter: brightness(1.08); }
+.play:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.play:focus-visible { outline: 3px solid #fff3d6; outline-offset: 3px; }
+
+.title-foot { display: grid; justify-items: center; gap: .3rem; margin-top: 1.6rem; }
+.title-foot .ghost { background: rgba(16, 32, 26, .7); }
+.title-foot .fine { margin: 0; font-size: .82rem; color: rgba(255, 243, 214, .75); }
+
+@media (max-width: 720px) {
+  .heroes { flex-direction: column; align-items: center; gap: 1.6rem; }
+  .hero-pick, .hero-stage { width: min(300px, 88vw); }
+  .logo-sub { color: var(--ink); font-weight: 700; text-shadow: 0 0 8px rgba(255, 248, 225, .9); }
+  .hero-stage { height: 240px; }
+  .hero-canvas { width: 240px; height: 240px; }
+}
+@media (prefers-reduced-motion: reduce) { .land canvas, .play { transition: none; } }
+
+/* ───────── carte de l'acte : plateau peint ───────── */
+.act-title { display: flex; align-items: baseline; gap: .7rem; font: 400 2.6rem/1 var(--title); color: #fff3d6; }
+.act-no { font: 700 1rem var(--font); color: var(--gold-2); }
+.map-head { margin-bottom: 1rem; align-items: center; }
+.map-head p { font: italic 400 1rem/1.3 var(--font); color: var(--muted); }
+.map-scroll {
+  overflow: auto; max-height: calc(100vh - 12.5rem); display: flex; padding: 0;
+  width: fit-content; max-width: 100%; margin: 0 auto;
+  border-radius: 24px; background: #3f6b2a;
+  border: 4px solid var(--ink); box-shadow: 0 8px 0 var(--ink), 0 22px 40px rgba(5, 12, 9, .5);
+}
+.map-board { position: absolute; inset: 0; }
+.map-board canvas { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .5s ease-out; }
+.map-board.on canvas { opacity: 1; }
+.map > svg.trails { position: absolute; inset: 0; }
+.map line { stroke-linecap: round; }
+.map line.edge { stroke: rgba(16, 32, 26, .55); stroke-width: 7; }
+.map line.core { stroke: rgba(255, 243, 214, .85); stroke-width: 2.5; stroke-dasharray: .5 9; }
+.map line.edge.walked, .map line.edge.next { stroke: #5a3d1c; stroke-width: 14; }
+.map line.core.walked { stroke: #e8c88a; stroke-width: 8; stroke-dasharray: none; }
+.map line.core.next { stroke: #f5dfa8; stroke-width: 8; stroke-dasharray: 14 10; animation: trail 1.1s linear infinite; }
+.floor-no {
+  left: 14px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%;
+  font: 700 .82rem var(--font); color: #fff3d6; background: rgba(16, 32, 26, .72);
+}
+.floor-no.current { background: var(--gold); color: var(--ink); }
+.start-label { font: 400 1.2rem var(--title); color: #fff3d6; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+
+/* Cases : médaillons crème cerclés d'encre, liseré de couleur selon le type */
+.node {
+  background: #fff3d6; border: 3px solid var(--ink); color: var(--ink);
+  box-shadow: inset 0 0 0 3px var(--ring, #b7c9a8), 0 4px 0 var(--ink);
+}
+.node .ui-ico { filter: none; }
+.node.t-combat { --ring: #b7c9a8; }
+.node.t-elite { --ring: #e5483b; }
+.node.t-zaap { --ring: #34aaa6; }
+.node.t-marchand { --ring: var(--gold); }
+.node.t-boss { --ring: var(--gold); background: radial-gradient(circle at 40% 30%, #fff8e6, #f3dca6); border-width: 4px; box-shadow: inset 0 0 0 5px var(--ring), 0 6px 0 var(--ink), 0 0 0 8px rgba(240, 183, 57, .35); }
+.node.s-locked { filter: saturate(.7); opacity: .82; }
+.node.s-done { filter: grayscale(.8); opacity: .6; }
+.node.s-here { filter: none; box-shadow: inset 0 0 0 3px var(--gold), 0 4px 0 var(--ink), 0 0 0 6px rgba(240, 183, 57, .45); }
+.node.s-avail { filter: none; animation: node-call 1.6s ease-in-out infinite; }
+@keyframes node-call {
+  0%, 100% { box-shadow: inset 0 0 0 3px var(--ring), 0 4px 0 var(--ink), 0 0 0 0 rgba(255, 214, 107, .8); }
+  50% { box-shadow: inset 0 0 0 3px var(--ring), 0 4px 0 var(--ink), 0 0 0 9px rgba(255, 214, 107, 0); }
+}
+.node-wrap:hover .node.s-avail, .node.s-avail:focus-visible { animation: none; box-shadow: inset 0 0 0 3px var(--ring), 0 6px 0 var(--ink), 0 0 0 5px rgba(255, 214, 107, .9); }
+.boss-plate { font: 400 1.05rem var(--title); color: #fff3d6; background: var(--ink); border: 0; }
+.you { border: 3px solid var(--ink); background: #fff3d6; box-shadow: 0 3px 0 var(--ink); }
+.legend { color: #d9e6d2; }
+.node.mini { box-shadow: inset 0 0 0 2px var(--ring, #b7c9a8), 0 2px 0 var(--ink); border-width: 2px; }
+@media (prefers-reduced-motion: reduce) { .node.s-avail, .map line.core.next { animation: none; } }
+
+/* Barre du haut hors combat */
+.brandbar { padding-top: 22px; }
+.brandbar .brand-name { font: 400 2rem/1.1 var(--title); letter-spacing: 0; color: #fff3d6; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; }
+.brandbar .brand-name::before, .brandbar .brand-name::after { display: none; }
+.brandbar .brand-sub { font: italic 400 .95rem var(--font); }

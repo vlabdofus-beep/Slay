@@ -20,6 +20,7 @@ import {
 import { buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
 import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
+import { paintBoard, paintLandscape } from './scene/paint.ts';
 
 // ───────────── état de l'interface ─────────────
 
@@ -348,32 +349,55 @@ function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
     <button class="color-reset" data-act="color-reset" data-classe="${id}" data-g="${g}" ${custom ? '' : 'disabled'} title="Couleurs d'origine" aria-label="Revenir aux couleurs d'origine">↺</button></div>`;
 }
 
+const HERO_HUE: Record<'iop' | 'cra', string> = { iop: '#e5483b', cra: '#7dbb2e' };
+
 function viewTitle(): string {
-  const choice = (id: 'iop' | 'cra') => {
+  const hero = (id: 'iop' | 'cra') => {
     const b = DOFUS.breeds[id];
     const g = ui.gender[id];
     const radio = (v: 'm' | 'f', label: string) =>
       `<button role="radio" aria-checked="${g === v}" class="${g === v ? 'on' : ''}" data-act="gender" data-classe="${id}" data-g="${v}">${label}</button>`;
-    return `<div class="class-pick" style="--accent: var(${id === 'iop' ? '--pourpre' : '--emeraude'})">
-      <div class="class-stage"><canvas class="class-preview" data-preview="${id}" width="440" height="440" aria-hidden="true"></canvas>
-        <img class="class-symbol" src="${asset(`classes/${b.id}.png`)}" alt=""></div>
-      <span class="class-name">${esc(b.n)}</span>
-      <span class="class-hp">${CLASS_START_HP[id]} PV</span>
-      <span class="class-pitch">${CLASS_INFO[id].pitch}</span>
-      <span class="class-passive">${passiveBadge(id)}<span><b>${esc(PASSIVES[id]!.name)}</b> ${esc(PASSIVES[id]!.text)}</span></span>
-      <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
-      ${colorRow(id, g)}
-      <button class="primary" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? 'le Iop' : 'le Crâ'}</button>
-    </div>`;
+    const p = PASSIVES[id]!;
+    return `<section class="hero-pick h-${id}" style="--hue:${HERO_HUE[id]}" aria-labelledby="hero-${id}">
+      <div class="hero-stage"><canvas class="hero-canvas" data-preview="${id}" width="600" height="600" aria-hidden="true"></canvas></div>
+      <div class="hero-plate">
+        <h2 class="hero-name" id="hero-${id}">${esc(b.n)}<span class="hero-hp">${CLASS_START_HP[id]} PV</span></h2>
+        <p class="hero-pitch">${CLASS_INFO[id].pitch}</p>
+        <p class="hero-passive">${passiveBadge(id)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
+        <div class="hero-look">
+          <div class="gender" role="radiogroup" aria-label="Apparence du personnage">${radio('m', 'Homme')}${radio('f', 'Femme')}</div>
+          ${colorRow(id, g)}
+        </div>
+        <button class="play" data-act="new-run" data-classe="${id}">Jouer ${id === 'iop' ? 'le Iop' : 'le Crâ'}</button>
+      </div>
+    </section>`;
   };
   return `<main class="title">
-    <h1 class="brand-name big">Dofus Slay</h1>
-    <p class="brand-sub">Un deckbuilder dans le Monde des Douze</p>
-    <p class="lead">Traverse Amakna jusqu'au Bouftou Royal. Chaque combat t'offre une carte, et parfois un objet : construis ta voie élémentaire.</p>
-    <div class="class-row">${choice('iop')}${choice('cra')}</div>
-    <p><button class="ghost" data-act="bestiary">Ouvrir le bestiaire</button></p>
-    <p class="fine">Fan game non officiel. Données issues de DofusDB, animations et décors de Dofus 3, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
+    <div class="land" data-land aria-hidden="true"></div>
+    <header class="logo">
+      <h1 class="logo-word" aria-label="Dofus Slay"><span aria-hidden="true">Dofus</span><span aria-hidden="true">Slay</span></h1>
+      <p class="logo-sub">Un deckbuilder dans le Monde des Douze. Trois actes, d'Amakna aux landes de Brâkmar.</p>
+    </header>
+    <div class="heroes">${hero('iop')}${hero('cra')}</div>
+    <footer class="title-foot">
+      <button class="ghost" data-act="bestiary">Ouvrir le bestiaire</button>
+      <p class="fine">Fan game non officiel. Données issues de DofusDB, animations et décors de Dofus 3, univers © Ankama. <a class="link" href="#styleguide">Guide de style</a></p>
+    </footer>
   </main>`;
+}
+
+/** Paysage de l'accueil : peint une fois par taille d'écran, posé derrière les héros. */
+const LAND_PACK = 8;
+function mountLand(): void {
+  const host = root.querySelector('[data-land]') as HTMLElement | null;
+  if (!host) return;
+  const W = Math.ceil(window.innerWidth / 160) * 160, H = Math.ceil(window.innerHeight / 120) * 120;
+  const horizon = window.innerWidth < window.innerHeight ? 0.36 : 0.5;
+  void paintLandscape(LAND_PACK, W, H, 17, horizon).then((c) => {
+    if (!c || !host.isConnected || host.firstChild === c) return;
+    host.replaceChildren(c);
+    host.classList.add('on');
+  });
 }
 
 // Aperçus animés de l'écran titre
@@ -400,13 +424,14 @@ function startPreviews(): void {
       const got = previews[key];
       if (got && got !== 'loading') shownPreview[`${id}${g}`] = got;
       const ch: Character | null = got && got !== 'loading' ? got : shownPreview[`${id}${g}`] ?? null;
-      const dpr = Math.min(3, window.devicePixelRatio || 1), size = Math.round(220 * dpr);
+      const css = cv.clientWidth || 300;
+      const dpr = Math.min(3, window.devicePixelRatio || 1), size = Math.round(css * dpr);
       if (cv.width !== size) { cv.width = size; cv.height = size; }
       const x = cv.getContext('2d')!;
       x.clearRect(0, 0, cv.width, cv.height);
       if (ch) {
         cv.parentElement!.classList.add('ready');
-        drawAnim(x, ch, 'idle', (performance.now() - t0) / 1000, cv.width / 2, cv.height * 0.93, cv.height * 0.7);
+        drawAnim(x, ch, 'idle', (performance.now() - t0) / 1000, cv.width / 2, cv.height * 0.97, cv.height * 0.78);
       } else cv.parentElement!.classList.remove('ready');
     }
   };
@@ -481,20 +506,30 @@ function nodeTip(run: Run, n: MapNode): string {
   return `<div class="tip ${side}" role="tooltip"><p class="tip-head"><b>${kind}</b><span>Étage ${n.floor}</span></p>${body}</div>`;
 }
 
+/** Disposition de la carte d'un acte : position de chaque case, taille du plateau. */
+function mapLayout(run: Run) {
+  const m = run.map;
+  const W = 126, H = 78, GUTTER = 74, TOP = 190, BOTTOM = 84, BOSS_Y = 72;
+  const pos = (n: MapNode) => ({ x: GUTTER + n.col * W, y: n.type === 'boss' ? BOSS_Y : TOP + (m.floors - 1 - n.floor) * H });
+  return { pos, width: GUTTER * 2 + (m.cols - 1) * W, height: TOP + (m.floors - 2) * H + BOTTOM, TOP, H };
+}
+/** Lieu peint sous la carte de chaque acte (packs de Dofus 3). */
+const ACT_BOARD: Record<number, number> = { 1: 8, 2: 46, 3: 66 };
+
 function viewMap(run: Run): string {
   const m = run.map;
-  const W = 104, H = 74, GUTTER = 64, TOP = 176, BOTTOM = 70, BOSS_Y = 64;
-  const pos = (n: MapNode) => ({ x: GUTTER + n.col * W, y: n.type === 'boss' ? BOSS_Y : TOP + (m.floors - 1 - n.floor) * H });
-  const width = GUTTER * 2 + (m.cols - 1) * W;
-  const height = TOP + (m.floors - 2) * H + BOTTOM;
+  const { pos, width, height, TOP, H } = mapLayout(run);
   const avail = new Set(run.availableNodes());
   const visited = new Set(run.path);
   const step = (a: string, b: string) => run.path.indexOf(b) === run.path.indexOf(a) + 1 && run.path.includes(a);
-  const lines = Object.values(m.nodes).flatMap((n) => n.next.map((id) => {
+  const segs = Object.values(m.nodes).flatMap((n) => n.next.map((id) => {
     const a = pos(n), b = pos(m.nodes[id]);
-    const cls = visited.has(id) && step(n.id, id) ? 'walked' : n.id === run.position && avail.has(id) ? 'next' : '';
-    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${cls}"/>`;
-  })).join('');
+    const cls = visited.has(id) && step(n.id, id) ? 'walked' : n.id === run.position && avail.has(id) ? 'next' : run.position === null && avail.has(id) ? 'next' : '';
+    return { a, b, cls };
+  }));
+  // Chemins : un sentier de terre (bord sombre + cœur clair) pour la route prise et les prochains pas, des pointillés ailleurs
+  const line = (s: (typeof segs)[number], cls: string) => `<line x1="${s.a.x}" y1="${s.a.y}" x2="${s.b.x}" y2="${s.b.y}" class="${cls}"/>`;
+  const lines = segs.map((sg) => line(sg, `edge ${sg.cls}`)).join('') + segs.map((sg) => line(sg, `core ${sg.cls}`)).join('');
   const breed = DOFUS.breeds[run.classe];
   const boss = LIBRARY.monsters[ENCOUNTERS[run.encounters.boss].monsters[0]];
   const nodes = Object.values(m.nodes).map((n) => {
@@ -514,19 +549,42 @@ function viewMap(run: Run): string {
   }).join('');
   const floors = Array.from({ length: m.floors - 1 }, (_, i) => i + 1)
     .map((f) => `<span class="floor-no${f === run.stats.floor ? ' current' : ''}" style="top:${TOP + (m.floors - 1 - f) * H}px">${f}</span>`).join('');
+  const hint = run.position === null ? 'Choisis ta première case en bas de la carte.' : 'Choisis ta prochaine case. Survole-la pour voir ce qui t\'y attend.';
   return `<main class="mapview">
     <section class="map-wrap">
-      <header class="map-head"><h2>Acte ${run.act} : ${esc(actName(run))}</h2><p>Choisis ta route. Survole une case pour voir ce qui t'y attend.</p></header>
+      <header class="map-head">
+        <h2 class="act-title"><span class="act-no">Acte ${run.act}</span>${esc(actName(run))}</h2>
+        <p>${hint}</p>
+      </header>
       <div class="map-scroll"><div class="map" style="width:${width}px;height:${height}px">
-        <svg width="${width}" height="${height}" aria-hidden="true">${lines}</svg>
+        <div class="map-board" data-board aria-hidden="true"></div>
+        <svg class="trails" width="${width}" height="${height}" aria-hidden="true">${lines}</svg>
         ${floors}
-        ${run.position === null ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 38}px">Départ</span>` : ''}
+        ${run.position === null ? `<span class="start-label" style="top:${TOP + (m.floors - 2) * H + 42}px">Départ</span>` : ''}
         ${nodes}
       </div></div>
       <ul class="legend">${(['combat', 'elite', 'zaap', 'marchand'] as const).map((t) => `<li><span class="node mini t-${t}">${NODE_ICON[t]}</span>${NODE_LABEL[t]}</li>`).join('')}<li><span class="node mini t-boss"><img src="${asset('ui/boss.png')}" alt=""></span>Boss</li></ul>
     </section>
     ${sheet(run)}
   </main>`;
+}
+
+/** Plateau peint sous la carte : cases et chemins restent dégagés. */
+function mountBoard(run: Run): void {
+  const host = root.querySelector('[data-board]') as HTMLElement | null;
+  if (!host) return;
+  const { pos, width, height } = mapLayout(run);
+  const m = run.map;
+  const nodes = Object.values(m.nodes).map((n) => ({ ...pos(n), r: n.type === 'boss' ? 64 : 34 }));
+  const segs = Object.values(m.nodes).flatMap((n) => n.next.map((id) => {
+    const a = pos(n), b = pos(m.nodes[id]);
+    return [a.x, a.y, b.x, b.y] as [number, number, number, number];
+  }));
+  void paintBoard(ACT_BOARD[run.act] ?? 8, { W: width, H: height, nodes, segs }, run.seed * 31 + run.act).then((c) => {
+    if (!c || !host.isConnected) return;
+    if (host.firstChild !== c) host.replaceChildren(c);
+    host.classList.add('on');
+  });
 }
 
 /** Chiffres de dégâts : couleur de l'élément qui a frappé. */
@@ -765,10 +823,10 @@ function viewModal(run: Run): string {
 
 const SWATCHES: { title: string; items: [string, string, string][] }[] = [
   { title: 'Base', items: [
-    ['--bg', '#172129', 'Encre de Brâkmar, fond'], ['--panel', '#1f2c35', "Pierre d'Astrub, cadres"], ['--panel-2', '#283a45', 'Pierre claire'],
-    ['--panel-deep', '#131c23', 'Creux, champs'], ['--line', '#3a4d58', 'Bordures'], ['--text', '#efe3c8', 'Vélin, texte'], ['--muted', '#9fae9f', 'Texte secondaire'],
+    ['--bg', '#14231d', "Sous-bois d'Amakna, fond"], ['--panel', '#1b2e26', 'Mousse, cadres'], ['--panel-2', '#243b31', 'Mousse claire'],
+    ['--panel-deep', '#0f1b16', 'Creux, champs'], ['--line', '#34503f', 'Bordures'], ['--text', '#fff3d6', 'Laine de Bouftou, texte'], ['--muted', '#a9bfa6', 'Texte secondaire'], ['--ink', '#10201a', 'Encre des contours'],
   ] },
-  { title: 'Or, pour ce qui se joue', items: [['--gold', '#d9ad57', "Feuille d'or"], ['--gold-2', '#f0d28e', 'Or clair, titres']] },
+  { title: 'Or, pour ce qui se joue', items: [['--gold', '#f0b739', "Tournesol d'Astrub"], ['--gold-2', '#ffd66b', 'Tournesol clair, titres']] },
   { title: 'Dofus primordiaux, un par écran', items: [
     ['--emeraude', '#93c02c', 'Carte'], ['--pourpre', '#d9613a', 'Combat'], ['--ocre', '#e2b23a', 'Récompense'],
     ['--turquoise', '#34aaa6', 'Zaap'], ['--ivoire', '#dccaa0', 'Réserve'], ['--ebene', '#a9835e', 'Défaite'],
@@ -805,10 +863,10 @@ function viewStyleguide(): string {
     `<figure class="sg-swatch"><span style="background:var(${v})"></span><figcaption><b>${name}</b><code>${v} ${hex}</code></figcaption></figure>`).join('')}</div></div>`).join('');
 
   const type = `<div class="sg-type">
-    <p class="brand-name">Dofus Slay</p><p class="brand-sub">Philosopher italique, sous-titres et lieux</p>
-    <h2>Titre d'écran, Philosopher 28</h2>
-    <h3>Titre de section, Philosopher or clair</h3>
-    <p>Texte courant en Inter 15, interligne 1,55. Les cartes, les objets et les infobulles l'utilisent aussi, en plus petit.</p>
+    <p class="brand-name">Dofus Slay</p><p class="brand-sub">Alegreya Sans italique, sous-titres et lieux</p>
+    <h2>Titre d'écran, Berkshire Swash</h2>
+    <h3>Titre de section, Berkshire Swash tournesol</h3>
+    <p>Texte courant en Alegreya Sans 16, interligne 1,5. Les cartes, les objets et les infobulles l'utilisent aussi, en plus petit.</p>
     <p class="muted">Texte secondaire : précisions, unités, états.</p>
   </div>`;
 
@@ -867,7 +925,7 @@ function viewStyleguide(): string {
     <header class="sg-head"><p class="brand-name">Dofus Slay</p><p class="brand-sub">Guide de style : la base visuelle du jeu</p>
       <a class="link" href="#">Revenir au jeu</a></header>
     ${sgSection('Couleurs', "L'ardoise et l'or de Dofusle. Chaque écran prend la couleur d'un Dofus primordial ; les éléments colorent les cartes.", swatches)}
-    ${sgSection('Typographie', 'Deux familles : Philosopher pour ce qui se lit comme un titre ou un nom, Inter pour le reste.', type)}
+    ${sgSection('Typographie', 'Deux familles : Berkshire Swash pour ce qui se lit comme un titre ou un nom, Alegreya Sans pour le reste.', type)}
     ${sgSection('Boutons et cadres', "Le bouton principal prend l'accent de l'écran. Coins biseautés pour les cadres, arrondis pour ce qui se joue.", buttons)}
     ${sgSection('Cartes', "Le cadre et le dégradé suivent l'élément. Les valeurs vertes tiennent compte des bonus en combat.",
       `<div class="sg-row cards">${cardsRow}</div><div class="sg-row cards">${cardStates}</div><div class="sg-row sg-labels">${cardLabels.map((l) => `<span>${l}</span>`).join('')}</div>`)}
@@ -944,7 +1002,8 @@ function render(): void {
   if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
   if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
   else stage.hide();
-  if (!run) startPreviews();
+  if (!run) { startPreviews(); mountLand(); }
+  if (run?.phase === 'map') mountBoard(run);
   if (run?.phase === 'map') {
     const here = root.querySelector('.node.s-avail') as HTMLElement | null;
     here?.scrollIntoView({ block: 'center' });
