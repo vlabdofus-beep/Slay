@@ -336,7 +336,7 @@ Boss 1 / boss 2 / victoire : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6),
 
 ## Table à plusieurs joueurs (31/10/2026)
 
-Le combat à plusieurs existe (étape 1). Chacun joue dans la même phase, puis les monstres jouent une fois et **frappent chaque héros en entier**. L'échelle est dans `echelle_joueurs`. Un combat seul ne l'utilise pas : la run à plusieurs n'est pas encore branchée.
+Le combat à plusieurs existe. Chacun joue dans la même phase, puis les monstres jouent une fois et **frappent chaque héros en entier**. L'échelle est dans `echelle_joueurs`. Un combat seul ne l'utilise pas. La partie à plusieurs, elle, la passe au combat.
 
 Les dégâts restent ×1. Chaque joueur encaisse déjà le coup du solo. Le plus gros coup du jeu fait 40 pour 70 PV : le gonfler frapperait tout le monde plus fort, pas une seule cible.
 
@@ -355,6 +355,20 @@ Solo : normale d'acte 1 environ 97 % de victoires et 60 % de PV, élite environ 
 L'acte 1 reste une salle qu'on gagne. L'élite d'acte 2 n'est plus gagnée presque à chaque fois (c'était 50 à 90 % avec ×1,85 / ×2,7 / ×3,55). La table gagne encore un peu plus souvent qu'un héros seul sur cette élite : on ne perd que lorsque tout le monde est à terre. À 4 joueurs, 3,2 héros sur 4 sont au sol à la fin.
 
 `scaleForParty(échelle de la salle, joueurs)` donne les coefficients à passer au combat. Au-delà de 4, on reste à 4.
+
+## Parties complètes (31/10/2026)
+
+L'échelle ci-dessus venait de salles isolées, avec un deck de départ. Le bot de la partie à plusieurs peut maintenant jouer une run entière. Il votait chacun de son côté : le Zaap ne passait presque jamais, et il quittait le marchand sans rien acheter. Ce n'était pas une mesure. Il vote maintenant comme un seul joueur (le plus blessé réclame le Zaap sous 50 % de PV, l'élite au-dessus de 80 %), il retire une frappe, achète, et améliore une carte au Zaap quand il n'a pas besoin de soins. Un héros qui meurt pendant son tour (épines, renvoi) ne bloque plus la table.
+
+Les dégâts restent ×1. Seuls les PV bougent. 100 parties, dieux et objets, graines 1 à 100. Iop et Crâ à deux, plus le Xélor à trois, plus un second Iop à quatre. Cible : le solo d'après les stats d'objets, autour de 36 / 12 / 3 % et 14,6 étages.
+
+| Joueurs | PV | Boss 1 / boss 2 / victoire | Étage | Zaap par partie |
+|---|---|---|---|---|
+| 2 | ×2,5 | 33 / 13 / 2 % | 14,1 | 1,3 |
+| 3 | ×4,1 | 39 / 9 / 0 % | 14,2 | 1,2 |
+| 4 | ×6 | 41 / 9 / 3 % | 15,1 | 1,3 |
+
+À ×3,6 et ×5,5, les tables à 3 et 4 allaient jusqu'à l'étage 18. Deux joueurs étaient déjà au bon niveau.
 
 ## Stats fixes des objets (31/10/2026)
 

@@ -1,5 +1,6 @@
 // Bot à plusieurs : une table de 1 à 4 héros joue une partie complète (src/game/party.ts), toutes les décisions
 // passant par des actions du journal, comme en ligne. Sert aux tests (pas de blocage) et à mesurer l'échelle.
+// Le chemin se vote comme un seul joueur (le plus blessé) : sinon chacun tire une case et le Zaap ne passe jamais.
 import { Rng } from '../core/rng.ts';
 import { ITEMS } from '../data/items.ts';
 import { LIBRARY } from '../data/library.ts';
@@ -9,6 +10,21 @@ import { pickBest } from './policy.ts';
 
 export interface PartyBotResult { won: boolean; end: 'victory' | 'defeat' | 'bloqué'; act: number; floor: number; actions: number; log: PartyAction[] }
 
+const isStrike = (id: string) => { const d = LIBRARY.cards[id]; return d.rarity === 'base' && d.type === 'attaque' && !d.spellId && !d.token; };
+
+/** La table vote comme un seul joueur : le plus blessé décide. Les autres suivent le premier vote. */
+function tableVote(p: Party, rng: Rng): string {
+  const followed = p.votes.find((v) => v !== null);
+  if (followed) return followed;
+  const nodes = p.voteOptions().map((id) => p.runs[0].map.nodes[id]);
+  const low = Math.min(...p.runs.map((r) => r.hp / Math.max(1, r.maxHp)));
+  const zaap = nodes.find((n) => n.type === 'zaap');
+  if (low < 0.5 && zaap) return zaap.id;
+  const elite = nodes.find((n) => n.type === 'elite');
+  if (low > 0.8 && elite) return elite.id;
+  return rng.pick(nodes).id;
+}
+
 /** Prochaine action d'un joueur, ou null s'il attend les autres. */
 function nextAction(p: Party, i: number, rng: Rng): PartyAction | null {
   const run = p.runs[i];
@@ -17,7 +33,10 @@ function nextAction(p: Party, i: number, rng: Rng): PartyAction | null {
   if (pend) {
     if (pend.kind === 'card') return [i, 'chooseCard', rng.pick(pend.options)];
     if (pend.kind === 'item') return [i, 'chooseItem', chooseItem(LIBRARY, ITEMS, run.itemEffects, run.deck, run.equipment, pend.options) ?? pend.options[0]];
-    return [i, 'resolvePick', rng.pick(run.pickCandidates(pend.what)).uid];
+    const c = run.pickCandidates(pend.what);
+    const bad = c.find((x) => LIBRARY.cards[x.id].curse) ?? c.find((x) => isStrike(x.id));
+    const uid = (pend.what === 'remove' || pend.what === 'transform') && bad ? bad.uid : rng.pick(c).uid;
+    return [i, 'resolvePick', uid];
   }
   switch (run.phase) {
     case 'dieu': return [i, 'takeBoon', rng.pick(run.god!.offer)];
@@ -31,9 +50,7 @@ function nextAction(p: Party, i: number, rng: Rng): PartyAction | null {
       if (run.availableNodes()[0] === 'dieu') return [i, 'enterNode', 'dieu'];
       const opts = p.voteOptions();
       if (!opts.length || p.votes[i] !== null) return null;
-      const low = run.hp < run.maxHp * 0.5;
-      const pref = opts.find((id) => (low ? run.map.nodes[id].type === 'zaap' : false));
-      return [i, 'vote', pref ?? rng.pick(opts)];
+      return [i, 'vote', tableVote(p, rng)];
     }
     case 'combat': {
       const c = run.combat!;
@@ -52,9 +69,23 @@ function nextAction(p: Party, i: number, rng: Rng): PartyAction | null {
       return [i, 'leaveReward'];
     }
     case 'dofus': return [i, 'takeDofus', rng.pick(run.dofusOffer)];
-    case 'marchand': return [i, 'leaveShop'];
+    case 'marchand': {
+      const shop = run.shop!;
+      const basic = run.deck.find((c) => isStrike(c.id));
+      if (basic && !shop.removed && run.kamas >= shop.removePrice) return [i, 'removeCard', basic.uid];
+      const affordable = shop.items.filter((x) => !x.sold && x.price <= run.kamas).map((x) => x.id);
+      const pick = affordable.length ? chooseItem(LIBRARY, ITEMS, run.itemEffects, run.deck, run.equipment, affordable) : null;
+      if (pick) return [i, 'buyItem', pick];
+      const card = shop.cards.find((x) => !x.sold && x.price <= run.kamas && LIBRARY.cards[x.id].rarity === 'rare');
+      if (card) return [i, 'buyCard', card.id];
+      return [i, 'leaveShop'];
+    }
     case 'zaap':
-      if (!run.zaapUsed && run.hp < run.maxHp * 0.6) return [i, 'zaapRest'];
+      if (!run.zaapUsed && run.hp < run.maxHp * 0.6 && run.zaapHealAmount() > 0) return [i, 'zaapRest'];
+      if (!run.zaapUsed) {
+        const c = run.deck.filter((x) => !x.upgraded);
+        if (c.length) return [i, 'zaapUpgrade', rng.pick(c).uid];
+      }
       return [i, 'leaveZaap'];
   }
   return null;

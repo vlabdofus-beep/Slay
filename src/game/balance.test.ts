@@ -97,7 +97,7 @@ test('échelle joueurs : le fichier fait foi, un joueur seul ne change pas la sa
   assert.equal(seul.hp, Math.round(room.hp * 1000) / 1000);
   assert.equal(seul.damage, room.damage);
   const quatre = scaleForParty(room, 4);
-  assert.equal(quatre.hp, Math.round(room.hp * 5.5 * 1000) / 1000);
+  assert.equal(quatre.hp, Math.round(room.hp * 6 * 1000) / 1000);
   assert.equal(quatre.damage, room.damage, 'les dégâts ne montent pas avec le nombre de joueurs');
   assert.equal(scaleForParty(room, 9).hp, quatre.hp, 'au-delà de 4, on reste à 4');
   const b = file();
