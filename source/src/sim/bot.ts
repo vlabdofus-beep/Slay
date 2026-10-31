@@ -6,6 +6,7 @@ import { ITEMS } from '../data/items.ts';
 import { EVENT_BY_ID } from '../data/events.ts';
 import { LIBRARY } from '../data/library.ts';
 import { Run } from '../game/run.ts';
+import { ENCOUNTERS } from '../data/monsters.ts';
 import { chooseItem } from './itemPolicy.ts';
 import { playGreedy } from './policy.ts';
 
@@ -34,6 +35,8 @@ export interface BotResult {
   hpBeforeBoss: number | null;
   prospection: number;
   rarities: Record<string, number>;
+  /** Acte et palier du combat perdu (« 2:elite »), null si la run n'est pas perdue en combat. */
+  diedAt: string | null;
 }
 
 /** Choix en attente : retirer d'abord les malédictions et les cartes de base, améliorer au hasard, prendre la première carte. */
@@ -138,5 +141,6 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
     hpBeforeBoss,
     prospection: run.prospection(),
     rarities,
+    diedAt: run.phase === 'defeat' && run.encounter ? `${run.act}:${ENCOUNTERS[run.encounter].tier}` : null,
   };
 }

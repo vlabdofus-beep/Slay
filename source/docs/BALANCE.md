@@ -228,3 +228,23 @@ Bot (choix au hasard parmi les bénédictions et les options possibles), 300 run
 | Événements et dieux | 49 / 16 / 3 % | 42 / 18 / 4 % |
 
 Les dieux jouent le rôle de la bénédiction de Neow dans Slay : un vrai coup de pouce de départ, choisi par le joueur. Comme le bot choisit au hasard, un joueur qui choisit bien en tirera plus. Pas encore de mesure bénédiction par bénédiction.
+
+## Rééquilibrage après les dieux et les événements (31/10/2026)
+
+Les bénédictions et les événements rendaient la run nettement plus facile (bot : 46 % au-delà du boss 1, 17 % au-delà du boss 2, 5 % de victoires). Retour à une difficulté proche de l'avant, un peu plus ouverte sur l'acte 3. Multiplicateurs (`echelle_monstres` de `equilibrage.json`) :
+
+| | avant | après |
+|---|---|---|
+| Acte 1, PV (faible / normal / élite / boss) | 1,012 / 1,056 / 0,88 / 1,012 | 1,11 / 1,18 / 0,97 / 1,13 |
+| Acte 2, dégâts (faible / normal / élite / boss) | 1,3 / 1,15 / 1,05 / 1 | 1,43 / 1,265 / 1,155 / 1,1 |
+| Acte 3, dégâts (faible / normal / élite / boss) | 0,95 / 1 / 1 / 1 | 1,045 / 1,1 / 1,1 / 1,1 |
+
+Bot, 600 runs par classe sur deux jeux de graines, part des runs qui battent le boss 1 / le boss 2 / gagnent :
+
+| | Iop | Crâ |
+|---|---|---|
+| Dieux et événements, ancienne échelle | 47 / 16 / 5 % | 45 / 19 / 5 % |
+| Nouvelle échelle | 35 / 8 / 3 % | 36 / 11 / 3 % |
+| Pour mémoire, avant dieux et événements | 28 / 3 / 0 % | 35 / 8 / 0 % |
+
+Les morts se répartissent ainsi : environ 60 % dans l'acte 1 (surtout les combats normaux et le boss), 25 % dans l'acte 2, 7 % dans l'acte 3. Outil de mesure : `botRun` renvoie maintenant `diedAt` (acte et palier du combat perdu).

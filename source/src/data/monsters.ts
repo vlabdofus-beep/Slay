@@ -18,9 +18,10 @@ export const ACT1_SCALE: MonsterScale = { hp: 1, damage: 1 };
  * acte 2 : 83 / 128 / 145 / 379 ; acte 3 : 96 / 150 / 276 / 556. Coups visés : voir le même tableau.
  */
 const BASE_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> = {
-  1: { faible: { hp: 1.15, damage: 1.1 }, normal: { hp: 1.2, damage: 1.1 }, elite: { hp: 1, damage: 1 }, boss: { hp: 1.15, damage: 1 } },
-  2: { faible: { hp: 1.3, damage: 1.3 }, normal: { hp: 1.3, damage: 1.15 }, elite: { hp: 1.07, damage: 1.05 }, boss: { hp: 1.17, damage: 1 } },
-  3: { faible: { hp: 0.88, damage: 0.95 }, normal: { hp: 1, damage: 1 }, elite: { hp: 1.15, damage: 1 }, boss: { hp: 1.16, damage: 1 } },
+  // 31/10/2026 : dieux et événements rendent la run plus facile → acte 1 plus solide, actes 2 et 3 frappent plus fort.
+  1: { faible: { hp: 1.261, damage: 1.1 }, normal: { hp: 1.341, damage: 1.1 }, elite: { hp: 1.102, damage: 1 }, boss: { hp: 1.284, damage: 1 } },
+  2: { faible: { hp: 1.3, damage: 1.43 }, normal: { hp: 1.3, damage: 1.265 }, elite: { hp: 1.07, damage: 1.155 }, boss: { hp: 1.17, damage: 1.1 } },
+  3: { faible: { hp: 0.88, damage: 1.045 }, normal: { hp: 1, damage: 1.1 }, elite: { hp: 1.15, damage: 1.1 }, boss: { hp: 1.16, damage: 1.1 } },
 };
 /** Les vraies résistances de Dofus (≈ 18 % en neutre, 10 à 13 % par élément en moyenne) rendent les monstres
  *  plus solides qu'avec l'ancien tout-ou-rien : leurs PV baissent d'autant pour garder la même durée de combat. */
