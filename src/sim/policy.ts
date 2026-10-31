@@ -76,6 +76,14 @@ function value(c: Combat, a: Move): number {
         else if (fx.status === 'faiblesse') v += 1.5 * fx.amount * n;
         else if (fx.status === 'brulure') v += 0.7 * ((fx.amount * (fx.amount + 1)) / 2) * n;
         else if (fx.status === 'poison') v += 0.8 * fx.amount * 1.8 * n;
+        else if (fx.status === 'telefrag') {
+          // Une marque vaut ce que rapportera l'attaque qui la consomme (pioche du passif, bonus des cartes).
+          const fresh = (fx.on === 'all_enemies' ? c.living() : targets).filter((e) => !e.status.telefrag).length;
+          const attacksLeft = c.hand.some((i, k) => k !== a.handIndex && c.cardDef(i).type === 'attaque');
+          v += w * fresh * (c.classe === 'xelor' ? (attacksLeft ? 1.5 : 0.8) : 0.2);
+        } else if (fx.status === 'ralenti') {
+          for (const e of fx.on === 'all_enemies' ? c.living() : targets) v += w * 0.9 * Math.min(fx.amount, c.intent(e).damage);
+        } else if (fx.status === 'echeance') v += w * 0.9 * fx.amount * (fx.on === 'all_enemies' ? c.living().length : targets.length);
         else v += 1.5 * fx.amount * n;
         break;
       }
@@ -106,10 +114,22 @@ function value(c: Combat, a: Move): number {
       case 'addCard':
         v += w * 3.5 * fx.count;
         break;
+      case 'consume':
+        for (const e of targets) if (e.status.telefrag) {
+          const before = v;
+          run(fx.then, 1);
+          v = before + (v - before) * w + w * 2;
+        }
+        break;
     }
   }
   };
   run(p.effects, 1);
+  // Téléfrag : une attaque qui touche un ennemi marqué consomme la marque (pioche du passif, pouvoirs).
+  if (p.type === 'attaque' && dealsDamage) {
+    const marked = targets.filter((e) => e.status.telefrag).length;
+    if (marked) v += (c.classe === 'xelor' && c.telefragDraws < 1 ? 2 : 0) + 0.5 * marked;
+  }
   const cost = p.cost;
   return v / Math.max(cost, 0.5);
 }

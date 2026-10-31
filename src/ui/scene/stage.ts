@@ -28,7 +28,7 @@ layoutStage();
 
 type FxEntry = [string, number, number]; // [type, gfx, sous les pieds]
 const FX = SPELLFX as unknown as { buckets: number; spells: Record<string, [string | null, FxEntry[]]> };
-const BREED: Record<string, number> = { iop: 8, cra: 9 };
+const BREED: Record<string, number> = { iop: 8, cra: 9, xelor: 5 };
 
 // ───────────── chargement de scripts (packs de cartes, effets) ─────────────
 

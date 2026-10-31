@@ -15,7 +15,7 @@ if (!src || !existsSync(join(src, 'index.html'))) {
   process.exit(1);
 }
 
-const BREEDS = [8, 9]; // Iop, Crâ
+const BREEDS = [8, 9, 5]; // Iop, Crâ, Xélor
 const MAP_PACKS = [
   1, 8, 9, 18, 32, 41, // acte 1, Amakna : camp des Bouftous, champs, sous-bois, prairie, œufs
   22, 46, 59, 89, 98, 117, 125, // acte 2 : grotte de cristal, jungle, forêt sombre, rocaille, ossuaire, bois maudit, marais

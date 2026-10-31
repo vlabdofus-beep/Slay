@@ -6,6 +6,10 @@
   "items": "2026-10-29T00:10:26.499Z"
  },
  "breeds": {
+  "xelor": {
+   "id": 5,
+   "n": "Xélor"
+  },
   "iop": {
    "id": 8,
    "n": "Iop"
@@ -395,6 +399,411 @@
    ],
    "icon": 11873,
    "de": "Occasionne des dommages Terre. Les dommages du sort sont augmentés après chaque lancer. Les bonus se décrémentent si le sort n'est pas relancé."
+  },
+  "13242": {
+   "n": "Ralentissement",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "eau"
+   ],
+   "icon": 12086,
+   "de": "Retire des PA et occasionne des dommages Eau. Le retrait devient un vol si la cible est Téléfrag."
+  },
+  "13243": {
+   "n": "Rembobinage",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12090,
+   "de": "Téléporte la cible à sa position de début de tour. Les effets sont appliqués à la fin du tour de la cible si c'est un allié. Peut générer un ."
+  },
+  "13244": {
+   "n": "Aiguille",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "terre"
+   ],
+   "icon": 13826,
+   "de": "Applique un poison Terre de début de tour et l'état Aiguille sur la cible : • Occasionne des dommages Terre si la cible perd l'état Téléfrag. Les dommages ne peuvent être déclenchés qu'une seule fois par tour."
+  },
+  "13245": {
+   "n": "Gelure",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "eau"
+   ],
+   "icon": 13239,
+   "de": "Téléporte la cible à sa position précédente et occasionne des dommages Eau aux ennemis. Peut générer un ."
+  },
+  "13246": {
+   "n": "Flou Temporel",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12096,
+   "de": "Retire immédiatement des PA non esquivables en zone pour les augmenter au tour suivant. Le retrait de PA n'affecte pas le lanceur."
+  },
+  "13247": {
+   "n": "Synchro",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12101,
+   "de": "Invoque une Synchro statique qui peut occasionner des dommages Air aux ennemis en zone lorsqu'elle entre dans l'état Téléfrag. Elle est détruite après avoir occasionné ses dommages. La Synchro est immunisée contre l'application directe du Téléfrag et contre les effets de fin de tour des sorts Rembobinage et Rémanence. Il ne peut y avoir qu'une seule Synchro par équipe. Si la Synchro est encore pré"
+  },
+  "13248": {
+   "n": "Régulateur",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 13832,
+   "de": "Réduit la durée des effets sur la cible et occasionne des dommages Terre aux ennemis. Augmente le nombre de lancers maximal par tour du sort pour le tour en cours si la cible est Téléfrag. Consomme l'état sur la cible."
+  },
+  "13249": {
+   "n": "Téléportation",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12088,
+   "de": "Téléporte le lanceur symétriquement par rapport à la cible. Peut générer un . Le temps de relance est réinitialisé lorsque le lanceur génère ou consomme un Téléfrag."
+  },
+  "13250": {
+   "n": "Paradoxe",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12100,
+   "de": "Sur le Complice ou le Cadran de Xélor du lanceur : • Rend l'invocation Indéplaçable. • Téléporte les entités symétriquement par rapport à l'invocation en zone autour d'elle. • Fixe le temps de relance des sorts Complice et Cadran de Xélor du lanceur à 1 tour. • Au début du tour de l'invocation, téléporte de nouveau ces entités symétriquement par rapport à elle. N'affecte pas la Synchro et le lance"
+  },
+  "13251": {
+   "n": "Fuite du Temps",
+   "b": "xelor",
+   "pa": 1,
+   "el": [],
+   "icon": 12105,
+   "de": "Augmente la Fuite de l'allié ciblé. Téléporte la cible à sa position précédente au tour suivant. Peut générer un ."
+  },
+  "13252": {
+   "n": "Frappe de Xélor",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 12091,
+   "de": "Téléporte la cible symétriquement par rapport au lanceur et occasionne des dommages Terre aux ennemis. Peut générer un ."
+  },
+  "13253": {
+   "n": "Rayon Obscur",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 13827,
+   "de": "Occasionne des dommages Feu aux ennemis en zone. Les dommages du sort sont augmentés pour chaque entité Téléfrag dans la zone avant d'appliquer les effets. Les dommages de zone ne sont pas dégressifs. Consomme les états sur les cibles."
+  },
+  "13254": {
+   "n": "Flétrissement",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "air"
+   ],
+   "icon": 12089,
+   "de": "Occasionne des dommages Air. Les dommages sont augmentés après chaque lancer si la cible est Téléfrag."
+  },
+  "13255": {
+   "n": "Rémanence",
+   "b": "xelor",
+   "pa": 3,
+   "el": [],
+   "icon": 13840,
+   "de": "Applique l'état Rémanent sur la cible : • Téléporte la cible à sa position précédente pour chaque PM qu'elle utilise. • Les effets sont appliqués à la fin du tour de la cible si c'est un allié. Peut générer un ."
+  },
+  "13256": {
+   "n": "Horloge",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 13824,
+   "de": "Retire des PA et occasionne des dommages Terre. Les dommages du sort sont augmentés avant d'appliquer les effets si la cible est Téléfrag. Consomme l'état sur la cible."
+  },
+  "13257": {
+   "n": "Poussière",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 12097,
+   "de": "Occasionne des dommages Feu aux ennemis en zone. Téléporte également les cibles Téléfrag dans la zone symétriquement par rapport au centre avant d'appliquer les effets. Peut générer un ."
+  },
+  "13258": {
+   "n": "Cadran de Xélor",
+   "b": "xelor",
+   "pa": 3,
+   "el": [],
+   "icon": 12116,
+   "de": "Invoque un Cadran de Xélor statique qui peut retirer ou donner des PA aux entités Téléfrag en zone. Il peut également renvoyer une partie des dommages qu'il subit à ses attaquants ennemis. Il renvoie également une partie des dommages qu'il subit par le lanceur aux ennemis en zone autour de lui. Il ne peut y avoir qu'un seul Cadran de Xélor par équipe. Si le Cadran est encore présent et que celui-c"
+  },
+  "13259": {
+   "n": "Compte-goutte",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "eau"
+   ],
+   "icon": 12095,
+   "de": "Téléporte la cible et le lanceur à leur position précédente et occasionne des dommages Eau aux ennemis. Peut générer un ."
+  },
+  "13260": {
+   "n": "Momification",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 13828,
+   "de": "Applique l'état Téléfrag sur le lanceur, le rend Intaclable et augmente ses PM et son Retrait PA."
+  },
+  "13261": {
+   "n": "Sablier de Xélor",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "feu"
+   ],
+   "icon": 12094,
+   "de": "Retire des PA et occasionne des dommages Feu aux ennemis et applique l'état Sablier sur la cible : • Occasionne des dommages Feu aux ennemis en zone lors de l'expiration de l'état. La durée de l'état est réduite pour chaque Téléfrag consommé sur la cible."
+  },
+  "13262": {
+   "n": "Raulebaque",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12098,
+   "de": "Téléporte tout le monde à sa position précédente. Peut générer un ."
+  },
+  "13281": {
+   "n": "Souvenir",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "air"
+   ],
+   "icon": 13851,
+   "de": "Téléporte la cible à sa position précédente et vole de la vie dans l'élément Air aux ennemis. Peut générer un ."
+  },
+  "13282": {
+   "n": "Astrolabe",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12112,
+   "de": "Téléporte le lanceur sur la case ciblée ou échange de position avec la cible. Sur le lanceur : le téléporte à sa position précédente. Peut générer un . Le temps de relance est réinitialisé lorsque le lanceur génère ou consomme un Téléfrag."
+  },
+  "13283": {
+   "n": "Rouage",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "terre"
+   ],
+   "icon": 13850,
+   "de": "Téléporte les cibles symétriquement par rapport au centre et vole de la vie dans l'élément Terre aux ennemis en zone. N'affecte pas directement le lanceur. Peut générer un ."
+  },
+  "13284": {
+   "n": "Dessèchement",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 12113,
+   "de": "Occasionne des dommages Air aux ennemis. Rebondit sur l'entité la plus proche dans un cercle de taille 2. Augmente également les PM du lanceur pour chaque entité Téléfrag touchée. Consomme les états sur les cibles."
+  },
+  "13285": {
+   "n": "Permutation",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 13852,
+   "de": "Échange de position avec la cible et vole de la vie dans l'élément Eau aux ennemis. Peut générer un ."
+  },
+  "13286": {
+   "n": "Réfraction",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "feu"
+   ],
+   "icon": 13825,
+   "de": "Occasionne des dommages Feu aux ennemis. Propage l'état Téléfrag et applique les effets en zone si la cible est Téléfrag. Consomme l'état sur la cible."
+  },
+  "13287": {
+   "n": "Complice",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12092,
+   "de": "Invoque un Complice contrôlable qui sert d'obstacle. Le Complice gagne des PM lorsqu'il entre dans l'état Téléfrag. Il renvoie également une partie des dommages qu'il subit par son invocateur aux ennemis en zone autour de lui. Si le Complice du lanceur est encore présent et que celui-ci est ré-invoqué, l'ancien est détruit pour laisser place au nouveau."
+  },
+  "13288": {
+   "n": "Perturbation",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "feu"
+   ],
+   "icon": 12118,
+   "de": "Téléporte la cible symétriquement par rapport au lanceur et vole de la vie dans l'élément Feu aux ennemis. Peut générer un ."
+  },
+  "13289": {
+   "n": "Distorsion",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 12119,
+   "de": "Téléporte les cibles à leur position précédente et occasionne des dommages Air aux ennemis en zone. Les dommages de zone ne sont pas dégressifs. N'affecte pas le lanceur. Peut générer un ."
+  },
+  "13290": {
+   "n": "Pétrification",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 12120,
+   "de": "Occasionne des dommages Eau et retire des PA. Le coût en PA du sort est réduit après le lancer si la cible est Téléfrag (cumulable 2 fois). Consomme l'état sur la cible."
+  },
+  "13291": {
+   "n": "Conservation",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12127,
+   "de": "Réduit les dommages subis par l'allié ciblé et lui applique l'état Conservation : • Augmente les PA de la cible pour chaque attaque ennemie subie (cumulable 2 fois)."
+  },
+  "13292": {
+   "n": "Sables du Temps",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "feu"
+   ],
+   "icon": 12122,
+   "de": "Téléporte la cible à sa position précédente et occasionne des dommages Feu aux ennemis. Rebondit sur l'entité la plus proche dans un cercle de taille 2. Le rebond s'effectue depuis la position initiale de chaque cible. Peut générer un ."
+  },
+  "13293": {
+   "n": "Prémonition",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12128,
+   "de": "Téléporte le lanceur ou échange sa position avec l'entité sur la case ciblée au tour suivant. Peut générer un ."
+  },
+  "13294": {
+   "n": "Pendule",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "air"
+   ],
+   "icon": 12124,
+   "de": "Téléporte le lanceur symétriquement par rapport à la cible, occasionne des dommages Air à l'ennemi ciblé et aux ennemis en zone autour du lanceur et le téléporte à sa position précédente. Les effets ne sont appliqués qu'une seule fois par lancer. Peut générer un ."
+  },
+  "13295": {
+   "n": "Faille",
+   "b": "xelor",
+   "pa": 4,
+   "el": [],
+   "icon": 12125,
+   "de": "Échange de position avec la Complice ou le Cadran de Xélor du lanceur et fixe leur temps de relance à 1 tour. À la fin du tour du lanceur, téléporte le Complice ou le Cadran à leur position précédente. Empêche l'application du Téléfrag sur la Synchro pour le tour en cours. Peut générer un ."
+  },
+  "13296": {
+   "n": "Désynchronisation",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 12109,
+   "de": "Pose un piège mono-cellule qui téléporte les entités symétriquement par rapport au piège en zone. Peut générer un ."
+  },
+  "13297": {
+   "n": "Espace-temps",
+   "b": "xelor",
+   "pa": 2,
+   "el": [],
+   "icon": 13830,
+   "de": "Applique l'état Espace-temps sur la cible : • Téléporte la cible et son attaquant à leur position précédente si elle subit des dommages. • Renvoie également une partie des dommages subis par la cible à son attaquant si c'est un ennemi Téléfrag. Peut générer un ."
+  },
+  "13298": {
+   "n": "Clepsydre",
+   "b": "xelor",
+   "pa": 4,
+   "el": [
+    "eau"
+   ],
+   "icon": 12129,
+   "de": "Retire des PA et occasionne des dommages Eau. Augmente les PA du lanceur au tour suivant si la cible est Téléfrag (cumulable 3 fois). Consomme l'état sur la cible."
+  },
+  "13299": {
+   "n": "Engrenage",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "terre"
+   ],
+   "icon": 12115,
+   "de": "Téléporte les cibles symétriquement par rapport au centre et occasionne des dommages Terre aux ennemis en zone. Les dommages de zone ne sont pas dégressifs. N'affecte pas directement le lanceur. Peut générer un ."
+  },
+  "13300": {
+   "n": "Glas",
+   "b": "xelor",
+   "pa": 3,
+   "el": [
+    "terre",
+    "feu",
+    "eau",
+    "air"
+   ],
+   "icon": 12132,
+   "de": "Occasionne des dommages Feu, Eau, Air et Terre aux ennemis en zone. Les dommages sont augmentés pour chaque Téléfrag consommé depuis son dernier lancer. Les effets sont retirés après utilisation du sort. Nécessite de consommer au moins un pour être utilisé."
+  },
+  "13301": {
+   "n": "Instabilité",
+   "b": "xelor",
+   "pa": 3,
+   "el": [],
+   "icon": 13843,
+   "de": "Pose un glyphe de début de tour qui téléporte les cibles à leur position précédente. Pose également un glyphe-aura qui rend les alliés Intaclables et retire des PA aux ennemis. Le glyphe est déclenché si le lanceur génère ou consomme un Téléfrag. Peut générer un ."
+  },
+  "14650": {
+   "n": "Vingt-cinquième Heure",
+   "b": "xelor",
+   "pa": 3,
+   "el": [],
+   "icon": 12126,
+   "de": "Désactive les états Enraciné, Indéplaçable et Pesanteur sur le lanceur pour le tour en cours."
+  },
+  "14651": {
+   "n": "Gousset",
+   "b": "xelor",
+   "pa": 2,
+   "el": [
+    "air"
+   ],
+   "icon": 13355,
+   "de": "Retire des PA et occasionne des dommages Air aux ennemis. Occasionne des dommages Air supplémentaires aux ennemis en zone sur la case ciblée à la fin du prochain tour du lanceur si la cible est Téléfrag. Consomme l'état sur la cible."
   },
   "14676": {
    "n": "Ferveur",

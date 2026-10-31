@@ -302,6 +302,102 @@ const spread = (s: StatusId): Effect => ({ type: 'spread', status: s });
 const detonate = (s: StatusId): Effect => ({ type: 'detonate', status: s });
 const create = (card: string, count: number): Effect => ({ type: 'addCard', card, count, pile: 'hand' });
 
+// ───────────── Xélor (proposition validée le 31/10/2026, docs/CLASSE_XELOR.md) ─────────────
+// Téléfrag : certains sorts posent une marque, l'attaque suivante la consomme (passif : pioche).
+// Ralenti (retrait de PA) : la prochaine action du monstre fait moins de dégâts au total.
+// Échéance : des dégâts Feu qui tombent à la fin du prochain tour du monstre.
+const tf = (on: 'target' | 'all_enemies' = 'target'): Effect => status('telefrag', 1, on);
+const slow = (n: number, on: 'target' | 'all_enemies' = 'target'): Effect => status('ralenti', n, on);
+const due = (n: number): Effect => status('echeance', n, 'target');
+const siT = (...then: Effect[]): Effect => ({ type: 'if', cond: 'cible_telefrag', then });
+const siRalenti = (...then: Effect[]): Effect => ({ type: 'if', cond: 'cible_ralentie', then });
+/** Pouvoir qui ne se déclenche qu'une fois par tour. */
+const powerOnce = (trigger: string, reward: string, amount: number): Effect =>
+  ({ type: 'grant', fx: [{ kind: 'roll', parts: [{ trigger, reward, amount, limit: 1 }] }] });
+
+export const XELOR_CARDS: CardDef[] = [
+  // Base : 5 Coup de baguette, 4 Conservation, 1 Frappe de Xélor (signature Terre : pose le Téléfrag)
+  weapon('xelor_coup_baguette', 'Coup de baguette', 'xelor', [dmg(6, 'neutre')], [dmg(9, 'neutre')]),
+  fromSpell({ id: 'xelor_conservation', spell: 13291, type: C, target: 'self', rarity: 'base', cost: 1, effects: [block(5)], upgrade: [block(8)] }),
+  fromSpell({ id: 'xelor_frappe', spell: 13252, type: A, target: 'enemy', rarity: 'base',
+    effects: [dmg(10, 'terre'), slow(2), tf()], upgrade: [dmg(13, 'terre'), slow(3), tf()] }),
+  // Eau : ralentir, voler la vie
+  fromSpell({ id: 'xelor_ralentissement', spell: 13242, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(4, 'eau'), slow(2)], upgrade: [dmg(6, 'eau'), slow(3)] }),
+  fromSpell({ id: 'xelor_gelure', spell: 13245, type: A, target: 'enemy', rarity: 'commune', effects: [dmg(4, 'eau'), tf()], upgrade: [dmg(6, 'eau'), tf()] }),
+  fromSpell({ id: 'xelor_compte_goutte', spell: 13259, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(7, 'eau'), block(4), tf()], upgrade: [dmg(10, 'eau'), block(5), tf()] }),
+  fromSpell({ id: 'xelor_petrification', spell: 13290, type: A, target: 'enemy', rarity: 'rare',
+    effects: [dmg(11, 'eau'), slow(2), siT(energy(1))], upgrade: [dmg(15, 'eau'), slow(3), siT(energy(1))] }),
+  fromSpell({ id: 'xelor_clepsydre', spell: 13298, type: A, target: 'enemy', rarity: 'rare',
+    effects: [drain(9, 'eau'), siT(energy(1))], upgrade: [drain(12, 'eau'), siT(energy(1))] }),
+  fromSpell({ id: 'xelor_permutation', spell: 13285, type: A, target: 'enemy', rarity: 'rare', effects: [drain(11, 'eau'), tf()], upgrade: [drain(15, 'eau'), tf()] }),
+  fromSpell({ id: 'xelor_flou_temporel', spell: 13246, type: C, target: 'all_enemies', rarity: 'commune',
+    effects: [slow(2, 'all_enemies')], upgrade: [slow(3, 'all_enemies')] }),
+  // Feu : échéances et zones
+  fromSpell({ id: 'xelor_sablier', spell: 13261, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(3, 'feu'), due(5)], upgrade: [dmg(4, 'feu'), due(7)] }),
+  fromSpell({ id: 'xelor_refraction', spell: 13286, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(4, 'feu'), siT(spread('telefrag'))], upgrade: [dmg(6, 'feu'), siT(spread('telefrag'))] }),
+  fromSpell({ id: 'xelor_perturbation', spell: 13288, type: A, target: 'enemy', rarity: 'commune', effects: [drain(6, 'feu'), tf()], upgrade: [drain(9, 'feu'), tf()] }),
+  fromSpell({ id: 'xelor_sables', spell: 13292, type: A, target: 'enemy', rarity: 'commune', effects: [dmg(7, 'feu', 2), tf()], upgrade: [dmg(9, 'feu', 2), tf()] }),
+  fromSpell({ id: 'xelor_poussiere', spell: 13257, type: A, target: 'all_enemies', rarity: 'commune', effects: [dmg(10, 'feu')], upgrade: [dmg(14, 'feu')] }),
+  fromSpell({ id: 'xelor_rayon_obscur', spell: 13253, type: A, target: 'all_enemies', rarity: 'rare',
+    effects: [dmgPer(8, 'feu', 'telefrag', 5)], upgrade: [dmgPer(11, 'feu', 'telefrag', 7)] }),
+  // Terre : coups lourds et aiguilles
+  fromSpell({ id: 'xelor_aiguille', spell: 13244, type: A, target: 'enemy', rarity: 'commune',
+    effects: [status('poison', 3, 'target'), siT(dmg(5, 'terre'))], upgrade: [status('poison', 4, 'target'), siT(dmg(7, 'terre'))] }),
+  fromSpell({ id: 'xelor_regulateur', spell: 13248, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(7, 'terre'), siT(slow(3))], upgrade: [dmg(10, 'terre'), siT(slow(4))] }),
+  fromSpell({ id: 'xelor_engrenage', spell: 13299, type: A, target: 'all_enemies', rarity: 'commune',
+    effects: [dmg(5, 'terre'), tf('all_enemies')], upgrade: [dmg(7, 'terre'), tf('all_enemies')] }),
+  fromSpell({ id: 'xelor_horloge', spell: 13256, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(10, 'terre'), slow(2), siT(dmg(6, 'terre'))], upgrade: [dmg(13, 'terre'), slow(2), siT(dmg(8, 'terre'))] }),
+  fromSpell({ id: 'xelor_rouage', spell: 13283, type: A, target: 'all_enemies', rarity: 'rare', effects: [drain(8, 'terre')], upgrade: [drain(11, 'terre')] }),
+  fromSpell({ id: 'xelor_glas', spell: 13300, type: A, target: 'all_enemies', rarity: 'rare',
+    effects: [dmgPer(4, 'terre', 'telefrag_tour', 4)], upgrade: [dmgPer(5, 'terre', 'telefrag_tour', 5)] }),
+  // Air : le Téléfrag qui paie
+  fromSpell({ id: 'xelor_souvenir', spell: 13281, type: A, target: 'enemy', rarity: 'commune', effects: [drain(3, 'air'), tf()], upgrade: [drain(5, 'air'), tf()] }),
+  fromSpell({ id: 'xelor_gousset', spell: 14651, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(3, 'air'), slow(1), siT(due(6))], upgrade: [dmg(4, 'air'), slow(1), siT(due(8))] }),
+  fromSpell({ id: 'xelor_fletrissement', spell: 13254, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(6, 'air'), siT(dmg(6, 'air'))], upgrade: [dmg(8, 'air'), siT(dmg(8, 'air'))] }),
+  fromSpell({ id: 'xelor_dessechement', spell: 13284, type: A, target: 'enemy', rarity: 'commune',
+    effects: [dmg(12, 'air'), siT(draw(1))], upgrade: [dmg(16, 'air'), siT(draw(1))] }),
+  fromSpell({ id: 'xelor_distorsion', spell: 13289, type: A, target: 'all_enemies', rarity: 'rare',
+    effects: [dmg(11, 'air'), tf('all_enemies')], upgrade: [dmg(15, 'air'), tf('all_enemies')] }),
+  fromSpell({ id: 'xelor_pendule', spell: 13294, type: A, target: 'enemy', rarity: 'rare',
+    effects: [dmg(12, 'air'), block(4), tf()], upgrade: [dmg(16, 'air'), block(6), tf()] }),
+  // Le temps (neutre)
+  fromSpell({ id: 'xelor_teleportation', spell: 13249, type: C, target: 'enemy', rarity: 'commune', effects: [block(3), tf()], upgrade: [block(5), tf()] }),
+  fromSpell({ id: 'xelor_astrolabe', spell: 13282, type: C, target: 'enemy', rarity: 'commune', effects: [tf(), draw(1)], upgrade: [tf(), draw(1), block(3)] }),
+  fromSpell({ id: 'xelor_espace_temps', spell: 13297, type: C, target: 'enemy', rarity: 'commune',
+    effects: [tf(), status('renvoi', 3, 'self')], upgrade: [tf(), status('renvoi', 5, 'self')] }),
+  fromSpell({ id: 'xelor_complice', spell: 13287, type: C, target: 'self', rarity: 'commune', effects: [status('bouclier', 3, 'self')], upgrade: [status('bouclier', 5, 'self')] }),
+  fromSpell({ id: 'xelor_fuite', spell: 13251, type: C, target: 'self', rarity: 'commune', effects: [block(3), draw(1)], upgrade: [block(5), draw(1)] }),
+  fromSpell({ id: 'xelor_premonition', spell: 13293, type: C, target: 'self', rarity: 'commune', exhaust: true, effects: [draw(2)], upgrade: [draw(3)] }),
+  fromSpell({ id: 'xelor_paradoxe', spell: 13250, type: C, target: 'enemy', rarity: 'commune', effects: [multiply('ralenti', 2)], upgrade: [multiply('ralenti', 3)] }),
+  fromSpell({ id: 'xelor_desynchronisation', spell: 13296, type: C, target: 'all_enemies', rarity: 'commune', exhaust: true,
+    effects: [tf('all_enemies'), draw(1)], upgrade: [tf('all_enemies'), draw(2)] }),
+  fromSpell({ id: 'xelor_remanence', spell: 13255, type: C, target: 'enemy', rarity: 'commune',
+    effects: [tf(), status('vulnerabilite', 2, 'target')], upgrade: [tf(), status('vulnerabilite', 3, 'target')] }),
+  fromSpell({ id: 'xelor_faille', spell: 13295, type: C, target: 'self', rarity: 'rare', effects: [block(14), tf('all_enemies')], upgrade: [block(18), tf('all_enemies')] }),
+  fromSpell({ id: 'xelor_rembobinage', spell: 13243, type: C, target: 'self', rarity: 'rare', exhaust: true, effects: [energy(1)], upgrade: [energy(1), draw(1)] }),
+  fromSpell({ id: 'xelor_raulebaque', spell: 13262, type: C, target: 'self', rarity: 'rare', exhaust: true, effects: [heal(6)], upgrade: [heal(9)] }),
+  fromSpell({ id: 'xelor_vingt_cinquieme_heure', spell: 14650, type: C, target: 'all_enemies', rarity: 'rare', exhaust: true, upgradeCost: 0,
+    effects: [{ type: 'consume', then: [status('etourdi', 1, 'target')] }], upgrade: [{ type: 'consume', then: [status('etourdi', 1, 'target')] }] }),
+  // Pouvoirs
+  fromSpell({ id: 'xelor_momification', spell: 13260, type: P, target: 'self', rarity: 'commune',
+    effects: [power('debut_tour', ['bouclier', 2])], upgrade: [power('debut_tour', ['bouclier', 3])] }),
+  fromSpell({ id: 'xelor_cadran', spell: 13258, type: P, target: 'self', rarity: 'rare',
+    effects: [power('debut_tour', ['telefrag', 2])], upgrade: [power('debut_tour', ['telefrag', 3], ['armure', 3])] }),
+  fromSpell({ id: 'xelor_synchro', spell: 13247, type: P, target: 'self', rarity: 'rare',
+    effects: [powerOnce('telefrag_consomme', 'degats_zone', 4)], upgrade: [powerOnce('telefrag_consomme', 'degats_zone', 6)] }),
+  fromSpell({ id: 'xelor_instabilite', spell: 13301, type: P, target: 'self', rarity: 'rare',
+    effects: [powerOnce('telefrag_consomme', 'ralenti_zone', 2)], upgrade: [powerOnce('telefrag_consomme', 'ralenti_zone', 3)] }),
+];
+
+
 export const IOP_INVENTED: CardDef[] = [
   invented({ id: 'iop_enchainement', name: 'Enchaînement', classe: 'iop', cost: 1, type: A, element: 'terre', target: 'enemy', rarity: 'commune', icon: 11939,
     effects: [dmg(8, 'terre'), when('apres_attaque', dmg(7, 'terre'))], upgrade: [dmg(11, 'terre'), when('apres_attaque', dmg(9, 'terre'))],
@@ -364,4 +460,38 @@ export const CRA_INVENTED: CardDef[] = [
     effects: [power('competence', ['visee', 1])], upgrade: [power('competence', ['visee', 1])], upgradeCost: 0 }),
 ];
 
-export const ALL_CARDS: CardDef[] = [...IOP_CARDS, ...CRA_CARDS, ...NEUTRAL_CARDS, ...IOP_INVENTED, ...CRA_INVENTED];
+/** Icône d'un sort du Xélor (sorts inventés). */
+const xIcon = (id: number) => spell(id).icon;
+export const XELOR_INVENTED: CardDef[] = [
+  invented({ id: 'xelor_seconde', name: 'Seconde', classe: 'xelor', cost: 0, type: A, element: 'neutre', target: 'enemy', rarity: 'base', icon: xIcon(13251), token: true, exhaust: true,
+    effects: [dmg(4, 'neutre'), tf()], upgrade: [dmg(6, 'neutre'), tf()] }),
+  invented({ id: 'xelor_tic_tac', name: 'Tic-Tac', classe: 'xelor', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: xIcon(13293),
+    effects: [create('xelor_seconde', 2)], upgrade: [create('xelor_seconde', 3)],
+    lore: 'Chaque tic pose une marque, chaque tac la fait payer.' }),
+  invented({ id: 'xelor_aiguille_heures', name: 'Aiguille des Heures', classe: 'xelor', cost: 1, type: A, element: 'terre', target: 'enemy', rarity: 'commune', icon: xIcon(13244),
+    effects: [dmg(8, 'terre'), siRalenti(dmg(8, 'terre'))], upgrade: [dmg(10, 'terre'), siRalenti(dmg(10, 'terre'))] }),
+  invented({ id: 'xelor_aiguille_minutes', name: 'Aiguille des Minutes', classe: 'xelor', cost: 0, type: A, element: 'air', target: 'enemy', rarity: 'commune', icon: xIcon(13254),
+    effects: [dmg(3, 'air', 2), tf()], upgrade: [dmg(4, 'air', 2), tf()] }),
+  invented({ id: 'xelor_contretemps', name: 'Contretemps', classe: 'xelor', cost: 1, type: A, element: 'eau', target: 'enemy', rarity: 'commune', icon: xIcon(13242),
+    effects: [dmg(8, 'eau'), siRalenti(draw(1))], upgrade: [dmg(11, 'eau'), siRalenti(draw(1))] }),
+  invented({ id: 'xelor_heure_pointe', name: 'Heure de Pointe', classe: 'xelor', cost: 1, type: A, element: 'neutre', target: 'enemy', rarity: 'commune', icon: xIcon(13248),
+    effects: [dmgPer(5, 'neutre', 'attaques', 2)], upgrade: [dmgPer(6, 'neutre', 'attaques', 3)] }),
+  invented({ id: 'xelor_rouille', name: 'Rouille', classe: 'xelor', cost: 1, type: C, element: 'neutre', target: 'enemy', rarity: 'commune', icon: xIcon(13283),
+    effects: [status('erosion', 2, 'target'), slow(4)], upgrade: [status('erosion', 3, 'target'), slow(5)],
+    lore: 'Les rouages grincent, l\'armure s\'effrite.' }),
+  invented({ id: 'xelor_instant_suspendu', name: 'Instant Suspendu', classe: 'xelor', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'commune', icon: xIcon(13291), retain: true,
+    effects: [block(8)], upgrade: [block(11)] }),
+  invented({ id: 'xelor_sablier_brise', name: 'Sablier Brisé', classe: 'xelor', cost: 1, type: A, element: 'feu', target: 'enemy', rarity: 'rare', icon: xIcon(13261),
+    effects: [dmg(6, 'feu'), due(4), detonate('echeance')], upgrade: [dmg(9, 'feu'), due(6), detonate('echeance')],
+    lore: 'Le sable tombe d\'un coup. Et le sablier se remplit déjà.' }),
+  invented({ id: 'xelor_arret_temps', name: 'Arrêt du Temps', classe: 'xelor', cost: 2, type: C, element: 'neutre', target: 'all_enemies', rarity: 'rare', icon: xIcon(13246), exhaust: true,
+    effects: [slow(8, 'all_enemies')], upgrade: [slow(10, 'all_enemies')] }),
+  invented({ id: 'xelor_echo_temporel', name: 'Écho Temporel', classe: 'xelor', cost: 1, type: C, element: 'neutre', target: 'self', rarity: 'rare', icon: xIcon(13282), exhaust: true,
+    effects: [energy(2)], upgrade: [energy(2)], upgradeCost: 0 }),
+  invented({ id: 'xelor_derniere_seconde', name: 'Dernière Seconde', classe: 'xelor', cost: 0, type: C, element: 'neutre', target: 'self', rarity: 'rare', icon: xIcon(13262), exhaust: true,
+    effects: [draw(1), when('pv_bas', energy(2))], upgrade: [draw(2), when('pv_bas', energy(2))] }),
+  invented({ id: 'xelor_horloge_interne', name: 'Horloge Interne', classe: 'xelor', cost: 1, type: P, element: 'neutre', target: 'self', rarity: 'commune', icon: xIcon(13258),
+    effects: [power('telefrag_consomme', ['armure', 3])], upgrade: [power('telefrag_consomme', ['armure', 4])] }),
+];
+
+export const ALL_CARDS: CardDef[] = [...IOP_CARDS, ...CRA_CARDS, ...XELOR_CARDS, ...NEUTRAL_CARDS, ...IOP_INVENTED, ...CRA_INVENTED, ...XELOR_INVENTED];

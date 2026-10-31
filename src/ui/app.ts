@@ -7,7 +7,7 @@ import { lootChance, prospFactor } from '../core/offers.ts';
 import type { MapNode } from '../core/map.ts';
 import type { CardDef, CardInstance, ClassId, Element, ItemDef, StatusMap } from '../core/types.ts';
 import { ELEMENTS, SLOTS } from '../core/types.ts';
-import { DOFUS, itemIcon } from '../data/dofus.ts';
+import { DOFUS, itemIcon, spell, spellIcon } from '../data/dofus.ts';
 import { ITEMS } from '../data/items.ts';
 import { BALANCE_TARGETS, CLASS_START_HP, LIBRARY, balanceWarnings } from '../data/library.ts';
 import { applyBalance } from '../data/balance.ts';
@@ -34,6 +34,13 @@ import { paintBoard, paintLandscape } from './scene/paint.ts';
 type Selecting = { kind: 'card'; index: number } | null;
 type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'remove' } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' };
 
+/** Classes jouables, dans l'ordre de l'accueil. */
+type Hero = 'iop' | 'cra' | 'xelor';
+const HEROES: Hero[] = ['iop', 'cra', 'xelor'];
+const asHero = (v: string | null): Hero => (HEROES as string[]).includes(v ?? '') ? (v as Hero) : 'iop';
+/** « le Iop », « le Crâ », « le Xélor » (jamais « l'Iop »). */
+const heroName = (c: ClassId) => `le ${DOFUS.breeds[c]?.n ?? c}`;
+
 const ui = {
   run: null as Run | null,
   selecting: null as Selecting,
@@ -55,7 +62,7 @@ const ui = {
   lunge: new Set<number>(),
   gender: loadGender(),
   /** Accueil : classe choisie (gardée d'une visite à l'autre) et panneau d'apparence ouvert. */
-  pick: ((): 'iop' | 'cra' => { try { return localStorage.getItem('slay.pick') === 'cra' ? 'cra' : 'iop'; } catch { return 'iop'; } })(),
+  pick: ((): Hero => { try { return asHero(localStorage.getItem('slay.pick')); } catch { return 'iop'; } })(),
   lookOpen: false,
   /** Couleurs choisies à l'accueil, par classe et sexe (5 emplacements, null = d'origine). */
   colors: loadColors(),
@@ -76,7 +83,7 @@ function saveColors(): void {
 }
 /** Couleurs d'origine de chaque classe, lues dans son fichier d'apparence. */
 const baseColors: Record<string, number[]> = {};
-function loadBaseColors(id: 'iop' | 'cra', g: 'm' | 'f'): void {
+function loadBaseColors(id: Hero, g: 'm' | 'f'): void {
   const k = `${id}${g}`;
   if (baseColors[k]) return;
   baseColors[k] = [];
@@ -93,22 +100,23 @@ function appearanceOf(run: Run): Appearance {
   return { cols: ui.colors[`${run.classe}${run.gender}`] ?? [], accs };
 }
 
-function loadGender(): Record<'iop' | 'cra', 'm' | 'f'> {
-  try {
-    const g = JSON.parse(localStorage.getItem('slay.gender') ?? '{}');
-    return { iop: g.iop === 'f' ? 'f' : 'm', cra: g.cra === 'f' ? 'f' : 'm' };
-  } catch { return { iop: 'm', cra: 'm' }; }
+function loadGender(): Record<Hero, 'm' | 'f'> {
+  let g: Record<string, string> = {};
+  try { g = JSON.parse(localStorage.getItem('slay.gender') ?? '{}'); } catch { /* stockage indisponible */ }
+  return Object.fromEntries(HEROES.map((h) => [h, g[h] === 'f' ? 'f' : 'm'])) as Record<Hero, 'm' | 'f'>;
 }
 
 const root = document.getElementById('app') as HTMLElement;
-const asset = (p: string) => `assets/${p}`;
+/** Image du jeu (dossier assets), ou adresse complète (icônes de sorts de DofusDB). */
+const asset = (p: string) => (/^https?:/.test(p) ? p : `assets/${p}`);
 
 const SLOT_NAMES: Record<string, string> = {
   coiffe: 'Coiffe', cape: 'Cape', amulette: 'Amulette', anneau: 'Anneau', ceinture: 'Ceinture', bottes: 'Bottes',
 };
-const CLASS_INFO: Record<'iop' | 'cra', { pitch: string }> = {
+const CLASS_INFO: Record<Hero, { pitch: string }> = {
   iop: { pitch: 'Au contact, il frappe fort et encaisse. Ses sorts couvrent les quatre éléments.' },
   cra: { pitch: 'À distance, il affaiblit, brûle et vole la vie. Moins de PV, plus de ressources.' },
+  xelor: { pitch: 'Il marque ses cibles, ralentit les coups et fait payer plus tard. Beaucoup de petits sorts, et la pioche pour les enchaîner.' },
 };
 const RARITY_NAMES: Record<string, string> = { commun: 'Commun', rare: 'Rare', mythique: 'Mythique', legendaire: 'Légendaire' };
 
@@ -132,6 +140,8 @@ const STATUS_ICON: Record<string, string> = {
   puissance: 'fx/puissance.webp', faiblesse: 'fx/faiblesse.webp', vulnerabilite: 'fx/vulnerabilite.webp', brulure: 'elements/feu.png',
   poison: 'fx/poison.webp', bouclier: 'fx/bouclier.webp', renvoi: 'fx/renvoi.webp', erosion: 'fx/erosion.webp',
   esquive: 'fx/esquive.webp', etourdi: 'fx/etourdi.webp',
+  // Xélor : icônes des sorts d'origine (Téléportation, Ralentissement, Sablier de Xélor).
+  telefrag: spellIcon(spell(13249).icon), ralenti: spellIcon(spell(13242).icon), echeance: spellIcon(spell(13261).icon),
 };
 /** Bons statuts (liseré doré) et mauvais (liseré rouge), vus depuis celui qui les porte. */
 const GOOD_STATUS = new Set(['puissance', 'bouclier', 'renvoi', 'esquive']);
@@ -224,14 +234,16 @@ const FX_ICON: Record<string, string> = {
   faiblesse: 'fx/faiblesse.webp', erosion: 'fx/erosion.webp', etourdi: 'fx/etourdi.webp', brulure_zone: 'elements/feu.png',
   poison_zone: 'fx/poison.webp', degats: 'fx/degats.webp', degats_zone: 'fx/degats_zone.webp',
   prospection: 'fx/prospection.webp', prospection_run: 'fx/prospection.webp',
+  telefrag: spellIcon(spell(13249).icon), ralenti_zone: spellIcon(spell(13242).icon),
 };
 const FX_NAME: Record<string, string> = {
   puissance: 'Puissance', armure: 'Armure', bouclier: 'Bouclier', soin: 'Soin', pioche: 'Pioche', pa: 'Points d\'action',
   reduction: 'Réduction de coût', esquive: 'Esquive', renvoi: 'Renvoi de dommages', brulure: 'Brûlure', poison: 'Poison',
   vulnerabilite: 'Vulnérabilité', faiblesse: 'Faiblesse', erosion: 'Érosion', etourdi: 'Étourdi', brulure_zone: 'Brûlure de zone',
   poison_zone: 'Poison de zone', degats: 'Dégâts', degats_zone: 'Dégâts de zone', prospection: 'Prospection', prospection_run: 'Prospection durable',
+  telefrag: 'Téléfrag', ralenti_zone: 'Ralenti de zone',
 };
-const ZONE = new Set(['brulure_zone', 'poison_zone', 'degats_zone']);
+const ZONE = new Set(['brulure_zone', 'poison_zone', 'degats_zone', 'ralenti_zone']);
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 function partIcon(p: EffectPart): string {
@@ -251,6 +263,7 @@ const TRG_SVG: Record<string, [string, string]> = {
   enemyKilled: ['Ennemi vaincu', '<path d="M12 3a7 7 0 0 0-4 12.7V19h8v-3.3A7 7 0 0 0 12 3z"/><circle cx="9.5" cy="11" r="1.2"/><circle cx="14.5" cy="11" r="1.2"/>'],
   hpLost: ['PV perdus', '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="m11 8-1.5 4h3L11 16"/>'],
   blockGained: ['Armure gagnée', '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>'],
+  telefragConsumed: ['Téléfrag consommé', '<circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>'],
   combatWon: ['Combat gagné', '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/>'],
 };
 const trgIcon = (ev: string, cls = 'trg') => {
@@ -295,6 +308,17 @@ function fxBadge(fx: ItemEffect, o: { title: string; icon?: string; live?: { use
     <span class="fxtip${o.down ? ' down' : ''}" role="tooltip">${o.title ? `<b class="fxt">${esc(o.title)}</b>` : ''}<span class="fx-what">${what}</span><span class="fx-when"><i>Activation</i> ${when}</span></span></span>`;
 }
 
+/** Téléfrag (Xélor) : ennemis marqués, pioches encore à prendre ce tour. */
+function telefragState(c: Combat): { marked: number; ready: boolean; state: string } {
+  const v = PASSIVE_VALUES.telefrag;
+  const marked = c.living().filter((e) => (e.status.telefrag ?? 0) > 0).length;
+  const left = Math.max(0, v.parTour - c.telefragDraws);
+  const ready = left > 0 && marked > 0;
+  const who = marked ? `${marked} ennemi${marked > 1 ? 's' : ''} Téléfrag.` : 'Aucun ennemi Téléfrag.';
+  const what = left ? `Frappe un ennemi Téléfrag pour piocher ${v.pioche > 1 ? `${v.pioche} cartes` : '1 carte'}.` : 'Pioche déjà prise ce tour.';
+  return { marked, ready, state: `${who} ${what}` };
+}
+
 /** Passif de classe : symbole de la classe, compteur vivant en combat, détail au survol. */
 function passiveBadge(classe: ClassId, o: { c?: Combat | null; flash?: boolean; down?: boolean } = {}): string {
   const p = PASSIVES[classe];
@@ -311,6 +335,11 @@ function passiveBadge(classe: ClassId, o: { c?: Combat | null; flash?: boolean; 
     ready = c.aimReady();
     live = `<span class="fxc${ready ? ' full' : ''}">${ready ? '×2' : `${c.aim}/${VISEE - 1}`}</span>`;
     state = ready ? 'Ta prochaine attaque inflige le double de dégâts.' : `Encore ${VISEE - 1 - c.aim} attaque${VISEE - 1 - c.aim > 1 ? 's' : ''} avant le tir doublé.`;
+  } else if (c && classe === 'xelor') {
+    const t = telefragState(c);
+    ready = t.ready;
+    live = `<span class="fxc${ready ? ' full' : ''}">${t.marked}</span>`;
+    state = t.state;
   }
   return `<span class="fxb passive${o.flash ? ' flash' : ''}${ready ? ' ready' : ''}" tabindex="0" aria-label="${esc(`${p.name} : ${p.text}`)}">
     <span class="fxi"><img src="${asset(`classes/${DOFUS.breeds[classe].id}.png`)}" alt="" draggable="false"></span>${live}
@@ -334,6 +363,12 @@ function passiveGauge(classe: ClassId, c: Combat, flash: boolean): string {
     steps = PASSIVE_VALUES.visee.attaques - 1; ready = c.aimReady(); done = ready ? steps : c.aim;
     goal = `×${PASSIVE_VALUES.visee.multiplicateur}`;
     state = ready ? 'Ta prochaine attaque inflige le double de dégâts.' : `Encore ${steps - done} attaque${steps - done > 1 ? 's' : ''} avant le tir doublé.`;
+  } else if (classe === 'xelor') {
+    // Une pastille par pioche du tour : allumée tant qu'elle reste à prendre.
+    const t = telefragState(c);
+    steps = PASSIVE_VALUES.telefrag.parTour; done = steps - c.telefragDraws; ready = t.ready;
+    goal = `+${PASSIVE_VALUES.telefrag.pioche}`;
+    state = t.state;
   }
   const pips = Array.from({ length: steps }, (_, i) => `<i class="pip${i < done ? ' on' : ''}"></i>`).join('');
   return `<span class="pgauge hastip${ready ? ' ready' : ''}${flash ? ' flash' : ''}" tabindex="0" aria-label="${esc(`${p.name} : ${state}`)}">
@@ -417,7 +452,7 @@ function sheet(run: Run): string {
 const COLOR_NAMES = ['Peau', 'Cheveux', 'Tenue 1', 'Tenue 2', 'Tenue 3'];
 const hex = (n: number) => `#${(n >>> 0).toString(16).padStart(6, '0').slice(-6)}`;
 /** Couleurs du personnage : 5 pastilles (sélecteur de couleur natif) et retour aux couleurs d'origine. */
-function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
+function colorRow(id: Hero, g: 'm' | 'f'): string {
   loadBaseColors(id, g);
   const base = baseColors[`${id}${g}`] ?? [];
   const mine = ui.colors[`${id}${g}`] ?? [];
@@ -432,7 +467,7 @@ function colorRow(id: 'iop' | 'cra', g: 'm' | 'f'): string {
     <button class="color-reset" data-act="color-reset" data-classe="${id}" data-g="${g}" ${custom ? '' : 'disabled'} title="Couleurs d'origine" aria-label="Revenir aux couleurs d'origine">↺</button></div>`;
 }
 
-const HERO_HUE: Record<'iop' | 'cra', string> = { iop: '#e5483b', cra: '#7dbb2e' };
+const HERO_HUE: Record<Hero, string> = { iop: '#e5483b', cra: '#7dbb2e', xelor: '#4c8fd6' };
 
 // ───────────── musique et sons de transition ─────────────
 const ACT_MUSIC: Record<number, string> = { 1: '20101', 2: '20152', 3: '20148' };
@@ -497,7 +532,7 @@ function resumeHtml(): string {
   if (ui.saveError) return `<p class="resume-error" role="alert">${esc(ui.saveError)}</p>`;
   if (!sv?.meta) return '';
   const m = sv.meta;
-  const who = sv.classe === 'iop' ? 'Le Iop' : 'Le Crâ';
+  const who = cap(heroName(sv.classe));
   const where = m.floor ? `acte ${m.act}, étage ${m.floor}` : `début de l'acte ${m.act}`;
   return `<div class="resume"><button class="play" data-act="continue-run">Continuer</button>
     <span class="resume-meta"><img src="${asset(`classes/${DOFUS.breeds[sv.classe].id}.png`)}" alt="">${who}, ${where}, ${m.hp} PV sur ${m.maxHp}, ${m.kamas} kamas</span></div>`;
@@ -506,7 +541,7 @@ function resumeHtml(): string {
 function viewTitle(): string {
   const pick = ui.pick;
   const saved = !!readSave()?.meta;
-  const hero = (id: 'iop' | 'cra') => {
+  const hero = (id: Hero) => {
     const b = DOFUS.breeds[id];
     const on = id === pick;
     return `<button class="hero-pick h-${id}${on ? ' on' : ''}" style="--hue:${HERO_HUE[id]}" role="radio" aria-checked="${on}" data-act="pick-class" data-classe="${id}" aria-label="${esc(b.n)}, ${CLASS_START_HP[id]} PV">
@@ -525,14 +560,14 @@ function viewTitle(): string {
       <h1 class="logo-word">Dofus Slay</h1>
       <p class="logo-sub">Un deckbuilder dans le Monde des Douze, d'Amakna aux landes de Brâkmar.</p>
     </header>
-    <div class="heroes" role="radiogroup" aria-label="Choisis ta classe">${hero('iop')}${hero('cra')}</div>
+    <div class="heroes" role="radiogroup" aria-label="Choisis ta classe">${HEROES.map(hero).join('')}</div>
     <section class="pick-info" aria-live="polite">
       <p class="pick-pitch">${CLASS_INFO[pick].pitch}</p>
       <p class="pick-passive">${passiveBadge(pick)}<span><b>${esc(p.name)}</b> : ${esc(p.text.charAt(0).toLowerCase() + p.text.slice(1))}</span></p>
       ${resumeHtml()}
       <div class="pick-actions">
-        ${saved ? `<button class="look-toggle new-run" data-act="new-run" data-classe="${pick}" aria-describedby="new-run-note">Nouvelle partie avec ${pick === 'iop' ? 'le Iop' : 'le Crâ'}</button>`
-          : `<button class="play" data-act="new-run" data-classe="${pick}">Jouer ${pick === 'iop' ? 'le Iop' : 'le Crâ'}</button>`}
+        ${saved ? `<button class="look-toggle new-run" data-act="new-run" data-classe="${pick}" aria-describedby="new-run-note">Nouvelle partie avec ${heroName(pick)}</button>`
+          : `<button class="play" data-act="new-run" data-classe="${pick}">Jouer ${heroName(pick)}</button>`}
         <button class="look-toggle" data-act="look-toggle" aria-expanded="${ui.lookOpen}">Apparence</button>
       </div>
       ${saved ? '<p id="new-run-note" class="resume-note">Une nouvelle partie remplace celle en cours.</p>' : ''}
@@ -576,7 +611,7 @@ function startPreviews(): void {
     if (!canvases.length) { previewRaf = 0; return; }
     previewRaf = requestAnimationFrame(loop);
     for (const cv of canvases) {
-      const id = cv.dataset.preview as 'iop' | 'cra';
+      const id = asHero(cv.dataset.preview ?? null);
       const g = ui.gender[id];
       const cols = ui.colors[`${id}${g}`] ?? [];
       const key = `${id}${g}|${cols.join(',')}`;
@@ -1797,7 +1832,7 @@ function handle(act: string, d: DOMStringMap): void {
       history.replaceState(null, '', location.pathname + location.search);
       break;
     case 'new-run': {
-      const classe = d.classe as 'iop' | 'cra';
+      const classe = asHero(d.classe ?? null);
       ui.saveError = '';
       startRun(new Run(classe, (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, ui.gender[classe]));
       break;
@@ -1813,14 +1848,14 @@ function handle(act: string, d: DOMStringMap): void {
       saveColors();
       break;
     case 'pick-class':
-      ui.pick = d.classe === 'cra' ? 'cra' : 'iop';
+      ui.pick = asHero(d.classe ?? null);
       try { localStorage.setItem('slay.pick', ui.pick); } catch { /* stockage indisponible */ }
       break;
     case 'look-toggle':
       ui.lookOpen = !ui.lookOpen;
       break;
     case 'gender':
-      ui.gender[d.classe as 'iop' | 'cra'] = d.g === 'f' ? 'f' : 'm';
+      ui.gender[asHero(d.classe ?? null)] = d.g === 'f' ? 'f' : 'm';
       try { localStorage.setItem('slay.gender', JSON.stringify(ui.gender)); } catch { /* stockage indisponible */ }
       break;
     case 'title':

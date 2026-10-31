@@ -1,6 +1,6 @@
 // Texte lisible des cartes, effets, intentions et stats. Une seule source pour toute l'interface.
 import type { Combat, Enemy } from '../core/combat.ts';
-import type { CardDef, CardTarget, CondId, Effect, Element, ScaleId, StatusId, Stats } from '../core/types.ts';
+import { RALENTI_CAP, type CardDef, type CardTarget, type CondId, type Effect, type Element, type ScaleId, type StatusId, type Stats } from '../core/types.ts';
 import { LIBRARY } from '../data/library.ts';
 import { PASSIVE_VALUES } from '../core/classes.ts';
 import { effectText as itemEffectText, ruleText, type ItemEffect, type RuleId } from '../core/effects.ts';
@@ -16,6 +16,8 @@ export const SCALE_TEXT: Record<ScaleId, string> = {
   lancers: 'par lancer précédent de cette carte ce combat',
   visee: 'par cran de Visée',
   epuisees: 'par carte épuisée ce combat',
+  telefrag: 'par ennemi Téléfrag',
+  telefrag_tour: 'par Téléfrag consommé ce tour',
 };
 
 export const COND_TEXT: Record<CondId, string> = {
@@ -29,6 +31,8 @@ export const COND_TEXT: Record<CondId, string> = {
   apres_competence: 'Si ta carte précédente ce tour est une compétence',
   premiere_carte: "Si c'est ta première carte du tour",
   main_vide: 'Si ta main est vide',
+  cible_telefrag: 'Si la cible est Téléfrag',
+  cible_ralentie: 'Si la cible est ralentie',
 };
 
 export const ELEMENT_NAMES: Record<Element, string> = {
@@ -46,6 +50,9 @@ export const STATUS_INFO: Record<StatusId, { name: string; help: string }> = {
   erosion: { name: 'Érosion', help: 'L\'armure et les soins reçus sont divisés par 2. Diminue de 1 chaque tour.' },
   esquive: { name: 'Esquive', help: 'Chaque point annule entièrement un coup reçu.' },
   etourdi: { name: 'Étourdi', help: 'Saute sa prochaine action. Un boss doit en cumuler 2.' },
+  telefrag: { name: 'Téléfrag', help: 'Marqué par le Xélor. La prochaine attaque qui le touche consomme la marque et déclenche les effets de Téléfrag.' },
+  ralenti: { name: 'Ralenti', help: `Sa prochaine action inflige autant de dégâts en moins au total, puis le ralenti disparaît à la fin de son tour. ${RALENTI_CAP} au plus.` },
+  echeance: { name: 'Échéance', help: 'À la fin de son prochain tour, perd autant de PV (l\'armure absorbe), puis l\'échéance disparaît.' },
 };
 
 const plural = (n: number, one: string, many: string) => (n > 1 ? many : one);
@@ -116,7 +123,14 @@ export function effectText(fx: Effect, target: CardTarget, c: Combat | null = nu
       return `Pioche <b>${fx.amount}</b> ${plural(fx.amount, 'carte', 'cartes')}.`;
     case 'energy':
       return `Gagne <b>${fx.amount}</b> PA.`;
+    case 'consume': {
+      const inner = fx.then.map((t) => effectText(t, 'enemy', c, cardElement, def).replace(/\.$/, '')).filter(Boolean);
+      const who = target === 'all_enemies' ? 'chaque ennemi Téléfrag' : 'la cible, si elle est Téléfrag';
+      const body = inner.map((t) => t.charAt(0).toLowerCase() + t.slice(1)).join(', ');
+      return `Consomme le Téléfrag de ${who}${body ? ` : ${body}` : ''}.`;
+    }
     case 'status': {
+      if (fx.status === 'telefrag') return fx.on === 'all_enemies' || target === 'all_enemies' ? 'Pose un <b>Téléfrag</b> sur tous les ennemis.' : 'Pose un <b>Téléfrag</b> sur la cible.';
       const s = STATUS_INFO[fx.status].name;
       if (fx.on === 'self') return `Gagne <b>${fx.amount}</b> ${s}.`;
       if (fx.on === 'all_enemies') return `Applique <b>${fx.amount}</b> ${s} à tous les ennemis.`;
@@ -156,7 +170,9 @@ export function intentSummary(c: Combat, e: Enemy): { kind: 'attack' | 'defend' 
   if (it.note) return { kind: it.damage > 0 ? 'attack' : 'other', label: it.damage > 0 ? `${it.note} ${it.damage}` : it.note };
   if (it.damage > 0) {
     const perHit = Math.round(it.damage / Math.max(1, it.hits));
-    return { kind: 'attack', label: it.hits > 1 ? `${perHit}×${it.hits}` : String(it.damage) };
+    // Ralenti : le total baisse coup après coup, on affiche donc le total.
+    const slowed = (e.status.ralenti ?? 0) > 0;
+    return { kind: 'attack', label: it.hits > 1 && !slowed ? `${perHit}×${it.hits}` : String(it.damage) };
   }
   if (move.effects.some((fx) => fx.type === 'summon')) return { kind: 'buff', label: move.name };
   if (move.effects.some((fx) => (fx.type === 'status' && fx.on === 'target') || fx.type === 'addCard')) return { kind: 'debuff', label: move.name };

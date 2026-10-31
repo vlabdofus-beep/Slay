@@ -9,7 +9,7 @@ import { botRun } from './bot.ts';
 import { playGreedy } from './policy.ts';
 
 const N = Number(process.argv[2] ?? 500);
-const CLASSES: ClassId[] = ['iop', 'cra'];
+const CLASSES: ClassId[] = ['iop', 'cra', 'xelor'];
 const pct = (x: number) => `${(100 * x).toFixed(0)}%`;
 const f1 = (x: number) => x.toFixed(1);
 
@@ -21,7 +21,7 @@ for (const enc of Object.keys(ENCOUNTERS).filter((e) => ENCOUNTERS[e].act === 1)
     const maxHp = CLASS_START_HP[classe] as number;
     let wins = 0, lost = 0, turns = 0;
     for (let s = 1; s <= N; s++) {
-      const c = new Combat(LIBRARY, starterDeck(classe), { hp: maxHp, maxHp }, ENCOUNTERS[enc].monsters, s, ACT1_SCALE);
+      const c = new Combat(LIBRARY, starterDeck(classe), { hp: maxHp, maxHp, classe }, ENCOUNTERS[enc].monsters, s, ACT1_SCALE);
       playGreedy(c);
       const r = c.result();
       turns += r.turns;

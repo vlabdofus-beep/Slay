@@ -18,7 +18,7 @@ const monstersDb = load('monsters.json');
 const itemsDb = load('items.json');
 
 // ── Sélection ──
-const BREEDS = { 8: 'iop', 9: 'cra' };
+const BREEDS = { 8: 'iop', 9: 'cra', 5: 'xelor' };
 const MONSTER_IDS = [
   31, 52, 61, 79, 59, 78, 101, 149, 103, 104, 98, // monstres d'Amakna
   148, 799, // élites : Chef de Guerre Bouftou, Tournesol Affamé

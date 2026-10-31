@@ -16,7 +16,7 @@ export interface BalanceTargets {
   monsters: Record<string, MonsterDef>;
   classHp: Partial<Record<ClassId, number>>;
   starters: Partial<Record<ClassId, Record<string, number>>>;
-  passives: { courroux: { attaques: number; puissance: number }; visee: { attaques: number; multiplicateur: number } };
+  passives: { courroux: { attaques: number; puissance: number }; visee: { attaques: number; multiplicateur: number }; telefrag: { marques: number; pioche: number; parTour: number } };
   scale: Scale;
   gods: GodDef[];
   relics: RelicDef[];
@@ -74,7 +74,7 @@ const PERK_KEYS: [keyof NonNullable<BalanceBoon['avantages']>, keyof RunPerks][]
 export const HELP = [
   "Fichier d'équilibrage de Dofus Slay. Modifie les nombres puis enregistre : le jeu en ligne relit ce fichier à chaque démarrage.",
   "Garde la forme JSON : guillemets doubles, virgules entre les éléments, pas de virgule après le dernier. En cas d'erreur, le jeu garde ses valeurs par défaut et l'écrit dans la console du navigateur.",
-  "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop et Visée du Crâ.",
+  "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop, Visée du Crâ et Téléfrag du Xélor (marques : ennemis marqués au début du tour, pioche : cartes piochées, parTour : fois par tour).",
   "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
   "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
   "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 50 au plus), mecaniques, actions et rythme.",
@@ -211,6 +211,9 @@ export function applyBalance(raw: unknown, t: BalanceTargets): string[] {
     if (isNum(pa.courroux?.puissance)) t.passives.courroux.puissance = pa.courroux.puissance;
     if (isNum(pa.visee?.attaques) && pa.visee.attaques >= 2) t.passives.visee.attaques = Math.round(pa.visee.attaques);
     if (isNum(pa.visee?.multiplicateur) && pa.visee.multiplicateur > 0) t.passives.visee.multiplicateur = pa.visee.multiplicateur;
+    if (isNum(pa.telefrag?.marques) && pa.telefrag.marques >= 0) t.passives.telefrag.marques = Math.round(pa.telefrag.marques);
+    if (isNum(pa.telefrag?.pioche) && pa.telefrag.pioche >= 0) t.passives.telefrag.pioche = Math.round(pa.telefrag.pioche);
+    if (isNum(pa.telefrag?.parTour) && pa.telefrag.parTour >= 1) t.passives.telefrag.parTour = Math.round(pa.telefrag.parTour);
   }
   for (const [act, tiers] of Object.entries(b.echelle_monstres ?? {})) {
     const a = Number(act) as 1 | 2 | 3;
