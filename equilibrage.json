@@ -872,8 +872,8 @@
       "type": "attaque",
       "cout": 1,
       "rarete": "commune",
-      "effets": [{"type": "damage", "amount": 8, "element": "air"}],
-      "amelioration": {"effets": [{"type": "damage", "amount": 11, "element": "air"}]}
+      "effets": [{"type": "damage", "amount": 6, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "air"}]}
     },
     "cra_fleche_harcelante": {
       "nom": "Flèche Harcelante",
@@ -924,8 +924,8 @@
       "type": "attaque",
       "cout": 1,
       "rarete": "commune",
-      "effets": [{"type": "drain", "amount": 6, "element": "eau"}],
-      "amelioration": {"effets": [{"type": "drain", "amount": 10, "element": "eau"}]}
+      "effets": [{"type": "drain", "amount": 4, "element": "eau"}],
+      "amelioration": {"effets": [{"type": "drain", "amount": 8, "element": "eau"}]}
     },
     "cra_fleche_redemption": {
       "nom": "Flèche de Rédemption",
@@ -968,8 +968,8 @@
       "type": "attaque",
       "cout": 2,
       "rarete": "commune",
-      "effets": [{"type": "damage", "amount": 14, "element": "feu"}],
-      "amelioration": {"effets": [{"type": "damage", "amount": 20, "element": "feu"}]}
+      "effets": [{"type": "damage", "amount": 12, "element": "feu"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 18, "element": "feu"}]}
     },
     "cra_fleche_tyrannique": {
       "nom": "Flèche Tyrannique",
@@ -1030,12 +1030,12 @@
       "cout": 2,
       "rarete": "rare",
       "effets": [
-        {"type": "damage", "amount": 12, "element": "terre"},
+        {"type": "damage", "amount": 10, "element": "terre"},
         {"type": "status", "status": "faiblesse", "amount": 1, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 16, "element": "terre"},
+          {"type": "damage", "amount": 14, "element": "terre"},
           {"type": "status", "status": "faiblesse", "amount": 2, "on": "all_enemies"}
         ]
       }
@@ -1092,8 +1092,8 @@
       "type": "attaque",
       "cout": 1,
       "rarete": "commune",
-      "effets": [{"type": "damage", "amount": 7, "element": "air"}, {"type": "charge", "amount": 1}],
-      "amelioration": {"effets": [{"type": "damage", "amount": 10, "element": "air"}, {"type": "charge", "amount": 1}]}
+      "effets": [{"type": "damage", "amount": 5, "element": "air"}, {"type": "charge", "amount": 1}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "air"}, {"type": "charge", "amount": 1}]}
     },
     "cra_fleche_persecutrice": {
       "nom": "Flèche Persécutrice",
@@ -1136,12 +1136,12 @@
       "cout": 2,
       "rarete": "commune",
       "effets": [
-        {"type": "damage", "amount": 10, "element": "eau"},
+        {"type": "damage", "amount": 8, "element": "eau"},
         {"type": "status", "status": "poison", "amount": 2, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 14, "element": "eau"},
+          {"type": "damage", "amount": 12, "element": "eau"},
           {"type": "status", "status": "poison", "amount": 3, "on": "all_enemies"}
         ]
       }
@@ -1170,8 +1170,8 @@
       "type": "attaque",
       "cout": 1,
       "rarete": "commune",
-      "effets": [{"type": "damage", "amount": 6, "element": "feu"}, {"type": "block", "amount": 3}],
-      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "feu"}, {"type": "block", "amount": 4}]}
+      "effets": [{"type": "damage", "amount": 4, "element": "feu"}, {"type": "block", "amount": 3}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 6, "element": "feu"}, {"type": "block", "amount": 4}]}
     },
     "cra_fleche_eclatante": {
       "nom": "Flèche Éclatante",
@@ -1180,12 +1180,12 @@
       "cout": 1,
       "rarete": "commune",
       "effets": [
-        {"type": "damage", "amount": 6, "element": "feu"},
+        {"type": "damage", "amount": 4, "element": "feu"},
         {"type": "status", "status": "brulure", "amount": 2, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 8, "element": "feu"},
+          {"type": "damage", "amount": 6, "element": "feu"},
           {"type": "status", "status": "brulure", "amount": 3, "on": "all_enemies"}
         ]
       }
@@ -1230,8 +1230,8 @@
       "type": "attaque",
       "cout": 2,
       "rarete": "rare",
-      "effets": [{"type": "damage", "amount": 9, "element": "terre", "bonus": {"per": "ennemis", "n": 4}}],
-      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "terre", "bonus": {"per": "ennemis", "n": 5}}]}
+      "effets": [{"type": "damage", "amount": 7, "element": "terre", "bonus": {"per": "ennemis", "n": 4}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 10, "element": "terre", "bonus": {"per": "ennemis", "n": 5}}]}
     },
     "cra_fleche_assaillante": {
       "nom": "Flèche Assaillante",
@@ -1714,12 +1714,12 @@
       "cout": 2,
       "rarete": "rare",
       "effets": [
-        {"type": "damage", "amount": 8, "element": "air"},
+        {"type": "damage", "amount": 6, "element": "air"},
         {"type": "status", "status": "poison", "amount": 3, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 10, "element": "air"},
+          {"type": "damage", "amount": 8, "element": "air"},
           {"type": "status", "status": "poison", "amount": 4, "on": "all_enemies"}
         ]
       }
