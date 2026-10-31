@@ -4,6 +4,7 @@
     "Garde la forme JSON : guillemets doubles, virgules entre les éléments, pas de virgule après le dernier. En cas d'erreur, le jeu garde ses valeurs par défaut et l'écrit dans la console du navigateur.",
     "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop, Visée du Crâ et Téléfrag du Xélor (marques : ennemis marqués au début du tour, pioche : cartes piochées, parTour : fois par tour).",
     "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
+    "echelle_joueurs : table de 1 à 4 joueurs. pv et degats multiplient l'échelle de la salle. actions = nombre de fois où les monstres jouent dans le round (une fois par joueur). Un joueur seul n'utilise pas cette échelle.",
     "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
     "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 50 au plus), mecaniques, actions et rythme.",
     "Effets — damage : dégâts (amount, element : terre, feu, eau, air, neutre ; hits = nombre de coups ; bonus.per / bonus.n = +n par attaques, puissance, armure, ennemis, statuts, main, lancers, visee, epuisees ; pierce = ignore l'armure).",
@@ -52,6 +53,12 @@
       "elite": {"pv": 1.012, "degats": 1.1},
       "boss": {"pv": 1.021, "degats": 1.1}
     }
+  },
+  "echelle_joueurs": {
+    "1": {"pv": 1, "degats": 1, "actions": 1},
+    "2": {"pv": 1.85, "degats": 1.1, "actions": 2},
+    "3": {"pv": 2.7, "degats": 1.15, "actions": 3},
+    "4": {"pv": 3.55, "degats": 1.2, "actions": 4}
   },
   "dieux": {
     "iop": {

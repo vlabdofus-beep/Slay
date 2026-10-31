@@ -33,6 +33,32 @@ export const TIER_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> 
   )]),
 ) as Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>>;
 
+/**
+ * Table de 2, 3 ou 4 joueurs. Le détail et les mesures sont dans docs/BALANCE.md.
+ * PV : presque un joueur de plus, moins 15 % (le poison et la puissance se cumulent sur les mêmes monstres).
+ * Dégâts : peu, le plus gros coup du jeu fait déjà 40 sur 70 PV.
+ * Actions : les monstres jouent une fois par joueur dans le round. Leurs coups restent à une cible.
+ * Un joueur seul ne passe pas par ici : son combat garde l'échelle d'acte telle quelle.
+ */
+export interface PartyScale { hp: number; damage: number; actions: number }
+export const PARTY_SCALE: Record<1 | 2 | 3 | 4, PartyScale> = {
+  1: { hp: 1, damage: 1, actions: 1 },
+  2: { hp: 1.85, damage: 1.1, actions: 2 },
+  3: { hp: 2.7, damage: 1.15, actions: 3 },
+  4: { hp: 3.55, damage: 1.2, actions: 4 },
+};
+
+/** Échelle d'une salle pour une table. Au-delà de 4, on reste à 4 : l'échelle n'est pas mesurée plus loin. */
+export function scaleForParty(room: MonsterScale, players = 1): MonsterScale & { actions: number } {
+  const n = Math.min(4, Math.max(1, Math.round(players))) as 1 | 2 | 3 | 4;
+  const p = PARTY_SCALE[n];
+  return {
+    hp: Math.round(room.hp * p.hp * 1000) / 1000,
+    damage: Math.round(room.damage * p.damage * 1000) / 1000,
+    actions: p.actions,
+  };
+}
+
 const hit = (amount: number, element: Element, hits?: number): Effect =>
   hits ? { type: 'damage', amount, element, hits } : { type: 'damage', amount, element };
 const block = (amount: number): Effect => ({ type: 'block', amount });

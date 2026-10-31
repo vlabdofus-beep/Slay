@@ -89,3 +89,33 @@ test('reliques et événements : le fichier fait foi ; aller-retour ; erreur sig
   }
   assert.equal(RELIC_BY_ID.larme_ogrest.stats!.pv, 12);
 });
+
+test('échelle joueurs : le fichier fait foi, un joueur seul ne change pas la salle', async () => {
+  const { PARTY_SCALE, TIER_SCALE, scaleForParty } = await import('../data/monsters.ts');
+  const room = TIER_SCALE[1].normal;
+  const seul = scaleForParty(room, 1);
+  assert.equal(seul.hp, Math.round(room.hp * 1000) / 1000);
+  assert.equal(seul.damage, room.damage);
+  assert.equal(seul.actions, 1);
+  const quatre = scaleForParty(room, 4);
+  assert.equal(quatre.hp, Math.round(room.hp * 3.55 * 1000) / 1000);
+  assert.equal(quatre.damage, Math.round(room.damage * 1.2 * 1000) / 1000);
+  assert.equal(quatre.actions, 4);
+  assert.equal(scaleForParty(room, 9).actions, 4, 'au-delà de 4, on reste à 4');
+  const b = file();
+  b.echelle_joueurs['4'].degats = 9;
+  b.echelle_joueurs['2'].pv = 0;
+  b.echelle_joueurs['5'] = { pv: 2, degats: 2, actions: 2 };
+  const w = applyBalance(b, BALANCE_TARGETS);
+  try {
+    assert.equal(PARTY_SCALE[4].damage, 9);
+    assert.equal(PARTY_SCALE[2].hp, 1.85, 'valeur invalide : l\'ancienne reste');
+    assert.equal(scaleForParty(room, 4).damage, Math.round(room.damage * 9 * 1000) / 1000);
+    assert.ok(w.some((x) => x.includes('echelle_joueurs.2.pv')));
+    assert.ok(w.some((x) => x.includes('5')));
+  } finally {
+    applyBalance(file(), BALANCE_TARGETS);
+  }
+  assert.equal(PARTY_SCALE[4].damage, 1.2);
+  assert.equal(PARTY_SCALE[2].hp, 1.85);
+});

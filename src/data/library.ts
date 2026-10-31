@@ -15,11 +15,11 @@ import { GODS } from './gods.ts';
 import { RELICS } from './relics.ts';
 import { EVENTS } from './events.ts';
 import { PASSIVE_VALUES } from '../core/classes.ts';
-import { TIER_SCALE } from './monsters.ts';
+import { TIER_SCALE, PARTY_SCALE } from './monsters.ts';
 import BALANCE from '../../equilibrage.json' with { type: 'json' };
 
 /** Le fichier d'équilibrage (equilibrage.json) fait foi : il s'applique dès le chargement des données. */
-export const BALANCE_TARGETS = { cards: LIBRARY.cards, monsters: LIBRARY.monsters, classHp: CLASS_START_HP, starters: STARTERS, passives: PASSIVE_VALUES, scale: TIER_SCALE, gods: GODS, relics: RELICS, events: EVENTS };
+export const BALANCE_TARGETS = { cards: LIBRARY.cards, monsters: LIBRARY.monsters, classHp: CLASS_START_HP, starters: STARTERS, passives: PASSIVE_VALUES, scale: TIER_SCALE, party: PARTY_SCALE, gods: GODS, relics: RELICS, events: EVENTS };
 export const balanceWarnings = applyBalance(BALANCE, BALANCE_TARGETS);
 
 let uidCounter = 1;
