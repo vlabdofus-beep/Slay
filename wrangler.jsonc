@@ -1,11 +1,15 @@
 // Dofus Slay : site 100 % statique (Workers Static Assets), pas de code serveur.
-// Déployé par Workers Builds à chaque push sur main : pas de commande de build,
-// commande de déploiement `npx wrangler deploy`, répertoire racine `/`.
+// Workers Builds lance `npx wrangler deploy` à chaque push sur main : wrangler exécute d'abord la commande
+// de build ci-dessous (installation, puis compilation dans dist/), puis publie dist/.
+// Si le build échoue, rien n'est publié : la version en ligne reste la précédente.
 // Le nom doit correspondre au nom du Worker dans le tableau de bord Cloudflare.
 {
   "name": "slay",
   "compatibility_date": "2025-09-01",
+  "build": {
+    "command": "npm install --no-audit --no-fund && npm run build"
+  },
   "assets": {
-    "directory": "./"
+    "directory": "./dist"
   }
 }

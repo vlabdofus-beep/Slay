@@ -1,6 +1,6 @@
 node_modules
+dist
 .wrangler
 .DS_Store
-source/node_modules
-source/dist
-source/reference
+# exports Spire Codex (référence locale, non versionnée)
+reference/

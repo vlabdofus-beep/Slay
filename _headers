@@ -1,7 +1,0 @@
-# index.html n'est jamais gardé en cache : il pointe toujours vers les derniers fichiers.
-/
-  Cache-Control: no-cache
-/index.html
-  Cache-Control: no-cache
-/equilibrage.json
-  Cache-Control: no-cache
