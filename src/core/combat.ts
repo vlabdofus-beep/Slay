@@ -195,76 +195,187 @@ function cloneCombat(c: Combat): Combat {
 
 const ZERO_EL = (): Record<Element, number> => ({ terre: 0, feu: 0, eau: 0, air: 0, neutre: 0 });
 
-export class Combat {
-  readonly lib: Library;
-  readonly rng: Rng;
-  readonly scale: MonsterScale;
+/**
+ * Ce qui appartient à un héros dans un combat à plusieurs : ses PV, ses piles, ses objets et pouvoirs, son passif,
+ * ses compteurs. Le combat lit et écrit toujours ceux du héros « en main » (`seatIndex`) : le code du moteur reste celui
+ * d'un combat à un joueur, et il suffit de changer de héros pour agir pour un autre.
+ */
+export interface Seat {
   player: Player;
+  drawPile: CardInstance[];
+  hand: CardInstance[];
+  discardPile: CardInstance[];
+  exhaustPile: CardInstance[];
+  rules: Set<RuleId>;
+  handlers: Partial<Record<EventId, Handler[]>>;
+  classe: ClassId | null;
+  aim: number;
+  turnAttacks: number;
+  playedById: Record<string, number>;
+  powers: { id: string; name: string; icon?: string; n: number }[];
+  prevType: CardDef['type'] | null;
+  echo: number;
+  dmgMul: number;
+  turnCards: number;
+  combatCards: number;
+  turnEl: Record<Element, number>;
+  combatEl: Record<Element, number>;
+  hpLostThisCombat: number;
+  discount: number;
+  prospection: { next: number; run: number };
+  tripleDone: boolean;
+  fired: Record<string, number>;
+  telefragTurn: number;
+  telefragCombat: number;
+  telefragDraws: number;
+  later: { effects: Effect[]; turns: number; card: string }[];
+  lastPlayed: { inst: CardInstance; pile: 'discard' | 'exhaust' } | null;
+  lostEnemyTurn: number;
+  backToHand: boolean;
+  leftover: number;
+  emptyDrawn: boolean;
+  reviveAvailable: boolean;
+  revived: boolean;
+  ready: boolean;
+}
+
+function newSeat(player: Player, classe: ClassId | null): Seat {
+  return {
+    player,
+    drawPile: [],
+    hand: [],
+    discardPile: [],
+    exhaustPile: [],
+    rules: new Set(),
+    handlers: {},
+    classe,
+    aim: 0,
+    turnAttacks: 0,
+    playedById: {},
+    powers: [],
+    prevType: null,
+    echo: 0,
+    dmgMul: 1,
+    turnCards: 0,
+    combatCards: 0,
+    turnEl: ZERO_EL(),
+    combatEl: ZERO_EL(),
+    hpLostThisCombat: 0,
+    discount: 0,
+    prospection: { next: 0, run: 0 },
+    tripleDone: false,
+    fired: {},
+    telefragTurn: 0,
+    telefragCombat: 0,
+    telefragDraws: 0,
+    later: [],
+    lastPlayed: null,
+    lostEnemyTurn: 0,
+    backToHand: false,
+    leftover: 0,
+    emptyDrawn: false,
+    reviveAvailable: false,
+    revived: false,
+    ready: false,
+  };
+}
+
+export class Combat {
   enemies: Enemy[] = [];
-  drawPile: CardInstance[] = [];
-  hand: CardInstance[] = [];
-  discardPile: CardInstance[] = [];
-  exhaustPile: CardInstance[] = [];
   turn = 0;
   outcome: Outcome = 'ongoing';
   log: string[] = [];
-
-  // ── suivi pour les effets d'objets ──
-  readonly rules: Set<RuleId> = new Set();
-  private readonly handlers: Partial<Record<EventId, Handler[]>> = {};
-  /** Passif de classe. */
-  readonly classe: ClassId | null;
-  /** Visée du Crâ : attaques comptées depuis le dernier tir doublé (0 à VISEE-1). */
-  aim = 0;
-  /** Attaques jouées ce tour (Courroux) et nombre de lancers de chaque carte ce combat. */
-  turnAttacks = 0;
-  playedById: Record<string, number> = {};
-  /** Pouvoirs actifs (cartes de pouvoir jouées), pour l'affichage. */
-  powers: { id: string; name: string; icon?: string; n: number }[] = [];
-  /** Type de la carte jouée juste avant, ce tour (enchaînements). */
-  prevType: CardDef['type'] | null = null;
-  /** Prochaines attaques lancées une fois de plus (Dédoublement). */
-  echo = 0;
-  /** Multiplicateur de la carte en cours (Visée). */
-  private dmgMul = 1;
-  /** Cartes jouées ce tour / ce combat, et par élément. */
-  turnCards = 0;
-  combatCards = 0;
-  turnEl: Record<Element, number> = ZERO_EL();
-  combatEl: Record<Element, number> = ZERO_EL();
-  hpLostThisCombat = 0;
-  /** Réduction de coût de la prochaine carte. */
-  discount = 0;
-  /** Prospection gagnée pendant le combat (prochain combat / reste de la run). */
-  prospection = { next: 0, run: 0 };
-  private tripleDone = false;
-  private statusUid = 0;
-  /** Déclenchements de chaque objet depuis le début du combat (l'interface les fait briller). */
-  fired: Record<string, number> = {};
-
-  /** Xélor : Téléfrag consommés ce tour et ce combat, pioches du passif déjà données ce tour. */
-  telefragTurn = 0;
-  telefragCombat = 0;
-  telefragDraws = 0;
-  /** Xélor : effets à appliquer au début des prochains tours (Prémonition, Faille, Écho Temporel…). */
-  later: { effects: Effect[]; turns: number; card: string }[] = [];
-  /** Dernière carte jouée ce tour et la pile où elle est allée (Rembobinage). */
-  lastPlayed: { inst: CardInstance; pile: 'discard' | 'exhaust' } | null = null;
-  /** PV perdus pendant le tour des monstres en cours ou le dernier (Raulebaque). */
-  lostEnemyTurn = 0;
+  readonly lib: Library;
+  readonly rng: Rng;
+  readonly scale: MonsterScale;
+  /** PV perdus pendant le tour des monstres : on les compte pendant leur phase. */
   private enemyPhase = false;
-  /** La carte en cours revient en main (Régulateur). */
-  private backToHand = false;
-
-  /** Sablier : PA gardé du tour précédent ; pioche à main vide déjà faite ce tour. */
-  private leftover = 0;
-  private emptyDrawn = false;
-  private reviveAvailable = false;
-  revived = false;
+  private statusUid = 0;
   private depth = 0;
   /** Élément de ce qui inflige des dégâts en ce moment (pour « un sort Feu achève un ennemi »). */
   private srcElement: Element | null = null;
 
+  /** Héros à la table (un seul en solo) et celui pour qui le combat agit en ce moment. */
+  seats: Seat[] = [];
+  private cur = 0;
+  get seatIndex(): number { return this.cur; }
+  /** Agit désormais pour ce héros (cartes jouées, fin de tour…). */
+  useSeat(i: number): void { if (!this.seats[i]) throw new Error(`Pas de héros ${i}`); this.cur = i; }
+  private get seat(): Seat { return this.seats[this.cur]; }
+  get player(): Player { return this.seat.player; }
+  set player(v: Player) { this.seat.player = v; }
+  get drawPile(): CardInstance[] { return this.seat.drawPile; }
+  set drawPile(v: CardInstance[]) { this.seat.drawPile = v; }
+  get hand(): CardInstance[] { return this.seat.hand; }
+  set hand(v: CardInstance[]) { this.seat.hand = v; }
+  get discardPile(): CardInstance[] { return this.seat.discardPile; }
+  set discardPile(v: CardInstance[]) { this.seat.discardPile = v; }
+  get exhaustPile(): CardInstance[] { return this.seat.exhaustPile; }
+  set exhaustPile(v: CardInstance[]) { this.seat.exhaustPile = v; }
+  get rules(): Set<RuleId> { return this.seat.rules; }
+  private get handlers(): Partial<Record<EventId, Handler[]>> { return this.seat.handlers; }
+  get classe(): ClassId | null { return this.seat.classe; }
+  get aim(): number { return this.seat.aim; }
+  set aim(v: number) { this.seat.aim = v; }
+  get turnAttacks(): number { return this.seat.turnAttacks; }
+  set turnAttacks(v: number) { this.seat.turnAttacks = v; }
+  get playedById(): Record<string, number> { return this.seat.playedById; }
+  set playedById(v: Record<string, number>) { this.seat.playedById = v; }
+  get powers(): { id: string; name: string; icon?: string; n: number }[] { return this.seat.powers; }
+  set powers(v: { id: string; name: string; icon?: string; n: number }[]) { this.seat.powers = v; }
+  get prevType(): CardDef['type'] | null { return this.seat.prevType; }
+  set prevType(v: CardDef['type'] | null) { this.seat.prevType = v; }
+  get echo(): number { return this.seat.echo; }
+  set echo(v: number) { this.seat.echo = v; }
+  private get dmgMul(): number { return this.seat.dmgMul; }
+  private set dmgMul(v: number) { this.seat.dmgMul = v; }
+  get turnCards(): number { return this.seat.turnCards; }
+  set turnCards(v: number) { this.seat.turnCards = v; }
+  get combatCards(): number { return this.seat.combatCards; }
+  set combatCards(v: number) { this.seat.combatCards = v; }
+  get turnEl(): Record<Element, number> { return this.seat.turnEl; }
+  set turnEl(v: Record<Element, number>) { this.seat.turnEl = v; }
+  get combatEl(): Record<Element, number> { return this.seat.combatEl; }
+  set combatEl(v: Record<Element, number>) { this.seat.combatEl = v; }
+  get hpLostThisCombat(): number { return this.seat.hpLostThisCombat; }
+  set hpLostThisCombat(v: number) { this.seat.hpLostThisCombat = v; }
+  get discount(): number { return this.seat.discount; }
+  set discount(v: number) { this.seat.discount = v; }
+  get prospection(): { next: number; run: number } { return this.seat.prospection; }
+  set prospection(v: { next: number; run: number }) { this.seat.prospection = v; }
+  private get tripleDone(): boolean { return this.seat.tripleDone; }
+  private set tripleDone(v: boolean) { this.seat.tripleDone = v; }
+  get fired(): Record<string, number> { return this.seat.fired; }
+  set fired(v: Record<string, number>) { this.seat.fired = v; }
+  get telefragTurn(): number { return this.seat.telefragTurn; }
+  set telefragTurn(v: number) { this.seat.telefragTurn = v; }
+  get telefragCombat(): number { return this.seat.telefragCombat; }
+  set telefragCombat(v: number) { this.seat.telefragCombat = v; }
+  get telefragDraws(): number { return this.seat.telefragDraws; }
+  set telefragDraws(v: number) { this.seat.telefragDraws = v; }
+  get later(): { effects: Effect[]; turns: number; card: string }[] { return this.seat.later; }
+  set later(v: { effects: Effect[]; turns: number; card: string }[]) { this.seat.later = v; }
+  get lastPlayed(): { inst: CardInstance; pile: 'discard' | 'exhaust' } | null { return this.seat.lastPlayed; }
+  set lastPlayed(v: { inst: CardInstance; pile: 'discard' | 'exhaust' } | null) { this.seat.lastPlayed = v; }
+  get lostEnemyTurn(): number { return this.seat.lostEnemyTurn; }
+  set lostEnemyTurn(v: number) { this.seat.lostEnemyTurn = v; }
+  private get backToHand(): boolean { return this.seat.backToHand; }
+  private set backToHand(v: boolean) { this.seat.backToHand = v; }
+  private get leftover(): number { return this.seat.leftover; }
+  private set leftover(v: number) { this.seat.leftover = v; }
+  private get emptyDrawn(): boolean { return this.seat.emptyDrawn; }
+  private set emptyDrawn(v: boolean) { this.seat.emptyDrawn = v; }
+  private get reviveAvailable(): boolean { return this.seat.reviveAvailable; }
+  private set reviveAvailable(v: boolean) { this.seat.reviveAvailable = v; }
+  get revived(): boolean { return this.seat.revived; }
+  set revived(v: boolean) { this.seat.revived = v; }
+  get ready(): boolean { return this.seat.ready; }
+  set ready(v: boolean) { this.seat.ready = v; }
+
+  /**
+   * Un combat. `deck` et `init` décrivent le premier héros ; `others` ajoute les autres héros d'une table à plusieurs
+   * (tous jouent en même temps, les monstres jouent une fois puis frappent tout le monde).
+   */
   constructor(
     lib: Library,
     deck: CardInstance[],
@@ -272,37 +383,66 @@ export class Combat {
     enemyIds: string[],
     seed: number,
     scale: MonsterScale = DEFAULT_SCALE,
+    others: { deck: CardInstance[]; init: PlayerInit }[] = [],
   ) {
     this.lib = lib;
     this.rng = new Rng(seed);
     this.scale = scale;
-    this.player = {
-      hp: init.hp,
-      maxHp: init.maxHp,
-      block: 0,
-      status: {},
-      energy: 0,
-      dom: { ...ZERO_EL(), ...init.dom },
-      blockBonus: init.blockBonus ?? 0,
-    };
-    this.classe = init.classe ?? null;
-    for (const e of init.effects ?? []) this.addEffect(e, e.src ?? '');
-    this.reviveAvailable = !!init.revive;
-    for (const id of enemyIds) this.spawn(id);
-    for (const e of this.enemies) {
-      if (this.rules.has('ocre')) this.addStatus(e, 'puissance', 1);
-      if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
-      if (this.rules.has('colosse')) this.addStatus(e, 'puissance', 2);
+    const party = [{ deck, init }, ...others];
+    for (const m of party) {
+      const player: Player = {
+        hp: m.init.hp, maxHp: m.init.maxHp, block: 0, status: {}, energy: 0,
+        dom: { ...ZERO_EL(), ...m.init.dom }, blockBonus: m.init.blockBonus ?? 0,
+      };
+      this.seats.push(newSeat(player, m.init.classe ?? null));
+      this.cur = this.seats.length - 1;
+      for (const e of m.init.effects ?? []) this.addEffect(e, e.src ?? '');
+      this.reviveAvailable = !!m.init.revive;
     }
-    if (this.rules.has('colosse')) this.addStatus(this.player, 'puissance', 3);
-    this.drawPile = this.rng.shuffle([...deck]);
-    // Cartes innées : sur le dessus de la pioche (la pioche se fait par la fin du tableau).
-    const innate = this.drawPile.filter((i) => this.cardDef(i).innate);
-    if (innate.length) this.drawPile = [...this.drawPile.filter((i) => !innate.includes(i)), ...innate];
+    for (const id of enemyIds) this.spawn(id);
+    party.forEach((m, k) => {
+      this.cur = k;
+      for (const e of this.enemies) {
+        if (this.rules.has('ocre')) this.addStatus(e, 'puissance', 1);
+        if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
+        if (this.rules.has('colosse')) this.addStatus(e, 'puissance', 2);
+      }
+      if (this.rules.has('colosse')) this.addStatus(this.player, 'puissance', 3);
+      this.drawPile = this.rng.shuffle([...m.deck]);
+      // Cartes innées : sur le dessus de la pioche (la pioche se fait par la fin du tableau).
+      const innate = this.drawPile.filter((i) => this.cardDef(i).innate);
+      if (innate.length) this.drawPile = [...this.drawPile.filter((i) => !innate.includes(i)), ...innate];
+    });
     for (const e of this.enemies) this.chooseMove(e);
-    this.startPlayerTurn(true);
-    this.emit('combatStart');
+    this.turn++;
+    this.eachSeat(() => this.startPlayerTurn(true));
+    this.eachSeat(() => this.emit('combatStart'));
+    this.cur = 0;
     this.checkEnd();
+  }
+
+  // ───────────── table à plusieurs ─────────────
+
+  /** Nombre de héros à la table. */
+  get partySize(): number { return this.seats.length; }
+
+  /** Un héros est hors combat quand ses PV tombent à 0 (il revient après le combat, voir la run). */
+  isDown(i: number): boolean { return this.seats[i].player.hp <= 0; }
+
+  /** Fait agir `fn` pour chaque héros encore debout, dans l'ordre de la table, puis revient au héros d'avant. */
+  private eachSeat(fn: (i: number) => void): void {
+    const prev = this.cur;
+    for (let i = 0; i < this.seats.length; i++) {
+      if (this.isDown(i)) continue;
+      this.cur = i;
+      fn(i);
+    }
+    this.cur = prev;
+  }
+
+  /** Héros auquel appartient cette entité, ou -1 (un monstre). */
+  private seatOf(t: Entity): number {
+    return this.seats.findIndex((s) => s.player === t);
   }
 
   /** Branche un effet (objet, Dofus ou pouvoir) sur les événements du combat. */
@@ -380,6 +520,13 @@ export class Combat {
     return { outcome: this.outcome, hp: this.player.hp, turns: this.turn, prospection: { ...this.prospection }, revived: this.revived, kamasStolen };
   }
 
+  /** Résultat du combat pour un héros de la table (PV, prospection, résurrection). Les kamas volés sont ceux de la table. */
+  resultFor(i: number): CombatResult {
+    const prev = this.cur;
+    this.cur = i;
+    try { return this.result(); } finally { this.cur = prev; }
+  }
+
   /** Dégâts qu'infligerait cet effet à cet ennemi, maintenant. */
   estimateDamage(fx: Effect, enemy: Enemy, card?: CardDef): number {
     if (fx.type !== 'damage' && fx.type !== 'drain') return 0;
@@ -446,7 +593,7 @@ export class Combat {
 
   legalActions(): Action[] {
     const actions: Action[] = [];
-    if (this.outcome !== 'ongoing') return actions;
+    if (this.outcome !== 'ongoing' || this.isDown(this.cur) || this.ready) return actions;
     this.hand.forEach((inst, handIndex) => {
       const def = this.cardDef(inst);
       if (def.unplayable || this.costOf(inst) > this.player.energy) return;
@@ -489,6 +636,8 @@ export class Combat {
 
   playCard(handIndex: number, targetUid?: number): void {
     if (this.outcome !== 'ongoing') throw new Error('Combat terminé');
+    if (this.isDown(this.cur)) throw new Error('Ce héros est hors combat');
+    if (this.ready) throw new Error('Ce héros a déjà fini son tour');
     const inst = this.hand[handIndex];
     if (!inst) throw new Error(`Pas de carte à l'index ${handIndex}`);
     const def = this.cardDef(inst);
@@ -566,8 +715,80 @@ export class Combat {
     this.checkEnd();
   }
 
+  /**
+   * Fin du tour du héros en main. En solo, la phase des monstres suit tout de suite. À plusieurs, le héros est
+   * « prêt » : la phase des monstres attend que tous les héros debout le soient.
+   */
   endTurn(): void {
     if (this.outcome !== 'ongoing') throw new Error('Combat terminé');
+    if (this.isDown(this.cur)) throw new Error('Ce héros est hors combat');
+    this.ready = true;
+    if (this.seats.every((s, i) => s.ready || this.isDown(i))) this.resolveRound();
+  }
+
+  /** Tous les héros sont prêts : fin de leurs tours, phase des monstres (une seule), puis tour suivant. */
+  private resolveRound(): void {
+    const prev = this.cur;
+    // Fin du tour de chaque héros, dans l'ordre de la table
+    for (let i = 0; i < this.seats.length; i++) {
+      if (this.isDown(i)) continue;
+      this.cur = i;
+      this.endHeroTurn();
+      if (this.checkEnd()) { this.cur = prev; return; }
+    }
+    for (const e of this.enemies) e.m.lostThisTurn = 0;
+    this.eachSeat(() => { this.lostEnemyTurn = 0; });
+    this.enemyPhase = true;
+
+    // Chaque monstre : le poison le ronge au début de son tour (il peut en mourir avant d'agir),
+    // il agit (une fois, et frappe tous les héros debout), puis la brûlure le consume à la fin de son tour.
+    for (const e of [...this.living()]) {
+      if (e.dead) continue;
+      e.block = 0;
+      this.tickPoison(e);
+      if (this.checkEnd()) return this.endPhase(prev);
+      if (e.dead) continue;
+      this.enemyAct(e);
+      if (this.checkEnd()) return this.endPhase(prev);
+      this.tickBurn(e);
+      if (this.checkEnd()) return this.endPhase(prev);
+      // Fin de son tour : le ralenti s'efface, l'échéance tombe.
+      delete e.status.ralenti;
+      this.tickDeadline(e);
+      if (this.checkEnd()) return this.endPhase(prev);
+    }
+
+    this.enemyPhase = false;
+    this.endOfRound();
+    if (this.checkEnd()) return this.endPhase(prev);
+
+    for (const e of this.living()) this.chooseMove(e);
+    if (this.turn >= MAX_TURNS) {
+      this.outcome = 'lost';
+      this.log.push('Limite de tours atteinte');
+      return this.endPhase(prev);
+    }
+    // Début du tour de chaque héros : son poison d'abord.
+    this.turn++;
+    for (let i = 0; i < this.seats.length; i++) {
+      if (this.isDown(i)) continue;
+      this.cur = i;
+      this.tickPoison(this.player);
+      if (this.checkEnd()) return this.endPhase(prev);
+      if (this.isDown(i)) continue;
+      this.startPlayerTurn(false);
+    }
+    this.endPhase(prev);
+    this.checkEnd();
+  }
+
+  private endPhase(prev: number): void {
+    this.enemyPhase = false;
+    this.cur = this.isDown(prev) ? Math.max(0, this.seats.findIndex((_, i) => !this.isDown(i))) : prev;
+  }
+
+  /** Fin du tour d'un héros : Courroux, effets de fin de tour, sa brûlure, cartes de statut, défausse. */
+  private endHeroTurn(): void {
     if (this.classe === 'iop' && this.turnAttacks >= PASSIVE_VALUES.courroux.attaques) {
       this.addStatus(this.player, 'puissance', PASSIVE_VALUES.courroux.puissance);
       this.fired['classe'] = (this.fired['classe'] ?? 0) + 1;
@@ -578,10 +799,10 @@ export class Combat {
       const e = this.pickFoe();
       if (e) this.fxDamage(e, Math.floor(this.player.block / 2), 'neutre');
     }
-    if (this.checkEnd()) return;
+    if (this.checkEnd() || this.player.hp <= 0) return;
     // Fin du tour du joueur : sa brûlure (son armure du tour l'absorbe).
     this.tickBurn(this.player);
-    if (this.checkEnd()) return;
+    if (this.checkEnd() || this.player.hp <= 0) return;
     // Cartes de statut encore en main : brûlures qui piquent, cartes éphémères qui s'épuisent.
     for (const inst of [...this.hand]) {
       const def = this.cardDef(inst);
@@ -591,7 +812,7 @@ export class Combat {
         this.exhaustPile.push(inst);
       }
     }
-    if (this.checkEnd()) return;
+    if (this.checkEnd() || this.player.hp <= 0) return;
     this.leftover = Math.min(1, this.player.energy);
     if (!this.rules.has('main_gardee')) {
       // Les cartes conservées restent en main (et la première carte avec Retenue).
@@ -599,49 +820,12 @@ export class Combat {
       this.discardPile.push(...this.hand.filter((i) => !keep.includes(i)));
       this.hand = keep;
     }
-    for (const e of this.enemies) e.m.lostThisTurn = 0;
-    this.lostEnemyTurn = 0;
-    this.enemyPhase = true;
-
-    // Chaque monstre : le poison le ronge au début de son tour (il peut en mourir avant d'agir),
-    // il agit, puis la brûlure le consume à la fin de son tour (son armure du tour l'absorbe).
-    for (const e of [...this.living()]) {
-      if (e.dead) continue;
-      e.block = 0;
-      this.tickPoison(e);
-      if (this.checkEnd()) return;
-      if (e.dead) continue;
-      this.enemyAct(e);
-      if (this.checkEnd()) return;
-      this.tickBurn(e);
-      if (this.checkEnd()) return;
-      // Fin de son tour : le ralenti s'efface, l'échéance tombe.
-      delete e.status.ralenti;
-      this.tickDeadline(e);
-      if (this.checkEnd()) return;
-    }
-
-    this.enemyPhase = false;
-    this.endOfRound();
-    if (this.checkEnd()) return;
-
-    for (const e of this.living()) this.chooseMove(e);
-    if (this.turn >= MAX_TURNS) {
-      this.outcome = 'lost';
-      this.log.push('Limite de tours atteinte');
-      return;
-    }
-    // Début du tour du joueur : son poison d'abord.
-    this.tickPoison(this.player);
-    if (this.checkEnd()) return;
-    this.startPlayerTurn(false);
-    this.checkEnd();
   }
 
   // ───────────── effets d'objets (appelés par les récompenses) ─────────────
 
   fxStatus(t: Entity, id: StatusId, n: number): void {
-    if (t === this.player) this.addStatus(t, id, n);
+    if (this.seatOf(t) >= 0) this.addStatus(t, id, n);
     else this.statusOnEnemy(t as Enemy, id, n);
   }
 
@@ -739,7 +923,7 @@ export class Combat {
   }
 
   private startPlayerTurn(first: boolean): void {
-    this.turn++;
+    this.ready = false;
     this.player.block = this.rules.has('armure_persistante') && !first ? Math.floor(this.player.block / 2) : 0;
     this.player.energy = BASE_ENERGY + (this.rules.has('pa_plus') ? 1 : 0) + (this.rules.has('ocre') ? 1 : 0);
     this.turnCards = 0;
@@ -867,6 +1051,13 @@ export class Combat {
    * `pierce` ignore armure et bouclier (poison, Air avec la règle). Renvoie les PV réellement perdus.
    */
   private applyHit(t: Entity, dmg: number, o: { attacker?: Enemy; pierce?: boolean; dot?: boolean } = {}): number {
+    // Un héros qui n'est pas « en main » : ses objets et ses règles comptent pour ce coup.
+    const si = this.seatOf(t);
+    if (si >= 0 && si !== this.cur) {
+      const prev = this.cur;
+      this.cur = si;
+      try { return this.applyHit(t, dmg, o); } finally { this.cur = prev; }
+    }
     if (!o.dot && (t.status.esquive ?? 0) > 0) {
       t.status.esquive! -= 1;
       this.log.push(t === this.player ? 'Esquive !' : 'Le coup est esquivé');
@@ -1180,7 +1371,7 @@ export class Combat {
     const ex = power(e, 'explosion');
     if (ex && e.m.turns >= ex.turns) {
       this.log.push(`${e.def.name} explose !`);
-      this.applyHit(this.player, this.enemyHit(e, ex.dmg, 'feu'), { attacker: e });
+      this.eachSeat(() => { this.applyHit(this.player, this.enemyHit(e, ex.dmg, 'feu'), { attacker: e }); });
       e.hp = 0;
       e.dead = true;
       e.m.gone = 'explose';
@@ -1213,22 +1404,39 @@ export class Combat {
     const move = e.def.moves[e.moveId];
     this.log.push(`${e.def.name} : ${move.name}`);
     const erode = (n: number) => (e.status.erosion ? Math.floor(n / 2) : n);
+    // Les monstres frappent tous les héros debout ; chacun vit l'action comme en solo (son ralenti à lui compris).
+    const heroes = this.seats.map((_, i) => i).filter((i) => !this.isDown(i));
+    const slowLeft = heroes.map(() => e.status.ralenti ?? 0);
+    const prev = this.cur;
+    const onEach = (fn: (k: number) => boolean | void): boolean => {
+      for (let k = 0; k < heroes.length; k++) {
+        if (this.isDown(heroes[k])) continue;
+        this.cur = heroes[k];
+        if (fn(k) === false) { this.cur = prev; return false; }
+      }
+      this.cur = prev;
+      return true;
+    };
     for (const fx of move.effects) {
       switch (fx.type) {
         case 'damage':
         case 'drain': {
           const hits = fx.type === 'damage' ? (fx.hits ?? 1) : 1;
-          for (let h = 0; h < hits; h++) {
-            // Ralenti : retiré du total de l'action, coup après coup.
-            let d = this.enemyHit(e, fx.amount, fx.element);
-            const slow = Math.min(e.status.ralenti ?? 0, d);
-            if (slow > 0) { d -= slow; e.status.ralenti! -= slow; }
-            const lost = this.applyHit(this.player, d, { attacker: e });
-            if (fx.type === 'drain') e.hp = Math.min(e.maxHp, e.hp + erode(lost));
-            const th = power(e, 'voleur');
-            if (th && lost > 0) e.m.stolen += th.n;
-            if (this.player.hp <= 0 || e.dead) return;
-          }
+          const go = onEach((k) => {
+            for (let h = 0; h < hits; h++) {
+              // Ralenti : retiré du total de l'action, coup après coup.
+              let d = this.enemyHit(e, fx.amount, fx.element);
+              const cut = Math.min(slowLeft[k], d);
+              d -= cut; slowLeft[k] -= cut;
+              const lost = this.applyHit(this.player, d, { attacker: e });
+              if (fx.type === 'drain') e.hp = Math.min(e.maxHp, e.hp + erode(lost));
+              const th = power(e, 'voleur');
+              if (th && lost > 0) e.m.stolen += th.n;
+              if (e.dead) return false;
+              if (this.player.hp <= 0) break;
+            }
+          });
+          if (!go || heroes.every((i) => this.isDown(i))) return;
           break;
         }
         case 'block':
@@ -1239,18 +1447,20 @@ export class Combat {
           break;
         case 'status':
           if (fx.on === 'self') this.addStatus(e, fx.status, fx.amount);
-          else if (fx.on === 'target') this.addStatus(this.player, fx.status, fx.amount);
+          else if (fx.on === 'target') onEach(() => { this.addStatus(this.player, fx.status, fx.amount); });
           break;
         case 'summon':
           for (let i = 0; i < (fx.count ?? 1); i++) this.spawn(fx.monster);
           break;
         case 'addCard':
-          for (let i = 0; i < fx.count; i++) {
-            const inst: CardInstance = { uid: 900000 + this.statusUid++, id: fx.card, upgraded: false };
-            if (fx.pile === 'hand' && this.hand.length < MAX_HAND) this.hand.push(inst);
-            else if (fx.pile === 'draw') this.drawPile.splice(this.rng.int(this.drawPile.length + 1), 0, inst);
-            else this.discardPile.push(inst);
-          }
+          onEach(() => {
+            for (let i = 0; i < fx.count; i++) {
+              const inst: CardInstance = { uid: 900000 + this.statusUid++, id: fx.card, upgraded: false };
+              if (fx.pile === 'hand' && this.hand.length < MAX_HAND) this.hand.push(inst);
+              else if (fx.pile === 'draw') this.drawPile.splice(this.rng.int(this.drawPile.length + 1), 0, inst);
+              else this.discardPile.push(inst);
+            }
+          });
           break;
         default:
           break;
@@ -1295,7 +1505,7 @@ export class Combat {
 
   /** Fin de round : usure des durées (faiblesse, vulnérabilité, érosion, renvoi). */
   private endOfRound(): void {
-    const entities: Entity[] = [this.player, ...this.living()];
+    const entities: Entity[] = [...this.seats.map((st) => st.player), ...this.living()];
     for (const t of entities) {
       for (const id of ['faiblesse', 'vulnerabilite', 'erosion', 'renvoi'] as const) {
         const v = t.status[id] ?? 0;
@@ -1306,18 +1516,23 @@ export class Combat {
 
   private checkEnd(): boolean {
     if (this.outcome !== 'ongoing') return true;
-    if (this.player.hp <= 0 && this.reviveAvailable) {
-      this.reviveAvailable = false;
-      this.revived = true;
-      this.player.hp = Math.ceil(this.player.maxHp / 2);
+    // Résurrection (Dofus) : chaque héros a la sienne
+    for (const st of this.seats) {
+      if (st.player.hp > 0 || !st.reviveAvailable) continue;
+      st.reviveAvailable = false;
+      st.revived = true;
+      st.player.hp = Math.ceil(st.player.maxHp / 2);
       this.log.push('Le Dofus te ramène à la vie');
     }
-    if (this.player.hp <= 0) this.outcome = 'lost';
+    if (this.seats.every((st) => st.player.hp <= 0)) this.outcome = 'lost';
     else if (this.living().length === 0) {
       this.outcome = 'won';
-      this.emit('combatWon');
-      if (this.rules.has('prospecteur') && this.hpLostThisCombat === 0) this.prospection.run += 20;
+      this.eachSeat(() => {
+        this.emit('combatWon');
+        if (this.rules.has('prospecteur') && this.hpLostThisCombat === 0) this.prospection.run += 20;
+      });
     }
     return this.outcome !== 'ongoing';
   }
+
 }

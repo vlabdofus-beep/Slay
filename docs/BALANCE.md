@@ -358,3 +358,6 @@ Repère, acte 1 salle normale (médiane 65 PV). Un Iop avec le deck de départ l
 Ce qu'il ne faut pas faire : multiplier les dégâts par le nombre de joueurs. ×4 sur le coup de 40 fait 160, plus du double des PV d'un Crâ. Ni faire jouer les monstres une fois par joueur : avec des joueurs simultanés, ce serait quatre fois plus de coups pour une seule phase de cartes.
 
 Pour brancher le mode : `scaleForParty(TIER_SCALE[acte][salle], joueurs)` donne les PV et les dégâts à passer au combat. La phase des monstres reste unique. Au-delà de 4 joueurs, on reste à 4.
+
+### Les monstres frappent tout le monde (décision du 31/10/2026)
+Le propriétaire a choisi que chaque action d'un monstre touche tous les héros debout. Chaque joueur encaisse donc ce qu'il encaisserait seul, et le raisonnement « un coup vise une seule personne » ci-dessus ne tient plus : la table n'est plus plus à l'aise qu'un joueur seul. L'échelle des PV (×1,85 / ×2,7 / ×3,55) reste à remesurer au bot quand la run à plusieurs existera (étape 3 de la feuille de route).
