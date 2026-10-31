@@ -17,7 +17,7 @@ import { bestiaryAct, bestiarySearch, bx, viewBestiary, type BxHelpers } from '.
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import { boonLines, opText, type Boon, type RunOp } from '../game/boons.ts';
 import { record, replay, type SaveFile } from '../game/save.ts';
-import { playMusic, sfx, soundButton, toggleSound, voice } from './sound.ts';
+import { mute, playMusic, sfx, soundButton, soundClick, toggleSound, voice } from './sound.ts';
 import { GOD_BY_ID, BOON_BY_ID } from '../data/gods.ts';
 import { RELIC_BY_ID } from '../data/relics.ts';
 import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
@@ -2016,7 +2016,10 @@ function handle(act: string, d: DOMStringMap): void {
       break;
     }
     case 'sound':
-      toggleSound();
+      soundClick();
+      break;
+    case 'sound-mute':
+      mute();
       break;
     case 'continue-run':
       void continueRun();
@@ -2308,6 +2311,13 @@ document.addEventListener('input', (ev) => {
 });
 
 document.addEventListener('keydown', (ev) => {
+  // M : couper ou remettre le son (pas pendant la saisie d'un texte).
+  const typing = (ev.target as HTMLElement)?.matches?.('input, textarea, select');
+  if (!typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey && (ev.key === 'm' || ev.key === 'M')) {
+    toggleSound();
+    render();
+    return;
+  }
   if (location.hash === '#bestiaire') {
     const inField = (ev.target as HTMLElement)?.matches?.('[data-bx-q]');
     // « / » ou Ctrl+F : aller à la recherche. Échap dans le champ : vider la recherche avant de quitter.
