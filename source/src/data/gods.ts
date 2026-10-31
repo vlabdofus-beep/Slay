@@ -12,9 +12,10 @@ export interface GodDef {
   name: string;
   /** Titre : « dieu de la Force »… */
   title: string;
-  /** Identifiant de classe (icône dans assets/classes, apparence animée look_<breed><gender>). */
+  /** Identifiant de classe : symbole (assets/classes/<breed>.png) et illustration de montée de niveau
+   *  de Dofus 3 (assets/gods/<breed>.webp, « godsOmega/LevelUp<breed> » dans les fichiers du jeu). */
   breed: number;
-  /** Apparence : Crâ, Eniripsa et Sacrieur sont des déesses. */
+  /** Crâ, Eniripsa, Féca et Sacrieur sont des déesses (comme dans leurs illustrations officielles). */
   gender: 'm' | 'f';
   color: string;
   /** Ce que dit le dieu en apparaissant. */
@@ -126,7 +127,7 @@ export const GODS: GodDef[] = [
     ],
   },
   {
-    id: 'feca', name: 'Féca', title: 'dieu de la Protection', breed: 1, gender: 'm', color: '#d9a441',
+    id: 'feca', name: 'Féca', title: 'déesse de la Protection', breed: 1, gender: 'f', color: '#d9a441',
     greeting: 'Personne ne tombe tant que je veille. Tiens-toi derrière mon bouclier.',
     boons: [
       { id: 'fec_glyphe', name: 'Glyphe de garde', effects: [rule('armure_persistante')], lore: 'Le glyphe garde la moitié de ta défense.' },

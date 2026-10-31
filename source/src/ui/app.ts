@@ -23,7 +23,7 @@ import { EVENT_BY_ID, type EventArt } from '../data/events.ts';
 import {
   cardText, ELEMENT_NAMES, powerInfo, esc, intentSummary, moveDetail, STATUS_INFO, statsText,
 } from './describe.ts';
-import { animLength, buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
+import { buildCharacter, defaultColors, drawAnim, type Appearance, type Character } from './scene/rt.js';
 import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
 import { paintBoard, paintLandscape } from './scene/paint.ts';
@@ -548,43 +548,6 @@ function startPreviews(): void {
 /** « de Sram », « d'Eniripsa »… mais « de Iop » (on dit « le Iop »). */
 const deName = (n: string) => (/^[AEIOUÉÈ]/.test(n) && n !== 'Iop' ? `d'${n}` : `de ${n}`);
 
-/**
- * Le dieu en personne, sous l'apparence de sa classe (apparences de Dofus 3) : à son arrivée il lance un sort dans
- * une gerbe de lumière, puis attend. Un seul personnage chargé à la fois, rendu à la résolution réelle du canvas.
- */
-const godChars: Record<string, Character | null | 'loading'> = {};
-let godRaf = 0, godSince = 0, godKey = '';
-function startGod(): void {
-  const cv = root.querySelector<HTMLCanvasElement>('canvas[data-god]');
-  if (!cv) return;
-  const key = cv.dataset.god!;
-  if (key !== godKey) { godKey = key; godSince = 0; }
-  if (!(key in godChars)) {
-    godChars[key] = 'loading';
-    const breed = parseInt(key, 10), g = key.endsWith('f') ? 'f' : 'm';
-    void buildCharacter(breed, g, {}).then((c) => { godChars[key] = c; });
-  }
-  if (godRaf) return;
-  const loop = () => {
-    const c = root.querySelector<HTMLCanvasElement>('canvas[data-god]');
-    if (!c) { godRaf = 0; return; }
-    godRaf = requestAnimationFrame(loop);
-    const ch = godChars[c.dataset.god!];
-    if (!ch || ch === 'loading') return;
-    const now = performance.now() / 1000;
-    if (!godSince) godSince = now;
-    c.parentElement!.classList.add(now - godSince < 1.4 ? 'arrived' : 'settled');
-    const css = c.clientWidth || 260, dpr = Math.min(3, window.devicePixelRatio || 1), size = Math.round(css * dpr);
-    if (c.width !== size) { c.width = size; c.height = size; }
-    const x = c.getContext('2d')!;
-    x.clearRect(0, 0, c.width, c.height);
-    const t = now - godSince, cast = reduceMotion() ? 0 : animLength(ch, 'cast');
-    const [anim, at] = t < cast ? ['cast', t] : ['idle', t - cast];
-    drawAnim(x, ch, anim, at, c.width / 2, c.height * 0.9, c.height * 0.66);
-  };
-  godRaf = requestAnimationFrame(loop);
-}
-
 const NODE_LABEL: Record<MapNode['type'], string> = { combat: 'Combat', elite: 'Élite', zaap: 'Zaap', marchand: 'Marchand', evenement: 'Événement', boss: 'Boss' };
 /** Icônes officielles de l'interface Dofus (modes de Dofusle, objets de Dofus Survivors). */
 const uiIcon = (name: string, cls = 'ui-ico') => `<img class="${cls}" src="${asset(`ui/${name}.webp`)}" alt="" draggable="false">`;
@@ -1028,15 +991,14 @@ function viewGod(run: Run): string {
   }).join('');
   return `<main class="godview">
     <section class="god" style="--god:${g.color}">
-      <div class="god-head">
-        <div class="god-stage" aria-hidden="true">
-          <span class="god-rays"></span><span class="god-glyph"></span>
-          <canvas class="god-canvas" data-god="${g.breed}${g.gender}" width="520" height="520"></canvas>
-          <img class="god-sym" src="${asset(`classes/${g.breed}.png`)}" alt="">
+      <header class="god-banner">
+        <img class="god-illu" src="${asset(`gods/${g.breed}.webp`)}" alt="${esc(`${g.name}, ${g.title}`)}">
+        <div class="god-caption">
+          <p class="god-kicker">Sanctuaire ${esc(deName(g.name))}, acte ${run.act}</p>
+          <h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
+          <blockquote>« ${esc(g.greeting)} »</blockquote>
         </div>
-        <div><p class="god-kicker">Sanctuaire ${esc(deName(g.name))}, acte ${run.act}</p><h2>${esc(g.name)}, <span>${esc(g.title)}</span></h2>
-        <blockquote>« ${esc(g.greeting)} »</blockquote></div>
-      </div>
+      </header>
       <p class="muted">${esc(g.name)} t'offre une bénédiction pour toute la run. Choisis-en une parmi trois.</p>
       <div class="boon-row">${offer}</div>
       <p class="god-foot"><button class="link" data-act="leave-god">Repartir sans bénédiction</button></p>
@@ -1330,7 +1292,6 @@ function render(): void {
   else stage.hide();
   if (!run) { startPreviews(); mountLand(); }
   if (run?.phase === 'map') mountBoard(run);
-  if (run?.phase === 'dieu') startGod();
   if (run?.phase === 'map') {
     const here = root.querySelector('.node.s-avail') as HTMLElement | null;
     here?.scrollIntoView({ block: 'center' });
