@@ -44,7 +44,7 @@ const piou = (id: string, dofusId: number, el: Element) => m(id, dofusId, [12, 1
 
 const gelee = (id: string, dofusId: number, el: Element, petite: string) => m(id, dofusId, [40, 44], {
   engluer: mv('Engluer', hit(7, el), card('bave')),
-  masse: mv('Masse gélatineuse', hit(11, el)),
+  masse: mv('Masse gélatineuse', hit(9, el)),
 }, cycle('engluer', 'masse'), [{ kind: 'division' }], { splitInto: petite });
 
 const GELEES = [
@@ -82,8 +82,8 @@ export const ACT1_EXTRA: MonsterDef[] = [
   m('boo', 112, [24, 28], { hantise: mv('Hantise', hit(5, 'terre'), deb('faiblesse', 1)), frisson: mv('Frisson', hit(8, 'terre')) },
     cycle('hantise', 'frisson')),
   m('citwouille', 207, [30, 34], { coup: mv('Coup de citrouille', hit(8, 'feu')) }, cycle('coup'), [{ kind: 'carapace', n: 3 }]),
-  m('tofu_malefique', 111, [16, 20], { bec: mv('Bec maléfique', hit(4, 'air', 2)) }, cycle('bec'), [{ kind: 'rituel', n: 1 }]),
-  m('tofu_noir', 796, [16, 20], { picorer: mv('Picorer', hit(3, 'air', 3)) }, cycle('picorer'), [{ kind: 'esquive', n: 1 }]),
+  m('tofu_malefique', 111, [24, 28], { bec: mv('Bec maléfique', hit(4, 'air', 2)) }, cycle('bec'), [{ kind: 'rituel', n: 1 }]),
+  m('tofu_noir', 796, [24, 28], { picorer: mv('Picorer', hit(3, 'air', 3)) }, cycle('picorer'), [{ kind: 'esquive', n: 1 }]),
   m('abraknyde_chetif', 4000, [30, 34], { branche: mv('Branche frêle', hit(7, 'terre')), ecorce: mv('Écorce', block(6)) },
     cycle('branche', 'ecorce'), [{ kind: 'carapace', n: 2 }]),
   m('gob_trotteur', 62, [26, 30], { coup: mv('Coup de bâton', hit(7, 'neutre')) }, cycle('coup'), [{ kind: 'voleur', n: 6, turns: 4 }]),
@@ -137,7 +137,7 @@ export const ACT2_EXTRA: MonsterDef[] = [
   m('scarafeuille_blanc', 241, [30, 34], { mandibules: mv('Mandibules', hit(5, 'air', 2)) }, cycle('mandibules'), [{ kind: 'carapace', n: 4 }]),
   m('kwak_vent', 81, [30, 34], { bourrasque: mv('Bourrasque', hit(9, 'air')), plumage: mv('Plumage', block(8)) },
     cycle('bourrasque', 'plumage'), [{ kind: 'esquive', n: 1 }]),
-  m('kwak_terre', 235, [30, 34], { eboulis: mv('Éboulis', hit(10, 'terre')), plumage: mv('Plumage', block(8)) },
+  m('kwak_terre', 235, [42, 48], { eboulis: mv('Éboulis', hit(10, 'terre')), plumage: mv('Plumage', block(8)) },
     cycle('eboulis', 'plumage'), [{ kind: 'esquive', n: 1 }]),
   m('kwakere_flamme', 269, [44, 48], { brasier: mv('Brasier', hit(10, 'feu'), card('braise', 1)), plumage: mv('Plumage ardent', block(10), buff(1)) },
     cycle('brasier', 'plumage')),
@@ -157,7 +157,7 @@ export const ACT2_EXTRA: MonsterDef[] = [
     cycle('lame', 'voile'), [{ kind: 'artefact', n: 1 }, { kind: 'esquive', n: 1 }]),
   m('fantome_egerie', 379, [36, 40], { chant: mv('Chant funèbre', deb('faiblesse', 2), deb('vulnerabilite', 1)), toucher: mv('Toucher glacé', hit(10, 'air')) },
     cycle('chant', 'toucher'), [{ kind: 'artefact', n: 1 }]),
-  m('crabe', 63, [36, 40], { pince: mv('Pince', hit(10, 'eau')) }, cycle('pince'), [{ kind: 'carapace', n: 4 }, { kind: 'epines', n: 2 }]),
+  m('crabe', 63, [48, 54], { pince: mv('Pince', hit(12, 'eau')) }, cycle('pince'), [{ kind: 'carapace', n: 4 }, { kind: 'epines', n: 2 }]),
   m('black_wabbit', 65, [38, 42], { carottes: mv('Carottes noires', hit(5, 'air', 3)), bond: mv('Bond', block(8), buff(1)) },
     random({ carottes: 60, bond: 40 })),
   m('wabbit_squelette', 179, [40, 44], { os: mv('Lancer d\'os', hit(13, 'terre')), cliquetis: mv('Cliquetis', deb('faiblesse', 2)) },
@@ -207,11 +207,11 @@ export const ACT2_EXTRA: MonsterDef[] = [
 
 export const ACT3_EXTRA: MonsterDef[] = [
   m('rat_hyoactif', 449, [44, 48], { morsure: mv('Morsure radioactive', hit(8, 'eau'), deb('poison', 5)) }, cycle('morsure')),
-  m('ramane_egoutant', 447, [44, 48], { griffe: mv('Griffe', hit(12, 'feu')), fuite: mv('Fuite', block(14)) },
+  m('ramane_egoutant', 447, [44, 48], { griffe: mv('Griffe', hit(16, 'feu')), fuite: mv('Fuite', block(14)) },
     cycle('griffe', 'griffe', 'fuite'), [{ kind: 'voleur', n: 15, turns: 4 }]),
-  m('corbac_chef', 4579, [56, 60], { ordre: mv('Ordre', buff(2), block(10)), bec: mv('Bec', hit(8, 'air', 2)) },
+  m('corbac_chef', 4579, [70, 76], { ordre: mv('Ordre', buff(2), block(10)), bec: mv('Bec', hit(8, 'air', 2)) },
     cycle('ordre', 'bec', 'bec'), [{ kind: 'rituel', n: 1 }]),
-  m('corbac_dresse', 4580, [46, 50], { plongeon: mv('Plongeon', hit(16, 'air')) }, cycle('plongeon'), [{ kind: 'esquive', n: 1 }]),
+  m('corbac_dresse', 4580, [58, 64], { plongeon: mv('Plongeon', hit(20, 'air')) }, cycle('plongeon'), [{ kind: 'esquive', n: 1 }]),
   m('koalak_coco', 752, [58, 62], { griffes: mv('Griffes', hit(9, 'air', 2)), cri: mv('Cri', buff(2)) }, cycle('griffes', 'griffes', 'cri')),
   m('koalak_griotte', 753, [58, 62], { morsure: mv('Morsure', hit(18, 'feu')), cri: mv('Cri', block(14)) }, cycle('morsure', 'cri')),
   m('warko_marron', 746, [60, 66], { charge: mv('Charge', hit(17, 'air')) }, cycle('charge'), [{ kind: 'colere', n: 2, every: 3 }]),

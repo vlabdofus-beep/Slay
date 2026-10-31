@@ -538,12 +538,12 @@
       "cout": 1,
       "rarete": "commune",
       "effets": [
-        {"type": "damage", "amount": 6, "element": "feu"},
+        {"type": "damage", "amount": 7, "element": "feu"},
         {"type": "status", "status": "brulure", "amount": 2, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 8, "element": "feu"},
+          {"type": "damage", "amount": 10, "element": "feu"},
           {"type": "status", "status": "brulure", "amount": 3, "on": "all_enemies"}
         ]
       }
@@ -572,12 +572,12 @@
       "cout": 1,
       "rarete": "commune",
       "effets": [
-        {"type": "damage", "amount": 6, "element": "air"},
+        {"type": "damage", "amount": 7, "element": "air"},
         {"type": "status", "status": "faiblesse", "amount": 1, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 9, "element": "air"},
+          {"type": "damage", "amount": 10, "element": "air"},
           {"type": "status", "status": "faiblesse", "amount": 1, "on": "all_enemies"}
         ]
       }
@@ -658,12 +658,12 @@
       "cout": 1,
       "rarete": "commune",
       "effets": [
-        {"type": "damage", "amount": 6, "element": "eau"},
+        {"type": "damage", "amount": 7, "element": "eau"},
         {"type": "status", "status": "erosion", "amount": 2, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 8, "element": "eau"},
+          {"type": "damage", "amount": 10, "element": "eau"},
           {"type": "status", "status": "erosion", "amount": 3, "on": "all_enemies"}
         ]
       }
@@ -1137,12 +1137,12 @@
       "rarete": "commune",
       "effets": [
         {"type": "damage", "amount": 10, "element": "eau"},
-        {"type": "status", "status": "poison", "amount": 3, "on": "all_enemies"}
+        {"type": "status", "status": "poison", "amount": 2, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
           {"type": "damage", "amount": 14, "element": "eau"},
-          {"type": "status", "status": "poison", "amount": 4, "on": "all_enemies"}
+          {"type": "status", "status": "poison", "amount": 3, "on": "all_enemies"}
         ]
       }
     },
@@ -1715,12 +1715,12 @@
       "rarete": "rare",
       "effets": [
         {"type": "damage", "amount": 8, "element": "air"},
-        {"type": "status", "status": "poison", "amount": 4, "on": "all_enemies"}
+        {"type": "status", "status": "poison", "amount": 3, "on": "all_enemies"}
       ],
       "amelioration": {
         "effets": [
           {"type": "damage", "amount": 10, "element": "air"},
-          {"type": "status", "status": "poison", "amount": 6, "on": "all_enemies"}
+          {"type": "status", "status": "poison", "amount": 4, "on": "all_enemies"}
         ]
       }
     },
@@ -2338,14 +2338,14 @@
     },
     "rat_egoutant": {
       "nom": "Rat d'Égoutant",
-      "pv": [40, 46],
+      "pv": [52, 60],
       "resistances": {"neutre": 9, "terre": 50, "feu": -20, "eau": 28, "air": -13},
       "mecaniques": [],
       "actions": {
         "morsure": {
           "nom": "Morsure infectée",
           "effets": [
-            {"type": "damage", "amount": 10, "element": "eau"},
+            {"type": "damage", "amount": 14, "element": "eau"},
             {"type": "status", "status": "poison", "amount": 3, "on": "target"}
           ]
         },
@@ -2635,7 +2635,7 @@
             {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
           ]
         },
-        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 11, "element": "eau"}]}
+        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 9, "element": "eau"}]}
       },
       "rythme": {"kind": "cycle", "order": ["engluer", "masse"]},
       "divise_en": "gelee_bleuet_petite"
@@ -2653,7 +2653,7 @@
             {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
           ]
         },
-        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 11, "element": "air"}]}
+        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 9, "element": "air"}]}
       },
       "rythme": {"kind": "cycle", "order": ["engluer", "masse"]},
       "divise_en": "gelee_menthe_petite"
@@ -2671,7 +2671,7 @@
             {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
           ]
         },
-        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 11, "element": "feu"}]}
+        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 9, "element": "feu"}]}
       },
       "rythme": {"kind": "cycle", "order": ["engluer", "masse"]},
       "divise_en": "gelee_fraise_petite"
@@ -2868,7 +2868,7 @@
     },
     "tofu_malefique": {
       "nom": "Tofu Maléfique",
-      "pv": [16, 20],
+      "pv": [24, 28],
       "resistances": {"neutre": -10, "terre": 20, "feu": -20, "eau": 30, "air": -15},
       "mecaniques": [{"kind": "rituel", "n": 1}],
       "actions": {"bec": {"nom": "Bec maléfique", "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}]}},
@@ -2876,7 +2876,7 @@
     },
     "tofu_noir": {
       "nom": "Tofu Noir",
-      "pv": [16, 20],
+      "pv": [24, 28],
       "resistances": {"neutre": 16, "terre": 13, "feu": -6, "eau": 20, "air": 21},
       "mecaniques": [{"kind": "esquive", "n": 1}],
       "actions": {"picorer": {"nom": "Picorer", "effets": [{"type": "damage", "amount": 3, "element": "air", "hits": 3}]}},
@@ -3059,7 +3059,7 @@
     },
     "kwak_terre": {
       "nom": "Kwak de Terre",
-      "pv": [30, 34],
+      "pv": [42, 48],
       "resistances": {"neutre": 50, "terre": 50, "feu": 10, "eau": 10, "air": -50},
       "mecaniques": [{"kind": "esquive", "n": 1}],
       "actions": {
@@ -3309,10 +3309,10 @@
     },
     "crabe": {
       "nom": "Crabe",
-      "pv": [36, 40],
+      "pv": [48, 54],
       "resistances": {"neutre": -5, "terre": 25, "feu": 25, "eau": -20, "air": 30},
       "mecaniques": [{"kind": "carapace", "n": 4}, {"kind": "epines", "n": 2}],
-      "actions": {"pince": {"nom": "Pince", "effets": [{"type": "damage", "amount": 10, "element": "eau"}]}},
+      "actions": {"pince": {"nom": "Pince", "effets": [{"type": "damage", "amount": 12, "element": "eau"}]}},
       "rythme": {"kind": "cycle", "order": ["pince"]}
     },
     "black_wabbit": {
@@ -3546,14 +3546,14 @@
       "resistances": {"neutre": 5, "terre": 45, "feu": 9, "eau": 27, "air": -6},
       "mecaniques": [{"kind": "voleur", "n": 15, "turns": 4}],
       "actions": {
-        "griffe": {"nom": "Griffe", "effets": [{"type": "damage", "amount": 12, "element": "feu"}]},
+        "griffe": {"nom": "Griffe", "effets": [{"type": "damage", "amount": 16, "element": "feu"}]},
         "fuite": {"nom": "Fuite", "effets": [{"type": "block", "amount": 14}]}
       },
       "rythme": {"kind": "cycle", "order": ["griffe", "griffe", "fuite"]}
     },
     "corbac_chef": {
       "nom": "Corbac Chef",
-      "pv": [56, 60],
+      "pv": [70, 76],
       "resistances": {"neutre": 30, "terre": 30, "feu": 30, "eau": -15, "air": -15},
       "mecaniques": [{"kind": "rituel", "n": 1}],
       "actions": {
@@ -3567,10 +3567,10 @@
     },
     "corbac_dresse": {
       "nom": "Corbac Dressé",
-      "pv": [46, 50],
+      "pv": [58, 64],
       "resistances": {"neutre": 25, "terre": -10, "feu": 30, "eau": 30, "air": -25},
       "mecaniques": [{"kind": "esquive", "n": 1}],
-      "actions": {"plongeon": {"nom": "Plongeon", "effets": [{"type": "damage", "amount": 16, "element": "air"}]}},
+      "actions": {"plongeon": {"nom": "Plongeon", "effets": [{"type": "damage", "amount": 20, "element": "air"}]}},
       "rythme": {"kind": "cycle", "order": ["plongeon"]}
     },
     "koalak_coco": {
