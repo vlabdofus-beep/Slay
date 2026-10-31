@@ -58,7 +58,7 @@ export const GODS: GodDef[] = [
     id: 'eniripsa', name: 'Eniripsa', title: 'déesse des Soins', breed: 7, gender: 'f', color: '#e9789c',
     greeting: 'Les mots soignent, mon enfant. Écoute bien les miens.',
     boons: [
-      { id: 'eni_mot', name: 'Mot de régénération', effects: [on('debut_tour', 'soin', 2)], lore: 'Un murmure à chaque aube.' },
+      { id: 'eni_mot', name: 'Mot de régénération', effects: [on('debut_tour', 'soin', 1)], lore: 'Un murmure à chaque aube.' },
       { id: 'eni_vampire', name: 'Mot vampirique', effects: [rule('eau_vampire')], lore: 'L\'eau rend ce qu\'elle prend.' },
       { id: 'eni_reconstituant', name: 'Mot reconstituant', stats: { pv: 6 }, effects: [rule('soin_bouclier')], lore: 'Une part du trop-plein de vie devient un rempart.' },
       { id: 'eni_source', name: 'Source de vie', now: [{ op: 'maxHp', n: 18 }], lore: 'Une eau claire qui ne tarit pas.' },
@@ -109,7 +109,7 @@ export const GODS: GodDef[] = [
       { id: 'xel_sablier', name: 'Sablier', effects: [rule('sablier')], lore: 'Le sable qui n\'a pas coulé attend son heure.' },
       { id: 'xel_retenue', name: 'Instant figé', effects: [rule('retenue')], lore: 'Une carte reste suspendue entre deux tours.' },
       { id: 'xel_ralenti', name: 'Ralentissement', effects: [on('tous_4_tours', 'etourdi', 1)], lore: 'De temps en temps, le monde s\'arrête un instant, sauf toi.' },
-      { id: 'xel_horloge', name: 'Horloge', effects: [both('premier_tour', ['pa', 1], ['pioche', 2])], lore: 'Le premier tour dure un peu plus longtemps.' },
+      { id: 'xel_horloge', name: 'Horloge', effects: [both('premier_tour', ['pa', 1], ['pioche', 1])], lore: 'Le premier tour dure un peu plus longtemps.' },
       { id: 'xel_frappe', name: 'Frappe de Xélor', effects: [rule('premiere_gratuite')], lore: 'Un geste déjà fait avant d\'être commencé.' },
       { id: 'xel_rembobinage', name: 'Rembobinage', effects: [rule('pioche_vide')], lore: 'La main vide se remplit d\'un tour en arrière.' },
     ],
@@ -131,7 +131,7 @@ export const GODS: GodDef[] = [
     greeting: 'Personne ne tombe tant que je veille. Tiens-toi derrière mon bouclier.',
     boons: [
       { id: 'fec_glyphe', name: 'Glyphe de garde', effects: [rule('armure_persistante')], lore: 'Le glyphe garde la moitié de ta défense.' },
-      { id: 'fec_bouclier', name: 'Bouclier Féca', effects: [on('debut_combat', 'bouclier', 18)], lore: 'Il est déjà levé quand le combat commence.' },
+      { id: 'fec_bouclier', name: 'Bouclier Féca', effects: [on('debut_combat', 'bouclier', 6)], lore: 'Il est déjà levé quand le combat commence.' },
       { id: 'fec_epines', name: 'Armure d\'épines', effects: [rule('epines_armure')], lore: 'Frapper ce mur coûte cher.' },
       { id: 'fec_armure', name: 'Armure terrestre', stats: { armure: 2 }, lore: 'Chaque protection est un peu plus épaisse.' },
       { id: 'fec_treve', name: 'Trêve', effects: [rule('puissance_armure')], lore: 'La force qui frappe peut aussi protéger.' },

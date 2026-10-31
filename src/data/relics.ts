@@ -22,7 +22,7 @@ export const RELICS: RelicDef[] = [
   { id: 'dofus_cawotte', name: 'Dofus Cawotte', fx: 'soin', iconId: 23006, now: [{ op: 'maxHp', n: 10 }], effects: [on('victoire', 'soin', 4)],
     lore: 'Un œuf orange, croquant, et étonnamment nourrissant.' },
   { id: 'corne_minotoboule', name: 'Bracelet du Minotoboule', fx: 'puissance', iconId: 9247, effects: [on('chere', 'puissance', 1, { limit: 1 })],
-    lore: 'Arrachée à la bête du labyrinthe. Elle vibre à chaque gros coup.' },
+    lore: 'Arraché à la bête du labyrinthe. Il vibre à chaque gros coup.' },
   { id: 'gelano', name: 'Gelano', fx: 'prospection', iconId: 9047, stats: { prospection: 60 },
     lore: 'L\'anneau gluant que tous les chercheurs de trésor envient.' },
   { id: 'plume_tofu', name: 'Plume de Tofu Royal', fx: 'esquive', iconId: 53413, effects: [on('debut_combat', 'esquive', 2)],

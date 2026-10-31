@@ -511,6 +511,15 @@ export class Run {
     this.god = { id: god.id, offer: rng.shuffle(god.boons.map((b) => b.id)).slice(0, 3), taken: null, visited: false };
   }
 
+  /** Simulation : accorde une bénédiction précise, hors sanctuaire. */
+  grantBoon(id: string): void {
+    if (this.boons.includes(id)) return;
+    const b = BOON_BY_ID[id];
+    if (!b) throw new Error(`Bénédiction inconnue : ${id}`);
+    this.boons.push(id);
+    this.grant(b);
+  }
+
   takeBoon(id: string): void {
     const g = this.god;
     if (this.phase !== 'dieu' || !g || g.taken || !g.offer.includes(id)) throw new Error('Bénédiction non proposée');

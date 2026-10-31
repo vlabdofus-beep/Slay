@@ -7,6 +7,8 @@ import type { CardDef, ClassId, Effect, Element, MonsterDef, MonsterMove, Monste
 import { BOON_RULES, DOFUS_RULES, REWARDS, RULES, TRIGGERS, TRIGGER_BY_ID, REWARD_BY_ID, type ItemEffect, type RuleId } from '../core/effects.ts';
 import type { Boon, RunOp, RunPerks } from '../game/boons.ts';
 import type { GodDef } from './gods.ts';
+import type { EventPage, GameEvent } from './events.ts';
+import type { RelicDef } from './relics.ts';
 
 type Scale = Record<1 | 2 | 3, Record<string, { hp: number; damage: number }>>;
 export interface BalanceTargets {
@@ -17,6 +19,8 @@ export interface BalanceTargets {
   passives: { courroux: { attaques: number; puissance: number }; visee: { attaques: number; multiplicateur: number } };
   scale: Scale;
   gods: GodDef[];
+  relics: RelicDef[];
+  events: GameEvent[];
 }
 
 /** Effet de combat d'une bénédiction, lisible : un déclencheur et une récompense, ou une règle. */
@@ -43,6 +47,13 @@ export interface BalanceMonster {
   phase2?: { seuil: number; puissance: number; nom: string; rythme: MovePattern };
   divise_en?: string;
 }
+export interface BalanceEventChoice {
+  /** Effets du choix, même forme que `immediat` d'une bénédiction (prix, gains, chances). */
+  operations: RunOp[];
+  /** Scène ouverte par ce choix, s'il y en a une. */
+  suite?: { choix: BalanceEventChoice[] };
+}
+export interface BalanceEvent { choix: BalanceEventChoice[] }
 export interface BalanceFile {
   _aide: string[];
   classes: Record<string, { pv: number; deck_depart: Record<string, number> }>;
@@ -51,6 +62,8 @@ export interface BalanceFile {
   cartes: Record<string, BalanceCard>;
   monstres: Record<string, BalanceMonster>;
   dieux?: Record<string, BalanceGod>;
+  reliques?: Record<string, BalanceBoon>;
+  evenements?: Record<string, BalanceEvent>;
 }
 
 const RULE_TEXT: Record<string, string> = { ...RULES, ...DOFUS_RULES, ...BOON_RULES };
@@ -76,6 +89,8 @@ export const HELP = [
   "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat, recharge = une fois puis rien pendant ce nombre de tours), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
   "dieux — avantages : kamas (0.35 = +35 % après chaque combat), remise_marchand (0.25 = −25 %), cartes_en_plus (aux récompenses), resurrection (nombre), soin_zaap (0.2 = +20 % de PV au Zaap).",
   "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type (+ protection: true = seulement celles qui donnent de l'armure ou du bouclier), pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
+  "reliques : les 18 reliques d'événement. Même forme qu'une bénédiction (nom, effets, stats, avantages, immediat). Pas d'emplacement d'équipement.",
+  "evenements : un événement, puis ses choix dans l'ordre. operations = effets immédiats (prix, gains, chances), même forme que immediat. suite.choix = la scène suivante. Les textes restent dans le code.",
   `Déclencheurs : ${TRIGGERS.map((t) => t.id).join(', ')}.`,
   `Récompenses : ${REWARDS.map((r) => r.id).join(', ')}.`,
   `Règles : ${Object.keys(RULE_TEXT).join(', ')}.`,
@@ -118,6 +133,8 @@ export function exportBalance(t: BalanceTargets, cards: CardDef[], monsters: Mon
     out.monstres[m.id] = mon;
   }
   out.dieux = exportGods(t.gods);
+  out.reliques = exportRelics(t.relics);
+  out.evenements = exportEvents(t.events);
   return out;
 }
 
@@ -131,18 +148,36 @@ function boonFx(fx: ItemEffect[]): BalanceBoonFx[] {
   }));
 }
 
+function exportBoon(b: Boon): BalanceBoon {
+  const o: BalanceBoon = { nom: b.name };
+  if (b.effects?.length) o.effets = boonFx(b.effects);
+  if (b.stats && Object.keys(b.stats).length) o.stats = { ...(b.stats.pv ? { pv: b.stats.pv } : {}), ...(b.stats.armure ? { armure: b.stats.armure } : {}), ...(b.stats.prospection ? { prospection: b.stats.prospection } : {}), ...(b.stats.dom ? { degats: clone(b.stats.dom) } : {}) };
+  if (b.perks && Object.keys(b.perks).length) o.avantages = Object.fromEntries(PERK_KEYS.filter(([, k]) => b.perks![k]).map(([fr, k]) => [fr, b.perks![k]]));
+  if (b.now?.length) o.immediat = clone(b.now);
+  return o;
+}
+
 export function exportGods(gods: GodDef[]): Record<string, BalanceGod> {
   return Object.fromEntries(gods.map((g) => [g.id, {
     nom: g.name, titre: g.title, phrase: g.greeting,
-    benedictions: Object.fromEntries(g.boons.map((b) => {
-      const o: BalanceBoon = { nom: b.name };
-      if (b.effects?.length) o.effets = boonFx(b.effects);
-      if (b.stats && Object.keys(b.stats).length) o.stats = { ...(b.stats.pv ? { pv: b.stats.pv } : {}), ...(b.stats.armure ? { armure: b.stats.armure } : {}), ...(b.stats.prospection ? { prospection: b.stats.prospection } : {}), ...(b.stats.dom ? { degats: clone(b.stats.dom) } : {}) };
-      if (b.perks && Object.keys(b.perks).length) o.avantages = Object.fromEntries(PERK_KEYS.filter(([, k]) => b.perks![k]).map(([fr, k]) => [fr, b.perks![k]]));
-      if (b.now?.length) o.immediat = clone(b.now);
-      return [b.id, o];
-    })),
+    benedictions: Object.fromEntries(g.boons.map((b) => [b.id, exportBoon(b)])),
   }]));
+}
+
+export function exportRelics(relics: RelicDef[]): Record<string, BalanceBoon> {
+  return Object.fromEntries(relics.map((r) => [r.id, exportBoon(r)]));
+}
+
+function exportChoices(page: EventPage): BalanceEventChoice[] {
+  return page.options.map((o) => {
+    const c: BalanceEventChoice = { operations: clone(o.ops) };
+    if (o.next) c.suite = { choix: exportChoices(o.next) };
+    return c;
+  });
+}
+
+export function exportEvents(events: GameEvent[]): Record<string, BalanceEvent> {
+  return Object.fromEntries(events.map((e) => [e.id, { choix: exportChoices(e) }]));
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -251,6 +286,17 @@ export function applyBalance(raw: unknown, t: BalanceTargets): string[] {
       applyBoon(boon, bv, `dieux.${gid}.${bid}`, warn);
     }
   }
+  for (const [id, v] of Object.entries(b.reliques ?? {})) {
+    const relic = t.relics.find((x) => x.id === id);
+    if (!relic) { warn.push(`relique inconnue : ${id}`); continue; }
+    applyBoon(relic, v, `reliques.${id}`, warn);
+  }
+  for (const [id, v] of Object.entries(b.evenements ?? {})) {
+    const ev = t.events.find((x) => x.id === id);
+    if (!ev) { warn.push(`événement inconnu : ${id}`); continue; }
+    if (!v || !Array.isArray(v.choix)) { warn.push(`evenements.${id} : choix invalides`); continue; }
+    applyChoices(ev, v.choix, `evenements.${id}`, warn);
+  }
   return warn;
 }
 
@@ -268,6 +314,23 @@ const OPS: Record<string, (o: Record<string, unknown>) => boolean> = {
 };
 function isOps(v: unknown): v is RunOp[] {
   return Array.isArray(v) && v.every((o) => o && typeof o === 'object' && OPS[(o as { op: string }).op]?.(o as Record<string, unknown>));
+}
+
+/** Les opérations d'un événement (et de ses scènes suivantes). Une liste invalide est ignorée. */
+function applyChoices(page: EventPage, choix: BalanceEventChoice[], at: string, warn: string[]): void {
+  choix.forEach((c, i) => {
+    const opt = page.options[i];
+    if (!opt) { warn.push(`${at} : choix ${i} en trop`); return; }
+    if (!c || typeof c !== 'object') { warn.push(`${at}.choix.${i} invalide`); return; }
+    if (c.operations !== undefined) {
+      if (isOps(c.operations)) opt.ops = clone(c.operations);
+      else warn.push(`${at}.choix.${i}.operations invalides`);
+    }
+    if (c.suite) {
+      if (!opt.next || !Array.isArray(c.suite.choix)) warn.push(`${at}.choix.${i} : suite invalide`);
+      else applyChoices(opt.next, c.suite.choix, `${at}.choix.${i}.suite`, warn);
+    }
+  });
 }
 
 /** Une bénédiction du fichier → la bénédiction du jeu. Chaque partie invalide est ignorée (l'ancienne valeur reste). */

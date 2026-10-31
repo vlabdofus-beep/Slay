@@ -273,7 +273,7 @@ export const EVENTS: GameEvent[] = [
     options: [
       open('Traverser à la nage', [{ op: 'loseHp', n: 10 }], 'Quelques morsures, mais tu passes.'),
       cost('Payer le passeur', [{ op: 'kamas', n: -40 }, luck(0.75, [], [fight('normal')],
-        'Une traversée tranquille.', 'Au milieu du fleuve, le passeur saute à l\'eau. La barque est cernée.')], ''),
+        'Une traversée tranquille.', 'Au milieu de la rivière, le passeur saute à l\'eau. La barque est cernée.')], ''),
       hide('Chasser les Crocodailles', [fight('elite', [{ op: 'itemChoice', rarity: 'mythique' }])], 'Le chef sort de l\'eau. Il est énorme.'),
     ],
   },
@@ -442,7 +442,7 @@ export const EVENTS: GameEvent[] = [
   },
   {
     id: 'a3_statue', act: 3, title: 'La statue de Rushu', art: { iconId: 18052 },
-    text: 'Une statue du démon Rushu, ses yeux de rubis rougeoient. Un shushu y est enchâssé, vivant, et il te murmure des promesses.',
+    text: 'Une statue du démon Rushu, ses yeux de rubis rougeoient. Un Shushu y est enchâssé, vivant, et il te murmure des promesses.',
     options: [
       cost('Prendre le shushu', [{ op: 'loseHp', n: 15 }, { op: 'relic', id: 'anneau_rushu' }], 'Il te brûle la main, mais il est à toi.'),
       hide('Briser la statue', [fight('elite', [{ op: 'kamas', n: 150 }])], 'Les gardiens de pierre s\'animent.'),
