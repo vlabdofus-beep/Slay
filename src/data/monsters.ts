@@ -34,17 +34,17 @@ export const TIER_SCALE: Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>> 
 ) as Record<1 | 2 | 3, Record<EncounterTier, MonsterScale>>;
 
 /**
- * Table de 2, 3 ou 4 joueurs qui jouent en même temps. Détail dans docs/BALANCE.md.
- * Tout le monde joue ses cartes dans la même phase, puis les monstres jouent une fois, comme en solo.
- * PV : un joueur de plus, moins 15 % (le poison et la puissance tombent sur les mêmes monstres avant qu'ils n'agissent).
- * Dégâts : ×1. Un coup vise une seule personne, et le plus gros fait déjà 40 sur 70 PV.
- * Un joueur seul ne passe pas par ici : son combat garde l'échelle d'acte telle quelle.
+ * Table de 2, 3 ou 4 joueurs qui jouent en même temps. Mesure dans docs/BALANCE.md.
+ * Tout le monde joue dans la même phase, puis les monstres jouent une fois et frappent chaque héros.
+ * PV : plus que le nombre de joueurs. Les malus s'empilent, et la table gagne tant qu'un héros tient.
+ * Dégâts : ×1. Chaque héros encaisse déjà le coup entier, comme en solo.
+ * Un joueur seul ne passe pas par ici.
  */
 export const PARTY_SCALE: Record<1 | 2 | 3 | 4, MonsterScale> = {
   1: { hp: 1, damage: 1 },
-  2: { hp: 1.85, damage: 1 },
-  3: { hp: 2.7, damage: 1 },
-  4: { hp: 3.55, damage: 1 },
+  2: { hp: 2.5, damage: 1 },
+  3: { hp: 3.6, damage: 1 },
+  4: { hp: 5.5, damage: 1 },
 };
 
 /** Échelle d'une salle pour une table. Au-delà de 4, on reste à 4 : l'échelle n'est pas mesurée plus loin. */

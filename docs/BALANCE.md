@@ -336,28 +336,22 @@ Boss 1 / boss 2 / victoire : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6),
 
 ## Table à plusieurs joueurs (31/10/2026)
 
-Le mode n'est pas encore jouable. L'échelle est dans `echelle_joueurs` et `scaleForParty`. Un combat seul ne l'utilise pas.
+Le combat à plusieurs existe (étape 1). Chacun joue dans la même phase, puis les monstres jouent une fois et **frappent chaque héros en entier**. L'échelle est dans `echelle_joueurs`. Un combat seul ne l'utilise pas : la run à plusieurs n'est pas encore branchée.
 
-Les joueurs jouent **en même temps**. Chacun a ses PV, son deck et ses 3 PA, et tout se résout dans la même phase. Les monstres jouent ensuite **une fois**, comme en solo. Pas un tour par joueur, et pas une action de monstre par joueur : une première version le faisait, elle est retirée.
+Les dégâts restent ×1. Chaque joueur encaisse déjà le coup du solo. Le plus gros coup du jeu fait 40 pour 70 PV : le gonfler frapperait tout le monde plus fort, pas une seule cible.
 
-| Joueurs | PV | Dégâts |
-|---|---|---|
-| 1 | ×1 | ×1 |
-| 2 | ×1,85 | ×1 |
-| 3 | ×2,70 | ×1 |
-| 4 | ×3,55 | ×1 |
+Les PV montent plus que le nombre de joueurs. Quatre héros posent poison, puissance et vulnérabilité avant l'unique phase des monstres, et la table ne perd que lorsque tout le monde tombe. Avec l'ancienne échelle (×1,85 / ×2,7 / ×3,55), une élite d'acte 2 tombait dans 50 à 90 % des tables, contre environ 13 % en solo.
 
-Les PV valent un joueur de plus, moins 15 %. Quatre personnes qui frappent avant que le monstre n'agisse tuent un peu plus vite que quatre combats séparés : le poison, la puissance et la vulnérabilité tombent sur les mêmes corps.
+Mesure au bot glouton, un siège après l'autre, toutes les salles normales et élites des actes 1 et 2, 12 graines. Acte 1 : deck de départ. Acte 2 : deck de départ plus 6 cartes. Le quatrième joueur est un second Iop, il n'y a que trois classes. Les boss et l'acte 3 ne comptent pas : ces decks y meurent seuls comme à plusieurs.
 
-Les dégâts ne bougent pas. Un coup vise une seule personne. Le plus gros du jeu, une élite d'acte 3, fait déjà 40 pour 70 PV. Le monter frapperait plus fort quelqu'un qui n'a pas eu de phase de plus pour se défendre : tout le monde a déjà joué. La colonne `degats` reste dans le fichier pour un réglage plus tard. Elle ne doit pas servir à compenser le nombre de joueurs.
+Solo : normale d'acte 1 environ 97 % de victoires et 60 % de PV, élite environ 75 %. Normale d'acte 2 environ 66 % et 15 % de PV, élite environ 14 %.
 
-Repère, acte 1 salle normale (médiane 65 PV). Un Iop avec le deck de départ la finit en 4 tours, environ 15 PV retirés par tour (24 graines, 96 % de victoires), et les monstres frappent 4 fois. À quatre joueurs la salle passe à 231 PV. Quatre fois 15 PV dans la même phase, soit 60, la finissent en 4 rounds aussi. Les monstres frappent toujours 4 fois dans la partie, pas 16. La personne visée encaisse à peu près ce qu'elle encaissait seule. Les autres non : une table est plus à l'aise qu'un joueur seul, et c'est le fait de jouer ensemble, pas un trou dans les PV.
+| Joueurs | PV | Dégâts | Normale acte 1 | Élite acte 1 | Normale acte 2 | Élite acte 2 |
+|---|---|---|---|---|---|---|
+| 2 | ×2,5 | ×1 | 92 %, 55 % de PV | 58 %, 30 % | 67 %, 31 % | 33 % |
+| 3 | ×3,6 | ×1 | 83 %, 55 % | 75 %, 36 % | 75 %, 34 % | 17 % |
+| 4 | ×5,5 | ×1 | 92 %, 54 % | 83 %, 37 % | 75 %, 36 % | 33 % |
 
-À deux joueurs, 120 PV et deux fois 15 PV par round : encore 4 rounds.
+L'acte 1 reste une salle qu'on gagne. L'élite d'acte 2 n'est plus gagnée presque à chaque fois (c'était 50 à 90 % avec ×1,85 / ×2,7 / ×3,55). La table gagne encore un peu plus souvent qu'un héros seul sur cette élite : on ne perd que lorsque tout le monde est à terre. À 4 joueurs, 3,2 héros sur 4 sont au sol à la fin.
 
-Ce qu'il ne faut pas faire : multiplier les dégâts par le nombre de joueurs. ×4 sur le coup de 40 fait 160, plus du double des PV d'un Crâ. Ni faire jouer les monstres une fois par joueur : avec des joueurs simultanés, ce serait quatre fois plus de coups pour une seule phase de cartes.
-
-Pour brancher le mode : `scaleForParty(TIER_SCALE[acte][salle], joueurs)` donne les PV et les dégâts à passer au combat. La phase des monstres reste unique. Au-delà de 4 joueurs, on reste à 4.
-
-### Les monstres frappent tout le monde (décision du 31/10/2026)
-Le propriétaire a choisi que chaque action d'un monstre touche tous les héros debout. Chaque joueur encaisse donc ce qu'il encaisserait seul, et le raisonnement « un coup vise une seule personne » ci-dessus ne tient plus : la table n'est plus plus à l'aise qu'un joueur seul. L'échelle des PV (×1,85 / ×2,7 / ×3,55) reste à remesurer au bot quand la run à plusieurs existera (étape 3 de la feuille de route).
+`scaleForParty(échelle de la salle, joueurs)` donne les coefficients à passer au combat. Au-delà de 4, on reste à 4.
