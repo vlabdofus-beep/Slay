@@ -171,10 +171,11 @@ test('chaque objet a un effet tiré pour la run, identique pour une même graine
 test('équiper un item qui donne des PV augmente aussi les PV actuels', () => {
   const run = new Run('cra', 2, 'm', { gods: false });
   run.hp = 50;
-  const id = Object.values(ITEMS.items).find((it) => it.rarity === 'commun' && it.stats.pv)!.id; // +6 PV
-  run.equip(id);
-  assert.equal(run.maxHp, 76);
-  assert.equal(run.hp, 56);
+  const it = Object.values(ITEMS.items).find((x) => x.rarity === 'commun' && x.stats.pv)!;
+  const bonus = it.stats.pv!;
+  run.equip(it.id);
+  assert.equal(run.maxHp, 70 + bonus);
+  assert.equal(run.hp, 50 + bonus);
 });
 
 test('chaque case de combat connaît sa rencontre à l\'avance, et c\'est celle qu\'on affronte', async () => {
