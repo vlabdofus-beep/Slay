@@ -1,6 +1,6 @@
 // Une partie (run) : carte de l'acte, combats, récompenses, Zaap. Aucune dépendance au DOM :
 // l'interface ne fait qu'appeler ces méthodes et afficher l'état.
-import { Combat } from '../core/combat.ts';
+import { Combat, type PlayerInit } from '../core/combat.ts';
 import { rollEffect } from '../core/effects.ts';
 import { computeLoadout, type EffectTable, type Equipment, type Loadout } from '../core/loadout.ts';
 import { generateMap, type ActMap, type MapNode } from '../core/map.ts';
@@ -138,12 +138,24 @@ export class Run {
   /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
   encounters: Record<string, string> = {};
 
-  constructor(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm', o: { gods?: boolean } = {}) {
+  /** Partie à plusieurs : ce joueur est un héros de la table (`seat`) ; le combat d'une case est partagé. */
+  readonly party: boolean;
+  /** Place du héros dans le combat en cours (0 en solo et dans un combat d'événement, qu'on joue seul). */
+  seat = 0;
+  /** Le combat en cours est celui de la table (case de la carte), pas un combat d'événement joué seul. */
+  sharedFight = false;
+
+  /**
+   * `o.rngSeed` : graine du tirage personnel (butin, marchand, événements). À plusieurs, chaque joueur a la sienne,
+   * mais la carte, les rencontres et les dieux viennent de `seed`, commune à la table.
+   */
+  constructor(classe: ClassId, seed: number, gender: 'm' | 'f' = 'm', o: { gods?: boolean; rngSeed?: number; party?: boolean } = {}) {
     this.gods = o.gods ?? true;
+    this.party = !!o.party;
     this.classe = classe;
     this.gender = gender;
     this.seed = seed;
-    this.rng = new Rng(seed);
+    this.rng = new Rng(o.rngSeed ?? seed);
     this.map = generateMap(Run.mapSeed(seed, 1));
     this.deck = starterDeck(classe).map((c) => this.card(c.id));
     this.baseMaxHp = CLASS_START_HP[classe] as number;
@@ -239,11 +251,7 @@ export class Run {
   enterNode(id: string): void {
     if (!this.availableNodes().includes(id)) throw new Error(`Nœud ${id} inaccessible`);
     if (id === 'dieu') { this.god!.visited = true; this.phase = 'dieu'; return; }
-    const node = this.map.nodes[id];
-    this.position = id;
-    this.path.push(id);
-    this.node = node;
-    this.stats.floor = node.floor;
+    const node = this.moveTo(id);
     if (node.type === 'zaap') {
       this.phase = 'zaap';
       this.zaapUsed = false;
@@ -260,12 +268,46 @@ export class Run {
     this.startCombat(this.encounters[id]);
   }
 
-  private startCombat(encounter: string): void {
+  private moveTo(id: string): MapNode {
+    const node = this.map.nodes[id];
+    this.position = id;
+    this.path.push(id);
+    this.node = node;
+    this.stats.floor = node.floor;
+    return node;
+  }
+
+  /**
+   * À plusieurs : la table entre sur une case de combat. La run se place sur la case et attend le combat commun,
+   * que la partie (`src/game/party.ts`) crée avec tous les héros et lui confie (`combat`, `seat`).
+   */
+  joinFight(id: string): void {
+    if (!this.availableNodes().includes(id) || id === 'dieu') throw new Error(`Nœud ${id} inaccessible`);
+    const node = this.moveTo(id);
+    if (node.type === 'zaap' || node.type === 'marchand' || node.type === 'evenement') throw new Error(`${id} n'est pas un combat`);
+    this.encounter = this.encounters[id];
+    this.fightTier = null;
+    this.combat = null;
+    this.sharedFight = true;
+    this.phase = 'combat';
+  }
+
+  /** Ce que la run apporte à un combat : son deck et son héros (PV, objets, passif). */
+  combatMember(): { deck: CardInstance[]; init: PlayerInit } {
     const l = this.loadout();
+    return {
+      deck: this.deck,
+      init: { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects], revive: this.revivesLeft() > 0, classe: this.noPassive ? undefined : this.classe },
+    };
+  }
+
+  private startCombat(encounter: string): void {
+    const m = this.combatMember();
     this.encounter = encounter;
+    this.seat = 0;
+    this.sharedFight = false;
     this.combat = new Combat(
-      LIBRARY, this.deck,
-      { hp: this.hp, maxHp: this.maxHp, dom: l.dom, blockBonus: l.blockBonus, effects: [...l.effects, ...this.extraEffects], revive: this.revivesLeft() > 0, classe: this.noPassive ? undefined : this.classe },
+      LIBRARY, m.deck, m.init,
       ENCOUNTERS[encounter].monsters, this.rng.int(2 ** 31), TIER_SCALE[this.act][ENCOUNTERS[encounter].tier],
     );
     this.phase = 'combat';
@@ -277,14 +319,27 @@ export class Run {
   checkCombatEnd(): void {
     const c = this.combat;
     if (this.phase !== 'combat' || !c || c.outcome === 'ongoing') return;
+    const shared = this.sharedFight;
     if (c.outcome === 'lost') {
+      // À plusieurs, un combat d'événement (joué seul) perdu ne finit pas la run : le héros revient avec 1 PV.
+      if (this.party && !shared) {
+        this.hp = 1;
+        this.combat = null;
+        this.eventPrize = null;
+        this.fightTier = null;
+        this.phase = 'map';
+        return;
+      }
       this.hp = 0;
       this.phase = 'defeat';
       return;
     }
-    this.hp = c.player.hp; // seul ce qui survit au combat
-    if (c.result().revived) this.revivesUsed++;
-    const stolen = c.result().kamasStolen;
+    const res = c.resultFor(this.seat);
+    // Seul ce qui survit au combat. À plusieurs, un héros tombé revient avec 1 PV quand la table gagne.
+    this.hp = Math.max(1, res.hp);
+    if (res.revived) this.revivesUsed++;
+    // Un voleur prend ses kamas à chaque héros qu'il frappe : à plusieurs, chacun en perd sa part.
+    const stolen = Math.round(res.kamasStolen / c.partySize);
     this.kamas = Math.max(0, this.kamas - stolen);
     this.stats.combats++;
     const prize = this.eventPrize;
@@ -307,7 +362,7 @@ export class Run {
     // Butin : la prospection de ce combat inclut le bonus gagné au combat précédent ;
     // les gains de ce combat-ci valent pour la suite.
     const prosp = this.prospection();
-    const gained = c.result().prospection;
+    const gained = res.prospection;
     this.prospRun += gained.run;
     this.prospNext = gained.next;
     const source: LootSource = type === 'elite' ? 'elite' : 'normal';
