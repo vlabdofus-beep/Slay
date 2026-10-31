@@ -355,3 +355,22 @@ Solo : normale d'acte 1 environ 97 % de victoires et 60 % de PV, élite environ 
 L'acte 1 reste une salle qu'on gagne. L'élite d'acte 2 n'est plus gagnée presque à chaque fois (c'était 50 à 90 % avec ×1,85 / ×2,7 / ×3,55). La table gagne encore un peu plus souvent qu'un héros seul sur cette élite : on ne perd que lorsque tout le monde est à terre. À 4 joueurs, 3,2 héros sur 4 sont au sol à la fin.
 
 `scaleForParty(échelle de la salle, joueurs)` donne les coefficients à passer au combat. Au-delà de 4, on reste à 4.
+
+## Stats fixes des objets (31/10/2026)
+
+Avant, la stat ne dépendait que de la rareté, et deux raretés se valaient : +1 dégât du commun au rare, +2 du mythique au légendaire, +1 armure du commun au rare, +6 à +15 PV. À côté d'un effet tiré (commun ≈ 2,8 points, rare ≈ 6,4, mythique ≈ 9,8), on équipait l'objet pour l'effet.
+
+La stat suit maintenant le niveau Dofus à l'intérieur de la rareté. Le bas de la fourchette est le niveau le plus faible de la rareté, le haut est le plus fort. Une rareté dépasse toujours la précédente. L'effet tiré ne change pas. Les dégâts s'ajoutent à chaque coup, donc un sort à plusieurs coups en profite plusieurs fois.
+
+| | Commun (niv. 1–40) | Rare (41–100) | Mythique (101–160) | Légendaire (161–200) |
+|---|---|---|---|---|
+| Dégâts d'un élément | +2 à +3 | +4 à +5 | +6 à +8 | +9 à +12 |
+| PV max | +12 à +18 | +20 à +28 | +32 à +42 | — |
+| Armure à chaque gain | +2 à +3 | +4 à +5 | — | — |
+| Prospection | +30 à +45 | +50 à +75 | — | — |
+
+Exemples : Artefact Eau (commun, niv. 1) +2 Eau, Bottes du Monarque (commun, niv. 40) +3 Feu, Amulette de l'Orfélin (mythique, niv. 157) +41 PV, Bottes de la Cour Sombre (légendaire, niv. 200) +12 Terre. Il n'y a pas d'objet légendaire en PV, en armure ou en prospection dans le catalogue.
+
+Les monstres ne bougent pas dans cette passe. La stat fixe pèse maintenant autant que l'effet, parfois plus sur un deck qui joue l'élément.
+
+Bot glouton, dieux et objets, graines 1 à 160 (Xélor : 80). Boss 1 / boss 2 / victoire, étage moyen : Iop 65 / 34 / 10 % (22,5), Crâ 52 / 38 / 18 % (20,9), Xélor 58 / 35 / 14 % (21,9). Avant, sur 1 000 runs : Iop 38 / 8 / 2 % (14,6), Crâ 34 / 12 / 3 % (14,6), Xélor 36 / 12 / 2 % (14,7). L'acte 2 et les victoires ont plus que doublé. La difficulté des monstres est à reprendre.

@@ -158,6 +158,29 @@ test('stats fixes des objets : la somme de l\'équipement', () => {
   assert.equal(l.effects.length, 0);
 });
 
+test('la stat fixe se voit : elle grandit avec le niveau, et la rareté dépasse la précédente', () => {
+  const all = Object.values(ITEMS.items);
+  const amount = (it: (typeof all)[number]) => it.stats.pv ?? it.stats.armure ?? it.stats.prospection ?? Object.values(it.stats.dom ?? {})[0] ?? 0;
+  const of = (rarity: string, kind: 'dom' | 'pv' | 'armure' | 'prospection') => all.filter((it) => it.rarity === rarity && (kind === 'dom' ? it.stats.dom : it.stats[kind]));
+  for (const kind of ['dom', 'pv', 'armure', 'prospection'] as const) {
+    const order = ['commun', 'rare', 'mythique', 'legendaire'];
+    const present = order.map((r) => of(r, kind)).filter((g) => g.length);
+    for (const g of present) {
+      const sorted = [...g].sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+      for (let i = 1; i < sorted.length; i++) assert.ok(amount(sorted[i]) >= amount(sorted[i - 1]), `${sorted[i].name} plus faible qu'un objet de niveau inférieur`);
+    }
+    for (let i = 1; i < present.length; i++) {
+      const prev = Math.max(...present[i - 1].map(amount));
+      const next = Math.min(...present[i].map(amount));
+      assert.ok(next > prev, `${kind} : ${present[i][0].rarity} (${next}) ne dépasse pas ${present[i - 1][0].rarity} (${prev})`);
+    }
+  }
+  const leg = of('legendaire', 'dom').map(amount);
+  assert.ok(Math.min(...leg) >= 9 && Math.max(...leg) <= 12);
+  const commonPv = of('commun', 'pv').map(amount);
+  assert.ok(Math.min(...commonPv) >= 12 && Math.max(...commonPv) <= 18);
+});
+
 test('catalogue : 132 objets Dofus réels, 4 raretés dans chaque emplacement, aucune panoplie', () => {
   const all = Object.values(ITEMS.items);
   assert.equal(all.length, 132);

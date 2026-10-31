@@ -21,6 +21,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 | Ajouter les événements au fichier d'équilibrage (prix, gains, chances) | `src/data/balance.ts`, `src/data/events.ts` | Grok | fait |
 | Réduire l'écart Crâ / Iop (le Crâ passe plus souvent l'acte 2) | `src/data/cards.ts`, `src/data/monsters.ts`, `src/data/bestiary.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | en relecture |
 | Échelle pour 2, 3 et 4 joueurs qui jouent en même temps (PV des monstres, dégâts inchangés) | `equilibrage.json`, `src/data/monsters.ts`, `docs/BALANCE.md` | Grok | fait |
+| Donner aux objets une stat fixe qui se voit, sans compter l'effet tiré | `src/data/items.ts`, `docs/BALANCE.md` | Grok | fait |
 | Parties jouées par des humains : noter difficulté ressentie, cartes trop fortes ou inutiles | `docs/BALANCE.md` | propriétaire | à faire |
 
 ### Contenu
@@ -68,6 +69,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Grok — stats fixes des objets. Un commun Terre passe de +1 à +2–3, un légendaire de +2 à +9–12, les PV d'un mythique de +12 à +32–42. L'effet tiré ne change pas. Les monstres ne sont pas retouchés : à mesurer ensuite.
 - 31/10/2026 : Grok — échelle recalée sur le draft (les monstres frappent tout le monde). PV ×2,5 / ×3,6 / ×5,5 pour 2, 3 et 4 joueurs. Dégâts inchangés. L'ancienne échelle rendait les élites d'acte 2 trop faciles.
 - 31/10/2026 : Claude — multijoueur, étape 1 : le combat accepte plusieurs héros (tours simultanés, monstres qui frappent tout le monde, héros hors combat). Le solo ne change pas (mêmes résultats au bot, graine par graine).
 - 31/10/2026 : Grok — correction de l'échelle à plusieurs. Les joueurs jouent en même temps : les monstres ne gagnent pas une action par joueur, et leurs dégâts restent ×1. Les PV restent ×1,85 / ×2,7 / ×3,55.

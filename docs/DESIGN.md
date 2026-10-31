@@ -28,7 +28,8 @@ Terre (armure, coups lourds) · Feu (brûlure, zone) · Eau (drain, économie) �
 - Catalogue : 132 objets Dofus réels, 22 par emplacement. Rareté selon le niveau Dofus :
   commun (1-40), rare (41-100), mythique (101-160), légendaire (161-200).
 - **Stat fixe** : la stat principale de l'objet dans Dofus (Force → dégâts Terre, Intelligence → Feu, Chance → Eau,
-  Agilité → Air, Vitalité → PV, Prospection, Sagesse / résistances → armure), valeur selon la rareté.
+  Agilité → Air, Vitalité → PV, Prospection, Sagesse / résistances → armure). Elle grandit avec le niveau dans
+  la rareté, et une rareté dépasse toujours la précédente. Les dégâts s'ajoutent à chaque coup de l'élément.
 - **Effet tiré** au début de chaque run (graine de la run : un même objet garde son effet toute la run) :
   - déclencheur × récompense (`src/core/effects.ts`) : 45 déclencheurs (dont 5 par élément) et 21 récompenses ;
   - commun : budget 6, rare : 11, mythique : 17 réparti sur deux récompenses du même déclencheur ;
