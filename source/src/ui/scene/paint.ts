@@ -35,6 +35,16 @@ function stamp(x: CanvasRenderingContext2D, pk: Sheet, p: Pre, cx: number, base:
   x.restore();
 }
 
+/**
+ * Pièces écartées du paysage de l'accueil (repérées par leur position x,y dans la planche du pack) :
+ * celles peintes sur leur propre dalle d'herbe (îlots aux bords visibles), l'arche coupée et l'échafaudage.
+ * Faites pour être posées sur une carte vue de dessus, debout dans un paysage elles « dépassent ».
+ * Le plateau de la carte, lui, les garde toutes.
+ */
+const LAND_SKIP: Record<number, string[]> = {
+  8: ['0,0', '938,0', '717,0', '1356,0', '1647,0', '0,349', '1175,349'],
+};
+
 const cache = new Map<string, Promise<HTMLCanvasElement | null>>();
 
 /**
@@ -43,11 +53,11 @@ const cache = new Map<string, Promise<HTMLCanvasElement | null>>();
  */
 export function paintLandscape(packId: number, W: number, H: number, seed: number, horizon = 0.5): Promise<HTMLCanvasElement | null> {
   const key = `land|${packId}|${W}x${H}|${seed}|${horizon}`;
-  if (!cache.has(key)) cache.set(key, loadPack(packId).then((pk) => (pk ? landscape(pk, W, H, seed, horizon) : null)));
+  if (!cache.has(key)) cache.set(key, loadPack(packId).then((pk) => (pk ? landscape(pk, W, H, seed, horizon, LAND_SKIP[packId] ?? []) : null)));
   return cache.get(key)!;
 }
 
-function landscape(pk: Sheet, W: number, H: number, seed: number, horizon: number): HTMLCanvasElement {
+function landscape(pk: Sheet, W: number, H: number, seed: number, horizon: number, skip: string[]): HTMLCanvasElement {
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d')!;
   const hz = H * horizon;
@@ -95,7 +105,7 @@ function landscape(pk: Sheet, W: number, H: number, seed: number, horizon: numbe
   x.fillStyle = haze; x.fillRect(0, hz, W, H * 0.22);
 
   // Décors : rang du fond voilé, rang moyen sur les côtés, grands éléments flous au premier plan
-  const pres = decors(pk).slice(0, 18);
+  const pres = decors(pk).filter((p) => !skip.includes(`${p.r[0]},${p.r[1]}`)).slice(0, 18);
   if (pres.length) {
     const k = H / 900;
     for (let px = -60; px < W + 60; px += 70 + rnd() * 70) stamp(x, pk, pres[Math.floor(rnd() * pres.length)], px, hz + H * 0.02, 0.42 * k, 'saturate(.75) brightness(1.08) opacity(.8)', rnd() < 0.5);
@@ -105,7 +115,7 @@ function landscape(pk: Sheet, W: number, H: number, seed: number, horizon: numbe
       stamp(x, pk, pres[Math.floor(rnd() * pres.length)], px, hz + H * 0.11, 0.72 * k, 'none', rnd() < 0.5);
     }
     stamp(x, pk, pres[0], W * 0.03, H * 1.05, 1.5 * k, 'brightness(.55) blur(2px)');
-    stamp(x, pk, pres[Math.min(1, pres.length - 1)], W * 0.97, H * 1.05, 1.4 * k, 'brightness(.55) blur(2px)', true);
+    stamp(x, pk, pres[0], W * 0.97, H * 1.05, 1.4 * k, 'brightness(.55) blur(2px)', true);
   }
   // Pied de page plus sombre : les plaques des héros restent lisibles
   const foot = x.createLinearGradient(0, H * 0.62, 0, H);
