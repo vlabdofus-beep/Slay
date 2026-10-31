@@ -97,30 +97,46 @@ function landscape(pk: Sheet, W: number, H: number, seed: number, horizon: numbe
   };
   hills(H * 0.13, 0.62, 0); hills(H * 0.08, 0.4, -H * 0.01);
 
-  // Sol du lieu
-  x.fillStyle = groundPattern(x, pk, Math.max(0.42, W / 3600));
+  // Prairie peinte. La dalle du pack est un papier peint de médaillons : on ne la pose pas à l'accueil.
+  const grass = x.createLinearGradient(0, hz, 0, H);
+  grass.addColorStop(0, '#d5e7a4');
+  grass.addColorStop(0.22, '#8fbf4e');
+  grass.addColorStop(0.62, '#62a33a');
+  grass.addColorStop(1, '#4a8628');
+  x.fillStyle = grass;
   x.fillRect(0, hz, W, H - hz);
-  const haze = x.createLinearGradient(0, hz, 0, hz + H * 0.22);
-  haze.addColorStop(0, 'rgba(251,233,191,.6)'); haze.addColorStop(1, 'rgba(251,233,191,0)');
-  x.fillStyle = haze; x.fillRect(0, hz, W, H * 0.22);
+  for (let i = 0; i < 70; i++) {
+    x.fillStyle = rnd() < 0.5 ? `rgba(255,248,210,${0.04 + rnd() * 0.05})` : `rgba(30,70,18,${0.04 + rnd() * 0.05})`;
+    x.beginPath();
+    x.ellipse(rnd() * W, hz + rnd() * (H - hz), 16 + rnd() * 48, 7 + rnd() * 16, 0, 0, Math.PI * 2);
+    x.fill();
+  }
+  const haze = x.createLinearGradient(0, hz, 0, hz + H * 0.14);
+  haze.addColorStop(0, 'rgba(251,233,191,.4)'); haze.addColorStop(1, 'rgba(251,233,191,0)');
+  x.fillStyle = haze; x.fillRect(0, hz, W, H * 0.14);
 
-  // Décors : rang du fond voilé, rang moyen sur les côtés, grands éléments flous au premier plan
+  // Quelques décors, loin du centre où se tiennent les héros. Pas de masse floue dans les coins.
   const pres = decors(pk).filter((p) => !skip.includes(`${p.r[0]},${p.r[1]}`)).slice(0, 18);
   if (pres.length) {
     const k = H / 900;
-    for (let px = -60; px < W + 60; px += 70 + rnd() * 70) stamp(x, pk, pres[Math.floor(rnd() * pres.length)], px, hz + H * 0.02, 0.42 * k, 'saturate(.75) brightness(1.08) opacity(.8)', rnd() < 0.5);
-    for (let px = -40; px < W + 40; px += 120 + rnd() * 110) {
-      const u = px / W;
-      if (u > 0.2 && u < 0.8) continue;
-      stamp(x, pk, pres[Math.floor(rnd() * pres.length)], px, hz + H * 0.11, 0.72 * k, 'none', rnd() < 0.5);
+    const pick = () => pres[Math.floor(rnd() * Math.min(8, pres.length))];
+    for (let i = 0; i < 6; i++) {
+      const px = ((i + 0.35 + rnd() * 0.3) / 6) * W;
+      stamp(x, pk, pick(), px, hz + H * 0.012, 0.36 * k, 'saturate(.7) brightness(1.12) opacity(.7)', rnd() < 0.5);
     }
-    stamp(x, pk, pres[0], W * 0.03, H * 1.05, 1.5 * k, 'brightness(.55) blur(2px)');
-    stamp(x, pk, pres[0], W * 0.97, H * 1.05, 1.4 * k, 'brightness(.55) blur(2px)', true);
+    // Sur un écran étroit les héros occupent presque toute la largeur : les décors restent dans les coins.
+    const sides = W < 800 ? [0.02, 0.98] : [0.05, 0.12, 0.88, 0.95];
+    for (const side of sides) {
+      stamp(x, pk, pick(), W * side, hz + H * (W < 800 ? 0.22 : 0.14 + rnd() * 0.1), (W < 800 ? 0.42 : 0.62 + rnd() * 0.28) * k, 'none', side > 0.5);
+    }
   }
-  // Pied de page plus sombre : les plaques des héros restent lisibles
-  const foot = x.createLinearGradient(0, H * 0.62, 0, H);
-  foot.addColorStop(0, 'rgba(14,30,22,0)'); foot.addColorStop(1, 'rgba(14,30,22,.72)');
-  x.fillStyle = foot; x.fillRect(0, H * 0.62, W, H * 0.38);
+  const side = x.createLinearGradient(0, 0, W, 0);
+  side.addColorStop(0, 'rgba(18, 36, 22, .22)');
+  side.addColorStop(0.16, 'rgba(18, 36, 22, 0)');
+  side.addColorStop(0.84, 'rgba(18, 36, 22, 0)');
+  side.addColorStop(1, 'rgba(18, 36, 22, .22)');
+  x.fillStyle = side;
+  x.fillRect(0, hz, W, H - hz);
   return c;
 }
 

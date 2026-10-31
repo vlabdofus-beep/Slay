@@ -56,6 +56,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Grok — accueil : l'herbe n'est plus un papier peint, les noms sont sur une plaque, le choix (pitch, passif, bouton) est sur une dalle sombre.
 - 31/10/2026 : Grok — 72 bénédictions mesurées (200 runs par classe). Bouclier Féca 18 → 6, Mot de régénération 2 → 1, Horloge pioche 2 → 1. Reliques et événements ajoutés à equilibrage.json. Trois phrases corrigées (Bracelet du Minotoboule, gué des Crocodailles, Shushu).
 - 31/10/2026 : Grok — zones du Crâ −2 dégâts (10 cartes). 600 runs : Iop 37/9/3, Crâ 35/12/2, étages 14,53 contre 14,58. L'écart de boss 2 passe de 7 à 3 points. Visée à 6, PV du Crâ et échelle de l'acte 2 mesurés et écartés.
 - 31/10/2026 : Grok — écart Crâ / Iop mesuré (37/8/3 contre 35/16/5). Visée à 6 écartée (trop dur pour l'acte 1). Poison de zone du Crâ baissé, trois zones du Iop relevées, huit monstres ramenés vers la médiane de leur salle.
