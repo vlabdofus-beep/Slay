@@ -191,3 +191,22 @@ Repères des nouvelles cartes : mêmes que le reste (0 PA ≈ 3-4 dégâts, 1 PA
 ## Sorts inventés (31/10/2026)
 
 Même bot, 300 runs par classe, passifs actifs. Boss 1 / 2 / 3 atteints : Iop 16 % / 2 % / 0 % (avant : 18 / 2 / 0), Crâ 14 % / 2 % / 0 % (avant : 19 / 3 / 0). La légère baisse vient surtout de la dilution du deck : le bot joue mal les cartes à condition et les combos. Repères : Enchaînement et Tir d'Exécution valent une attaque à 1 PA de 6-7 dégâts qui double dans le bon cas ; Pacte de Sang et Dédoublement sont rares et épuisés.
+
+## Cartes recalées sur Slay the Spire 2 (31/10/2026)
+
+Repères recalculés sur toutes les attaques des 5 personnages de StS2 (dégâts × coups, médianes) :
+
+| Coût | Cible unique | Zone |
+|---|---|---|
+| 0 | 6 | 5 (petit échantillon) |
+| 1 | 8 (6–10) | 8 |
+| 2 | 13 (10–15) | 14 et plus |
+| 3 | 19 (15–27) | — |
+
+Nos cartes de récompense étaient en dessous : 0 PA ≈ 3–4, 1 PA ≈ 5–6, 2 PA ≈ 10, zones à 1 PA ≈ 4. Les monstres étant déjà calés sur StS2, c'est ce qui rendait les combats longs et les decks peu puissants.
+
+- **59 cartes relevées** par une règle unique : cible 6 / 9 / 14 / 24 et zone 5 / 8 / 14 selon le coût, moins la moitié de la valeur des effets annexes (brûlure, poison, armure, pioche…), vol de vie compté ×1,25. Jamais en dessous de la valeur d'avant, jamais plus du double. Les améliorations suivent (+30 % au moins, +2 au minimum).
+- **Scaling renforcé** : Puissance (Iop) +3 / +4, Tirs Puissants (Crâ) +2 / +3, Furie Écarlate +2 puissance par tour. Les cartes à bonus grossissent plus vite : Massacre 3 +4 par attaque, Fureur 8 +5 par lancer, Déferlement 14 +3 par puissance, Explosion de Rage 10 +8 par puissance, Tir Chargé 6 +8 par cran de Visée, Flèche Massacrante 9 +4 par ennemi, etc.
+- Les cartes de base (Coup d'épée/d'arc 6, Vitalité/Tir de Repli 5) restent sur les Frappe et Défense de StS.
+
+Effet (bot, 300 runs par classe, boss 1 / 2 / 3 atteints) : Iop 16 / 2 / 0 % → **25 / 4 / 0 %**, Crâ 14 / 2 / 0 % → **34 / 9 / 3 %**. Le Crâ profite davantage (zones, poison, Visée qui double des coups plus gros) : à surveiller en jeu.

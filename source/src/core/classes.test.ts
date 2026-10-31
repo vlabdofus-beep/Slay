@@ -80,11 +80,11 @@ test('bonus : Massacre grossit avec les attaques du tour, Fureur avec ses lancer
   c.playCard(0, e.uid); c.playCard(0, e.uid);
   let before = e.hp;
   c.playCard(0, e.uid);
-  assert.equal(before - e.hp, 2 + 3 * 2);
+  assert.equal(before - e.hp, 3 + 4 * 2);
   before = e.hp; c.playCard(0, e.uid);
-  assert.equal(before - e.hp, 7);
+  assert.equal(before - e.hp, 8);
   before = e.hp; c.playCard(0, e.uid);
-  assert.equal(before - e.hp, 7 + 4);
+  assert.equal(before - e.hp, 8 + 5);
 });
 
 test('Vendetta double le poison, les sorts de sang coûtent des PV', () => {
@@ -118,9 +118,9 @@ test('au moins 50 nouvelles cartes jouables, des pouvoirs et des armes neutres d
 test('enchaînement : bonus seulement après une attaque', () => {
   const c = combatWith('iop', ['iop_enchainement', 'iop_coup_epee', 'iop_enchainement']);
   const e = c.enemies[0];
-  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 6);
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 8);
   c.playCard(0, e.uid);
-  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 11);
+  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 15);
 });
 
 test('coup de grâce : PA et pioche seulement si la cible meurt', () => {
@@ -141,7 +141,7 @@ test('explosion de rage : consomme la puissance', () => {
   c.player.status.puissance = 3;
   const e = c.enemies[0], before = e.hp;
   c.playCard(0, e.uid);
-  assert.equal(before - e.hp, 8 + 6 * 3 + 3);
+  assert.equal(before - e.hp, 10 + 8 * 3 + 3);
   assert.equal(c.player.status.puissance ?? 0, 0);
 });
 
@@ -149,7 +149,7 @@ test("frappe écrasante ignore l'armure ; charge blindée frappe de son armure",
   const c = combatWith('iop', ['iop_frappe_ecrasante', 'iop_charge_blindee']);
   const e = c.enemies[0];
   e.block = 20;
-  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 12); assert.equal(e.block, 20);
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 14); assert.equal(e.block, 20);
   e.block = 0; c.player.block = 9;
   before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 9);
 });
@@ -179,7 +179,7 @@ test('furie écarlate : puissance et perte de PV à chaque tour', () => {
   const hp = c.player.hp;
   c.enemies[0].status.etourdi = 1;
   c.endTurn();
-  assert.equal(c.player.status.puissance, 1);
+  assert.equal(c.player.status.puissance, 2);
   assert.equal(c.player.hp, hp - 2);
 });
 
@@ -192,7 +192,7 @@ test('Crâ : carquois crée des flèches, tir chargé consomme la Visée', () =>
   assert.equal(c.aim, 2);
   const e = c.enemies[0], before = e.hp;
   c.playCard(c.hand.findIndex((i) => i.id === 'cra_tir_charge'), e.uid);
-  assert.equal(before - e.hp, 4 + 6 * 2);
+  assert.equal(before - e.hp, 6 + 8 * 2);
   assert.equal(c.aim, 0);
   assert.equal(c.exhaustPile.length, 2);
 });
@@ -216,9 +216,9 @@ test('poison : propagation et détonation', () => {
 test("tir d'exécution : bonus sur une cible blessée", () => {
   const c = combatWith('cra', ['cra_tir_execution', 'cra_tir_execution']);
   const e = c.enemies[0];
-  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 7);
+  let before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 8);
   e.hp = 200;
-  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 14);
+  before = e.hp; c.playCard(0, e.uid); assert.equal(before - e.hp, 16);
 });
 
 test('les cartes créées ne sont jamais proposées en récompense', () => {

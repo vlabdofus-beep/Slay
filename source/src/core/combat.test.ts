@@ -25,12 +25,12 @@ test('calcDamage : puissance, faiblesse, vulnérabilité, faiblesse/résistance 
 });
 
 test('une faiblesse élémentaire s\'applique sur chaque coup d\'une attaque multi-coups', () => {
-  const c = setup(['tofu'], ['iop_zenith']); // 6 air x2, Tofu faible à l'air
+  const c = setup(['tofu'], ['iop_zenith']); // 7 air x2, Tofu faible à l'air
   c.enemies[0].hp = 999;
   c.enemies[0].status = {}; // sans son esquive d'Agilité
   const before = c.enemies[0].hp;
   c.playCard(0);
-  assert.equal(before - c.enemies[0].hp, 18); // floor(6*1.5)=9, deux fois
+  assert.equal(before - c.enemies[0].hp, 20); // floor(7*1.5)=10, deux fois
 });
 
 test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () => {
@@ -38,8 +38,8 @@ test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () =
   const e = c.enemies[0];
   e.block = 3;
   const before = e.hp;
-  c.playCard(0); // 3 feu x1.5 = 4 ; 3 absorbés ; 1 PV perdu ; brûlure 2
-  assert.equal(before - e.hp, 1);
+  c.playCard(0); // 5 feu x1.5 = 7 ; 3 absorbés ; 4 PV perdus ; brûlure 2
+  assert.equal(before - e.hp, 4);
   assert.equal(e.status.brulure, 2);
   c.hand = [];
   c.endTurn();
@@ -49,8 +49,8 @@ test('l\'armure absorbe avant les PV ; la brûlure se fait aussi absorber', () =
 test('le drain rend les PV réellement retirés', () => {
   const c = setup(['prespic'], ['cra_fleche_devorante'], 50);
   c.enemies[0].block = 0;
-  c.playCard(0); // drain 6 feu, Prespic neutre au feu => 6 PV perdus, 6 rendus ; ses épines renvoient 1
-  assert.equal(c.player.hp, 55);
+  c.playCard(0); // drain 7 feu, Prespic neutre au feu => 7 PV perdus, 7 rendus ; ses épines renvoient 1
+  assert.equal(c.player.hp, 56);
 });
 
 test('une attaque de zone et un statut de zone touchent tous les ennemis', () => {

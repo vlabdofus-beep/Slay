@@ -128,3 +128,7 @@ Pour l'instant tout est visible. `known()` dans `bestiary.ts` est l'endroit où 
 - **Netteté** : les personnages ne sont plus des planches cuites à petite taille puis agrandies. Chaque image est rendue en WebGL à la taille réelle d'affichage (densité d'écran comprise), une seule fois, puis réutilisée. Les animations de base se préparent en tâche de fond au début du combat ; celles des sorts au premier lancer.
 - **Couleurs** : 5 pastilles sur l'écran titre (peau, cheveux, trois couleurs de tenue), par classe et par sexe, gardées dans le navigateur. Bouton pour revenir aux couleurs d'origine.
 - **Coiffe et cape** : l'objet équipé change l'apparence en combat (42 des 44 coiffes et capes ont leur vraie apparence Dofus, reprise de Dofus Survivors via `tools/import-survivors-assets.mjs` → `src/data/skins.json` et `public/game/anims/accp*.js`).
+
+## Visuels des Dofus (31/10/2026)
+
+Les 18 Dofus utilisent leur icône officielle de Dofus 3 : identifiants d'image relevés dans les données du client (`items.json` et `fr.json` publiés par dofusdude/dofus3-main, objets de type 23), servis par DofusDB comme les autres objets. Les anciennes répliques recolorées ne servent plus que de repli si DofusDB ne répond pas.

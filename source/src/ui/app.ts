@@ -11,8 +11,7 @@ import { DOFUS } from '../data/dofus.ts';
 import { ITEMS } from '../data/items.ts';
 import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
 import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
-import { EGG_BY_ID } from '../data/eggs.ts';
-import { eggArt, loadEggArt } from './eggArt.ts';
+import { EGG_BY_ID, eggImage } from '../data/eggs.ts';
 import { bestiaryAct, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
 import { Run, ZAAP_HEAL } from '../game/run.ts';
 import {
@@ -427,14 +426,13 @@ const actName = (run: Run) => ACTS[run.act - 1].name;
 const KAMAS = (n: number) => `<span class="kamas">${uiIcon('kamas', 'k-ico')}${n}</span>`;
 const eggIcon = (id: string, cls = 'egg-ico') => {
   const local = asset(`dofus/${EGG_BY_ID[id].icon}.webp`);
-  return eggArt[id]
-    ? `<img class="${cls}" src="${eggArt[id]}" alt="" draggable="false" onerror="this.onerror=null;this.src='${local}'">`
-    : `<img class="${cls}" src="${local}" alt="" draggable="false">`;
+  // Icône officielle de Dofus 3 ; l'icône locale ne sert que si DofusDB est injoignable.
+  return `<img class="${cls}" src="${eggImage(EGG_BY_ID[id])}" alt="" draggable="false" onerror="this.onerror=null;this.src='${local}'">`;
 };
 function eggBadges(id: string, o: { live?: (fxi: number) => { used: number; limit: number } | null; flash?: boolean; down?: boolean } = {}): string {
   const egg = EGG_BY_ID[id];
   const stats = statsText(egg.stats ?? {}).map((t) => `<span class="fxstat">${esc(t)}</span>`).join('');
-  return `<span class="fx-badges">${stats}${egg.effects.map((fx, i) => fxBadge(fx, { title: egg.name, icon: eggArt[id] ?? asset(`dofus/${egg.icon}.webp`), live: o.live?.(i), flash: o.flash, down: o.down })).join('')}</span>`;
+  return `<span class="fx-badges">${stats}${egg.effects.map((fx, i) => fxBadge(fx, { title: egg.name, icon: eggImage(egg), live: o.live?.(i), flash: o.flash, down: o.down })).join('')}</span>`;
 }
 function eggText(id: string): string {
   const egg = EGG_BY_ID[id];
@@ -1568,4 +1566,3 @@ document.addEventListener('keydown', (ev) => {
 window.addEventListener('hashchange', render);
 render();
 // Artwork officiel des Dofus : chargé en arrière-plan, l'écran se redessine s'il en affiche.
-void loadEggArt().then((found) => { if (found && root.querySelector('.egg-ico, .egg-big') && !drag) render(); });
