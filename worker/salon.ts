@@ -10,11 +10,11 @@ export const CLASSES = ['iop', 'cra', 'xelor'] as const;
 export type Classe = (typeof CLASSES)[number];
 
 export interface Member { id: string; name: string; classe: Classe; gender: 'm' | 'f' }
-export interface SalonState { code: string; host: string | null; members: Member[]; seed: number | null; count: number; touched: number }
+export interface SalonState { code: string; host: string | null; members: Member[]; seed: number | null; count: number; touched: number; version?: string }
 
 /** Messages du navigateur vers le salon. */
 export type ClientMsg =
-  | { t: 'join'; name?: string }
+  | { t: 'join'; name?: string; v?: string }
   | { t: 'pick'; name?: string; classe?: string; gender?: string }
   | { t: 'start' }
   | { t: 'act'; a: (string | number | null)[] }
@@ -61,14 +61,17 @@ export class Salon {
   async message(code: string, id: string, raw: string): Promise<string | null> {
     let msg: ClientMsg;
     try { msg = JSON.parse(raw); } catch { return null; }
-    if (msg.t === 'join') return this.join(code, id, String(msg.name ?? ''));
+    if (msg.t === 'join') return this.join(code, id, String(msg.name ?? ''), String(msg.v ?? ''));
     await this.handle(id, msg);
     return null;
   }
 
   /** Un navigateur arrive (ou revient). Avant le départ, il prend une place s'il en reste ; après, seuls les joueurs reviennent. */
-  async join(code: string, id: string, name: string): Promise<string | null> {
+  async join(code: string, id: string, name: string, version = ''): Promise<string | null> {
     const s = await this.state(code);
+    // Tout le monde doit jouer la même version du jeu, sinon les parties divergent.
+    if (version && s.version && version !== s.version) return 'Ta version du jeu n\'est pas celle du salon : recharge la page.';
+    if (version && !s.version) s.version = version;
     let m = s.members.find((x) => x.id === id);
     if (!m) {
       if (s.seed !== null) return 'La partie a déjà commencé.';
