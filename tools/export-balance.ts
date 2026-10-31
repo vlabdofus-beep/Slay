@@ -8,11 +8,13 @@ import { CLASS_START_HP, STARTERS } from '../src/data/classStart.ts';
 import { PASSIVE_VALUES } from '../src/core/classes.ts';
 import { HELP, exportBalance, formatBalance, type BalanceFile } from '../src/data/balance.ts';
 import { GODS } from '../src/data/gods.ts';
+import { RELICS } from '../src/data/relics.ts';
+import { EVENTS } from '../src/data/events.ts';
 
 const FILE = new URL('../equilibrage.json', import.meta.url);
 const cards = Object.fromEntries(ALL_CARDS.map((c) => [c.id, c]));
 const monsters = Object.fromEntries(MONSTERS.map((m) => [m.id, m]));
-const fresh = exportBalance({ cards, monsters, classHp: CLASS_START_HP, starters: STARTERS, passives: PASSIVE_VALUES, scale: TIER_SCALE, gods: GODS }, ALL_CARDS, MONSTERS);
+const fresh = exportBalance({ cards, monsters, classHp: CLASS_START_HP, starters: STARTERS, passives: PASSIVE_VALUES, scale: TIER_SCALE, gods: GODS, relics: RELICS, events: EVENTS }, ALL_CARDS, MONSTERS);
 
 let out: BalanceFile = fresh;
 let added = 0;
@@ -30,8 +32,12 @@ if (existsSync(FILE) && !process.argv.includes('--reset')) {
     if (!gods[gid]) { gods[gid] = g; added += Object.keys(g.benedictions).length; continue; }
     for (const [bid, b] of Object.entries(g.benedictions)) if (!(bid in gods[gid].benedictions)) { gods[gid].benedictions[bid] = b; added++; }
   }
+  const relics = (cur.reliques ??= {});
+  for (const [id, r] of Object.entries(fresh.reliques ?? {})) if (!(id in relics)) { relics[id] = r; added++; }
+  const events = (cur.evenements ??= {});
+  for (const [id, e] of Object.entries(fresh.evenements ?? {})) if (!(id in events)) { events[id] = e; added++; }
   cur._aide = HELP;
-  out = { _aide: cur._aide, classes: cur.classes, passifs: cur.passifs, echelle_monstres: cur.echelle_monstres, dieux: cur.dieux, cartes: cur.cartes, monstres: cur.monstres };
+  out = { _aide: cur._aide, classes: cur.classes, passifs: cur.passifs, echelle_monstres: cur.echelle_monstres, dieux: cur.dieux, reliques: cur.reliques, evenements: cur.evenements, cartes: cur.cartes, monstres: cur.monstres };
 }
 writeFileSync(FILE, formatBalance(out) + '\n');
-console.log(`equilibrage.json : ${Object.keys(out.cartes).length} cartes, ${Object.keys(out.monstres).length} monstres${added ? `, ${added} entrées ajoutées` : ''}.`);
+console.log(`equilibrage.json : ${Object.keys(out.cartes).length} cartes, ${Object.keys(out.monstres).length} monstres, ${Object.keys(out.reliques ?? {}).length} reliques, ${Object.keys(out.evenements ?? {}).length} événements${added ? `, ${added} entrées ajoutées` : ''}.`);

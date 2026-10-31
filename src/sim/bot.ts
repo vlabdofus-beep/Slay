@@ -21,6 +21,8 @@ export interface BotOptions {
   noItems?: boolean;
   /** Ignorer les dieux (comparaison avec la version sans bénédictions). */
   noGods?: boolean;
+  /** Accorde cette bénédiction dès le départ (mesure isolée). */
+  forceBoon?: string;
 }
 
 export interface BotResult {
@@ -53,6 +55,7 @@ export function botRun(classe: ClassId, seed: number, o: BotOptions = {}): BotRe
   run.extraEffects = o.extra ?? [];
   run.extraProspection = o.extraProspection ?? 0;
   run.noPassive = !!o.noPassive;
+  if (o.forceBoon) run.grantBoon(o.forceBoon);
   const rng = new Rng(seed * 2654435761);
   const rarities: Record<string, number> = {};
   let hpBeforeBoss: number | null = null;

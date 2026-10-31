@@ -16,9 +16,9 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 ### Équilibrage
 | Tâche | Fichiers | Qui | Statut |
 |---|---|---|---|
-| Mesurer chaque bénédiction au bot (taux de victoire avec / sans), proposer des corrections | `src/sim/`, `docs/BALANCE.md`, `equilibrage.json` | | à faire |
-| Ajouter les reliques au fichier d'équilibrage (même format que les dieux) | `src/data/balance.ts`, `src/data/relics.ts`, `tools/export-balance.ts`, `equilibrage.json` | | à faire |
-| Ajouter les événements au fichier d'équilibrage (prix, gains, chances) | `src/data/balance.ts`, `src/data/events.ts` | | à faire |
+| Mesurer chaque bénédiction au bot (taux de victoire avec / sans), proposer des corrections | `src/sim/`, `docs/BALANCE.md`, `equilibrage.json` | Grok | fait |
+| Ajouter les reliques au fichier d'équilibrage (même format que les dieux) | `src/data/balance.ts`, `src/data/relics.ts`, `tools/export-balance.ts`, `equilibrage.json` | Grok | fait |
+| Ajouter les événements au fichier d'équilibrage (prix, gains, chances) | `src/data/balance.ts`, `src/data/events.ts` | Grok | fait |
 | Réduire l'écart Crâ / Iop (le Crâ passe plus souvent l'acte 2) | `src/data/cards.ts`, `src/data/monsters.ts`, `src/data/bestiary.ts`, `equilibrage.json`, `docs/BALANCE.md` | Grok | en relecture |
 | Parties jouées par des humains : noter difficulté ressentie, cartes trop fortes ou inutiles | `docs/BALANCE.md` | propriétaire | à faire |
 
@@ -55,6 +55,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 31/10/2026 : Grok — 72 bénédictions mesurées (200 runs par classe). Bouclier Féca 18 → 6, Mot de régénération 2 → 1, Horloge pioche 2 → 1. Reliques et événements ajoutés à equilibrage.json. Trois phrases corrigées (Bracelet du Minotoboule, gué des Crocodailles, Shushu).
 - 31/10/2026 : Grok — zones du Crâ −2 dégâts (10 cartes). 600 runs : Iop 37/9/3, Crâ 35/12/2, étages 14,53 contre 14,58. L'écart de boss 2 passe de 7 à 3 points. Visée à 6, PV du Crâ et échelle de l'acte 2 mesurés et écartés.
 - 31/10/2026 : Grok — écart Crâ / Iop mesuré (37/8/3 contre 35/16/5). Visée à 6 écartée (trop dur pour l'acte 1). Poison de zone du Crâ baissé, trois zones du Iop relevées, huit monstres ramenés vers la médiane de leur salle.
 - 31/10/2026 : dépôt réorganisé (sources à la racine, build par Cloudflare), AGENTS.md et feuille de route créés.

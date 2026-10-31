@@ -61,3 +61,31 @@ test('dieux : le fichier règle les bénédictions ; aller-retour sans perte ; e
   }
   assert.equal(GODS.find((g) => g.id === 'feca')!.title, 'déesse de la Protection');
 });
+
+test('reliques et événements : le fichier fait foi ; aller-retour ; erreur signalée', async () => {
+  const { RELICS, RELIC_BY_ID } = await import('../data/relics.ts');
+  const { EVENTS } = await import('../data/events.ts');
+  const { exportRelics, exportEvents } = await import('../data/balance.ts');
+  assert.deepEqual(JSON.parse(JSON.stringify(exportRelics(RELICS))), file().reliques);
+  assert.deepEqual(JSON.parse(JSON.stringify(exportEvents(EVENTS))), file().evenements);
+  const b = file();
+  const rushu = structuredClone(RELIC_BY_ID.anneau_rushu.effects);
+  const fontaine = structuredClone(EVENTS.find((e) => e.id === 'a1_fontaine')!.options[0].ops);
+  b.reliques.larme_ogrest.stats.pv = 20;
+  b.reliques.anneau_rushu.effets = [{ regle: 'regle_inconnue' }];
+  b.evenements.a1_colporteur.choix[0].operations[0].n = -55;
+  b.evenements.a1_fontaine.choix[0].operations = [{ op: 'pas_une_operation' }];
+  const w = applyBalance(b, BALANCE_TARGETS);
+  try {
+    assert.equal(RELIC_BY_ID.larme_ogrest.stats!.pv, 20);
+    assert.deepEqual(RELIC_BY_ID.anneau_rushu.effects, rushu, 'règle inconnue : ancienne valeur gardée');
+    const colp = EVENTS.find((e) => e.id === 'a1_colporteur')!.options[0].ops[0];
+    assert.equal(colp.op === 'kamas' && colp.n, -55);
+    assert.deepEqual(EVENTS.find((e) => e.id === 'a1_fontaine')!.options[0].ops, fontaine);
+    assert.ok(w.some((x) => x.includes('anneau_rushu') && x.includes('regle_inconnue')));
+    assert.ok(w.some((x) => x.includes('a1_fontaine') && x.includes('operations invalides')));
+  } finally {
+    applyBalance(file(), BALANCE_TARGETS);
+  }
+  assert.equal(RELIC_BY_ID.larme_ogrest.stats!.pv, 12);
+});

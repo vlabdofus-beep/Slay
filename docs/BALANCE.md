@@ -305,4 +305,20 @@ Après cette baisse (Visée toujours à 5, même échelle de monstres), 600 runs
 
 Le poison, la brûlure et l'armure de ces cartes ne changent pas. L'amélioration reste au moins +30 % ou +2.
 
+## Bénédictions une par une (31/10/2026)
+
+`node src/sim/boons.ts 200` : 200 runs Iop et 200 runs Crâ par bénédiction, mêmes graines, sans autre dieu. Référence sans bénédiction : étage moyen 11,36, boss 1 / 2 / 3 battus 22 % / 5 % / 1 %. L'écart se lit en étages (0 à 39). Le bot choisit ses cartes au hasard : les bénédictions de cartes (Tirage chanceux, Carquois sans fond) restent dans le bruit (±0,6 étage). On n'y touche pas.
+
+Trois valeurs numériques sortaient du peloton (les autres fortes sont entre +3 et +4 étages) :
+
+| Bénédiction | Avant | Après | Mesure après (200 × 2) |
+|---|---|---|---|
+| Bouclier Féca | 18 bouclier en début de combat (+10,4 étages) | 6 | +5,0 étages, boss 1 à 45 % |
+| Mot de régénération | 2 soins par tour (+6,5) | 1 | +3,2 étages, boss 1 à 38 % |
+| Horloge | +1 PA et pioche 2 au premier tour (+4,8) | +1 PA et pioche 1 | +3,7 étages, boss 1 à 38 % |
+
+Règles trop fortes, laissées telles quelles parce qu'elles sont aussi des effets d'objets ou de Dofus : Bond `premier_double` (+10,8), Sang bouillant `sang` (+10,1), Frappe de Xélor `premiere_gratuite` (+7,2). Juste en dessous, assumées : Neuf vies (+5,5, une résurrection), Invisibilité (+5,0, une esquive).
+
+Les 18 reliques et les 45 événements sont dans `equilibrage.json` (sections `reliques` et `evenements`), même forme que les bénédictions pour les effets, et `operations` pour les prix, gains et chances. Les textes des événements restent dans le code.
+
 

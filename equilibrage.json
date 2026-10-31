@@ -17,6 +17,8 @@
     "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat, recharge = une fois puis rien pendant ce nombre de tours), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
     "dieux — avantages : kamas (0.35 = +35 % après chaque combat), remise_marchand (0.25 = −25 %), cartes_en_plus (aux récompenses), resurrection (nombre), soin_zaap (0.2 = +20 % de PV au Zaap).",
     "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type (+ protection: true = seulement celles qui donnent de l'armure ou du bouclier), pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
+    "reliques : les 18 reliques d'événement. Même forme qu'une bénédiction (nom, effets, stats, avantages, immediat). Pas d'emplacement d'équipement.",
+    "evenements : un événement, puis ses choix dans l'ordre. operations = effets immédiats (prix, gains, chances), même forme que immediat. suite.choix = la scène suivante. Les textes restent dans le code.",
     "Déclencheurs : carte_terre, premiere_terre, deuxieme_terre, ouverture_terre, acheve_terre, carte_feu, premiere_feu, deuxieme_feu, ouverture_feu, acheve_feu, carte_eau, premiere_eau, deuxieme_eau, ouverture_eau, acheve_eau, carte_air, premiere_air, deuxieme_air, ouverture_air, acheve_air, debut_tour, debut_combat, premier_tour, tous_3_tours, tous_4_tours, pv_bas, fin_pa, fin_armure, fin_main, ennemi_meurt, pv_perdus, armure_gagnee, toutes_3_cartes, attaque, competence, gratuite, chere, premiere_carte, dernier_pa, trois_elements, zone, cible_brule, cible_empoisonnee, cible_vulnerable, victoire, victoire_intacte.",
     "Récompenses : puissance, armure, bouclier, soin, pioche, pa, reduction, esquive, renvoi, brulure, poison, vulnerabilite, faiblesse, erosion, etourdi, brulure_zone, poison_zone, degats, degats_zone, perte_pv, visee, prospection, prospection_run.",
     "Règles : brulure_tenace, poison_tenace, premiere_gratuite, eau_vampire, armure_persistante, pa_plus, main_gardee, contagion, ricochet, puissance_armure, air_perce, vulne_forte, brule_empoisonne, etourdi_fragile, renvoi_moitie, triple_element, soin_bouclier, double_premier, faiblesse_forte, prospecteur, armure_offensive, braises, ivoire, pioche_plus, resurrection, ocre, cauchemar, critique, sablier, retenue, sang, poison_affaiblit, premier_double, pioche_vide, brulure_double, epines_armure, colosse."
@@ -84,7 +86,7 @@
       "titre": "déesse des Soins",
       "phrase": "Les mots soignent, mon enfant. Écoute bien les miens.",
       "benedictions": {
-        "eni_mot": {"nom": "Mot de régénération", "effets": [{"declencheur": "debut_tour", "recompense": "soin", "quantite": 2}]},
+        "eni_mot": {"nom": "Mot de régénération", "effets": [{"declencheur": "debut_tour", "recompense": "soin", "quantite": 1}]},
         "eni_vampire": {"nom": "Mot vampirique", "effets": [{"regle": "eau_vampire"}]},
         "eni_reconstituant": {"nom": "Mot reconstituant", "effets": [{"regle": "soin_bouclier"}], "stats": {"pv": 6}},
         "eni_source": {"nom": "Source de vie", "immediat": [{"op": "maxHp", "n": 18}]},
@@ -161,7 +163,7 @@
           "nom": "Horloge",
           "effets": [
             {"declencheur": "premier_tour", "recompense": "pa", "quantite": 1},
-            {"declencheur": "premier_tour", "recompense": "pioche", "quantite": 2}
+            {"declencheur": "premier_tour", "recompense": "pioche", "quantite": 1}
           ]
         },
         "xel_frappe": {"nom": "Frappe de Xélor", "effets": [{"regle": "premiere_gratuite"}]},
@@ -192,7 +194,7 @@
         "fec_glyphe": {"nom": "Glyphe de garde", "effets": [{"regle": "armure_persistante"}]},
         "fec_bouclier": {
           "nom": "Bouclier Féca",
-          "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 18}]
+          "effets": [{"declencheur": "debut_combat", "recompense": "bouclier", "quantite": 6}]
         },
         "fec_epines": {"nom": "Armure d'épines", "effets": [{"regle": "epines_armure"}]},
         "fec_armure": {"nom": "Armure terrestre", "stats": {"armure": 2}},
@@ -244,6 +246,716 @@
         "pan_flamme": {"nom": "Flamme du bambou", "stats": {"degats": {"feu": 2}}},
         "pan_vapeurs": {"nom": "Vapeurs", "effets": [{"declencheur": "zone", "recompense": "vulnerabilite", "quantite": 1}]}
       }
+    }
+  },
+  "reliques": {
+    "larme_ogrest": {
+      "nom": "Larme d'Ogrest",
+      "effets": [{"declencheur": "debut_tour", "recompense": "soin", "quantite": 1}],
+      "stats": {"pv": 12}
+    },
+    "marteau_moon": {
+      "nom": "Marteau de Moon",
+      "effets": [{"declencheur": "toutes_3_cartes", "recompense": "degats_zone", "quantite": 6}]
+    },
+    "bourse_kerubim": {"nom": "Bourse de Kerubim", "avantages": {"kamas": 0.5}},
+    "sablier_fele": {"nom": "Sablier miniature cassé", "effets": [{"declencheur": "premier_tour", "recompense": "pa", "quantite": 2}]},
+    "dofus_cawotte": {
+      "nom": "Dofus Cawotte",
+      "effets": [{"declencheur": "victoire", "recompense": "soin", "quantite": 4}],
+      "immediat": [{"op": "maxHp", "n": 10}]
+    },
+    "corne_minotoboule": {
+      "nom": "Bracelet du Minotoboule",
+      "effets": [{"declencheur": "chere", "recompense": "puissance", "quantite": 1, "par_tour": 1}]
+    },
+    "gelano": {"nom": "Gelano", "stats": {"prospection": 60}},
+    "plume_tofu": {
+      "nom": "Plume de Tofu Royal",
+      "effets": [{"declencheur": "debut_combat", "recompense": "esquive", "quantite": 2}]
+    },
+    "griffe_kitsou": {"nom": "Amulette du Kitsou", "effets": [{"declencheur": "attaque", "recompense": "degats", "quantite": 2}]},
+    "ecaille_dragoeuf": {"nom": "Coquille de Dragoeuf", "stats": {"armure": 3}},
+    "anneau_rushu": {"nom": "Shushu de Rushu", "effets": [{"regle": "braises"}]},
+    "tablette_allister": {"nom": "Document d'Allister", "avantages": {"cartes_en_plus": 1}},
+    "parchemin_sagesse": {"nom": "Parchemin doré", "immediat": [{"op": "upgrade", "n": 4}]},
+    "fiole_resurrection": {"nom": "Potion de résurrection", "avantages": {"resurrection": 1}},
+    "masque_kralamoure": {"nom": "Kralamoure Unique", "effets": [{"declencheur": "competence", "recompense": "armure", "quantite": 3}]},
+    "cle_marchand": {"nom": "Clef de la Cour", "avantages": {"remise_marchand": 0.3}},
+    "oeuf_dragodinde": {"nom": "Œuf de Dragoeuf", "avantages": {"soin_zaap": 0.2}, "immediat": [{"op": "healPct", "pct": 0.5}]},
+    "sceau_ombre": {"nom": "Sceau des Zewouan", "effets": [{"declencheur": "ennemi_meurt", "recompense": "pa", "quantite": 1}]}
+  },
+  "evenements": {
+    "a1_fontaine": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.65,
+              "win": [{"op": "healPct", "pct": 0.35}],
+              "lose": [{"op": "heal", "n": 5}, {"op": "curse", "id": "malediction_doute"}],
+              "winText": "L'eau est fraîche et douce. Tes plaies se referment.",
+              "loseText": "L'eau a un goût de vase. Une angoisse sourde te prend, et ne te lâche plus."
+            }
+          ]
+        },
+        {"operations": [{"op": "kamas", "n": -40}, {"op": "pick", "what": "upgrade", "n": 1}]},
+        {
+          "operations": [
+            {"op": "kamas", "n": 55},
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [],
+              "lose": [{"op": "fight", "tier": "normal", "then": []}],
+              "winText": "Personne ne t'a vu.",
+              "loseText": "Le clapotis attire les monstres du coin. Ils n'aiment pas les voleurs."
+            }
+          ]
+        }
+      ]
+    },
+    "a1_bouftou": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "kamas", "n": 60}, {"op": "heal", "n": 10}],
+              "lose": [{"op": "fight", "tier": "normal", "then": []}],
+              "winText": "Le berger t'accueille comme un héros et te glisse une bourse bien remplie.",
+              "loseText": "Le troupeau te trouve avant le berger. Et il croit que tu voles le petit."
+            }
+          ]
+        },
+        {"operations": [{"op": "cardChoice", "rarity": "rare"}, {"op": "curse", "id": "malediction_honte"}]},
+        {"operations": []}
+      ]
+    },
+    "a1_champignons": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "maxHp", "n": 6}],
+              "lose": [{"op": "loseHp", "n": 8}],
+              "winText": "Une chaleur agréable t'envahit. Tu te sens plus solide.",
+              "loseText": "Ton ventre se tord. Mauvais champignon, très mauvais."
+            }
+          ]
+        },
+        {
+          "operations": [],
+          "suite": {
+            "choix": [
+              {
+                "operations": [
+                  {
+                    "op": "chance",
+                    "p": 0.6,
+                    "win": [{"op": "maxHp", "n": 4}, {"op": "heal", "n": 15}],
+                    "lose": [{"op": "fight", "tier": "normal", "then": []}],
+                    "winText": "Ils t'acclament et t'offrent un festin de spores.",
+                    "loseText": "Tu danses comme un Iop. Ils le prennent très mal."
+                  }
+                ]
+              },
+              {"operations": [{"op": "prosp", "n": 20}]}
+            ]
+          }
+        },
+        {"operations": []}
+      ]
+    },
+    "a1_forge": {
+      "choix": [
+        {"operations": [{"op": "kamas", "n": -75}, {"op": "pick", "what": "upgrade", "n": 2}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.4,
+              "win": [{"op": "pick", "what": "upgrade", "n": 2}],
+              "lose": [{"op": "loseHp", "n": 10}],
+              "winText": "Il rit, vaincu, et retravaille deux de tes sorts pour rien.",
+              "loseText": "Il te plie le bras en deux secondes. Ça craque."
+            }
+          ]
+        },
+        {"operations": [{"op": "upgrade", "n": 1}]}
+      ]
+    },
+    "a1_nid_tofu": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "relic", "id": "plume_tofu"}]}]},
+        {
+          "operations": [
+            {"op": "heal", "n": 12},
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [],
+              "lose": [{"op": "curse", "id": "malediction_honte"}],
+              "winText": "Un bon repas, et personne n'en saura rien.",
+              "loseText": "La mère te regarde manger. Longtemps."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a1_milice": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "kamas", "n": 80}]}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "healPct", "pct": 0.2}, {"op": "kamas", "n": 30}],
+              "lose": [{"op": "loseHp", "n": 6}],
+              "winText": "Une journée tranquille à l'infirmerie, un peu payée.",
+              "loseText": "On te met à l'entraînement des recrues. Comme mannequin."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a1_autel": {
+      "choix": [
+        {"operations": [{"op": "loseHp", "n": 12}, {"op": "relic"}]},
+        {
+          "operations": [{"op": "relic"}, {"op": "curse", "id": "malediction_honte"}, {"op": "curse", "id": "malediction_doute"}]
+        },
+        {"operations": [{"op": "pick", "what": "remove", "n": 1}]}
+      ]
+    },
+    "a1_colporteur": {
+      "choix": [
+        {
+          "operations": [
+            {"op": "kamas", "n": -50},
+            {
+              "op": "chance",
+              "p": 0.6,
+              "win": [{"op": "itemChoice", "rarity": "rare"}],
+              "lose": [{"op": "curse", "id": "malediction_fardeau"}],
+              "winText": "Dedans, un vrai trésor.",
+              "loseText": "Dedans, une pierre. Lourde. Qui ne veut plus te lâcher."
+            }
+          ]
+        },
+        {"operations": [{"op": "kamas", "n": -140}, {"op": "relic"}]},
+        {"operations": []}
+      ]
+    },
+    "a1_puits": {
+      "choix": [
+        {
+          "operations": [],
+          "suite": {
+            "choix": [
+              {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "itemChoice", "rarity": "rare"}]}]},
+              {
+                "operations": [
+                  {
+                    "op": "chance",
+                    "p": 0.5,
+                    "win": [{"op": "itemChoice", "rarity": "rare"}],
+                    "lose": [{"op": "fight", "tier": "normal", "then": []}],
+                    "winText": "Tu reviens avec le butin. Personne ne bouge.",
+                    "loseText": "Une Larve ouvre un œil. Puis toutes."
+                  }
+                ]
+              },
+              {"operations": []}
+            ]
+          }
+        },
+        {
+          "operations": [
+            {"op": "kamas", "n": -10},
+            {
+              "op": "chance",
+              "p": 0.3,
+              "win": [{"op": "relic"}],
+              "lose": [],
+              "winText": "Un éclat remonte du puits et tombe dans ta main.",
+              "loseText": "Plouf. Rien."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a1_fermier": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "kamas", "n": 70}]}]},
+        {"operations": [{"op": "heal", "n": 15}, {"op": "curse", "id": "malediction_honte"}]},
+        {"operations": []}
+      ]
+    },
+    "a1_fete": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "maxHp", "n": 5}, {"op": "kamas", "n": 40}],
+              "lose": [{"op": "loseHp", "n": 6}, {"op": "kamas", "n": -20}],
+              "winText": "Le Pandawa tombe le premier. La cagnotte est à toi.",
+              "loseText": "Tu te réveilles sous une table, la bourse plus légère."
+            }
+          ]
+        },
+        {"operations": [{"op": "heal", "n": 15}]},
+        {"operations": []}
+      ]
+    },
+    "a1_bibliotheque": {
+      "choix": [
+        {"operations": [{"op": "pick", "what": "upgrade", "n": 1}]},
+        {"operations": [{"op": "pick", "what": "duplicate", "n": 1}]},
+        {"operations": [{"op": "relic", "id": "parchemin_sagesse"}, {"op": "curse", "id": "malediction_fardeau"}]}
+      ]
+    },
+    "a1_pissenlits": {
+      "choix": [
+        {"operations": [{"op": "pick", "what": "transform", "n": 1}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.7,
+              "win": [{"op": "maxHp", "n": 4}],
+              "lose": [{"op": "loseHp", "n": 4}],
+              "winText": "Amère, mais revigorante.",
+              "loseText": "Ce n'étaient pas des pissenlits."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a1_aventurier": {
+      "choix": [
+        {"operations": [{"op": "loseHp", "n": 8}, {"op": "cardChoice", "rarity": "rare"}]},
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "relic"}]}]},
+        {"operations": [{"op": "kamas", "n": 70}, {"op": "curse", "id": "malediction_honte"}]}
+      ]
+    },
+    "a1_toile": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "itemChoice", "rarity": "rare"}]}]},
+        {"operations": [{"op": "loseHp", "n": 5}, {"op": "pick", "what": "remove", "n": 1}]},
+        {"operations": []}
+      ]
+    },
+    "a2_chene": {
+      "choix": [
+        {"operations": [{"op": "upgrade", "n": 2}]},
+        {"operations": [{"op": "fight", "tier": "elite", "then": [{"op": "relic"}]}]},
+        {"operations": []}
+      ]
+    },
+    "a2_sources": {
+      "choix": [
+        {"operations": [{"op": "healPct", "pct": 0.4}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.6,
+              "win": [{"op": "itemChoice", "rarity": "rare"}, {"op": "loseHp", "n": 4}],
+              "lose": [{"op": "loseHp", "n": 12}],
+              "winText": "L'eau brûle, mais tu remontes avec un trésor.",
+              "loseText": "L'eau est bouillante au fond. Tu remontes ébouillanté, les mains vides."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a2_bworks": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "elite", "then": [{"op": "kamas", "n": 120}]}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.55,
+              "win": [{"op": "kamas", "n": 90}],
+              "lose": [{"op": "fight", "tier": "normal", "then": []}],
+              "winText": "Personne ne bouge. Tu repars les poches pleines.",
+              "loseText": "Une branche craque. Le Bwork de garde ouvre un œil."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a2_nid": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "relic", "id": "oeuf_dragodinde"}]}]},
+        {"operations": [{"op": "healPct", "pct": 0.2}]},
+        {"operations": []}
+      ]
+    },
+    "a2_cartomancienne": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "cardChoice", "rarity": "rare"}],
+              "lose": [
+                {
+                  "op": "chance",
+                  "p": 0.5,
+                  "win": [{"op": "kamas", "n": 60}],
+                  "lose": [{"op": "curse", "id": "malediction_doute"}],
+                  "winText": "La Fortune. Elle te tend une bourse en riant.",
+                  "loseText": "La Tour. Elle range ses cartes, sans un mot."
+                }
+              ],
+              "winText": "L'Étoile. « Celle-là, elle t'attendait. »",
+              "loseText": ""
+            }
+          ]
+        },
+        {"operations": [{"op": "kamas", "n": -50}, {"op": "pick", "what": "transform", "n": 2}]},
+        {"operations": []}
+      ]
+    },
+    "a2_ruines": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "relic"}],
+              "lose": [{"op": "loseHp", "n": 6}, {"op": "curse", "id": "malediction_doute"}],
+              "winText": "Derrière une dalle, une relique intacte.",
+              "loseText": "Une dalle s'enfonce. Tu repars blessé, et troublé."
+            }
+          ]
+        },
+        {"operations": [{"op": "pick", "what": "upgrade", "n": 1}]},
+        {"operations": []}
+      ]
+    },
+    "a2_chafer": {
+      "choix": [
+        {"operations": [{"op": "pick", "what": "remove", "n": 1}, {"op": "kamas", "n": 40}]},
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "cardChoice", "rarity": "toute"}]}]},
+        {"operations": []}
+      ]
+    },
+    "a2_wabbits": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "cardChoice", "rarity": "rare"}]}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.6,
+              "win": [{"op": "heal", "n": 15}],
+              "lose": [],
+              "winText": "Un petit Wabbit sort et t'offre une infusion en retour.",
+              "loseText": "La carotte disparaît. Rien d'autre."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a2_gue": {
+      "choix": [
+        {"operations": [{"op": "loseHp", "n": 10}]},
+        {
+          "operations": [
+            {"op": "kamas", "n": -40},
+            {
+              "op": "chance",
+              "p": 0.75,
+              "win": [],
+              "lose": [{"op": "fight", "tier": "normal", "then": []}],
+              "winText": "Une traversée tranquille.",
+              "loseText": "Au milieu de la rivière, le passeur saute à l'eau. La barque est cernée."
+            }
+          ]
+        },
+        {"operations": [{"op": "fight", "tier": "elite", "then": [{"op": "itemChoice", "rarity": "mythique"}]}]}
+      ]
+    },
+    "a2_scarafeuilles": {
+      "choix": [{"operations": [{"op": "prosp", "n": 30}]}, {"operations": [{"op": "kamas", "n": 60}]}, {"operations": []}]
+    },
+    "a2_alchimiste": {
+      "choix": [
+        {"operations": [{"op": "maxHp", "n": 8}, {"op": "curse", "id": "malediction_fardeau"}]},
+        {"operations": [{"op": "pick", "what": "upgrade", "n": 1}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "healPct", "pct": 1}],
+              "lose": [{"op": "loseHp", "n": 10}],
+              "winText": "Un goût de menthe, et toutes tes plaies se ferment.",
+              "loseText": "Un goût de vase, et une migraine terrible."
+            }
+          ]
+        }
+      ]
+    },
+    "a2_lac": {
+      "choix": [
+        {"operations": [{"op": "pick", "what": "duplicate", "n": 1}]},
+        {
+          "operations": [],
+          "suite": {
+            "choix": [
+              {"operations": [{"op": "pick", "what": "remove", "n": 2}]},
+              {"operations": [{"op": "loseHp", "n": 8}, {"op": "maxHp", "n": 4}]},
+              {
+                "operations": [
+                  {
+                    "op": "chance",
+                    "p": 0.5,
+                    "win": [],
+                    "lose": [{"op": "fight", "tier": "normal", "then": []}],
+                    "winText": "Tu tombes en arrière, libre.",
+                    "loseText": "Tu tires si fort que tu le sors de l'eau. Il n'est pas venu seul."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {"operations": []}
+      ]
+    },
+    "a2_bandits": {
+      "choix": [
+        {"operations": [{"op": "kamas", "n": -60}]},
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "kamas", "n": 90}]}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.4,
+              "win": [{"op": "kamas", "n": 30}],
+              "lose": [{"op": "loseHp", "n": 10}],
+              "winText": "Ils rient tellement qu'ils t'offrent une part de leur butin.",
+              "loseText": "Ils n'aiment pas la fin. Les bombes partent."
+            }
+          ]
+        }
+      ]
+    },
+    "a2_tronknyde": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.7,
+              "win": [{"op": "maxHp", "n": 6}],
+              "lose": [{"op": "fight", "tier": "elite", "then": []}],
+              "winText": "Il grogne, se retourne, et se rendort.",
+              "loseText": "Il ouvre un œil. Puis deux."
+            }
+          ]
+        },
+        {"operations": [{"op": "fight", "tier": "elite", "then": [{"op": "relic"}]}]},
+        {"operations": []}
+      ]
+    },
+    "a2_graines": {
+      "choix": [
+        {"operations": [{"op": "pick", "what": "remove", "n": 1}, {"op": "cardChoice", "rarity": "rare"}]},
+        {"operations": [{"op": "kamas", "n": -40}, {"op": "maxHp", "n": 7}]},
+        {"operations": []}
+      ]
+    },
+    "a3_pacte": {
+      "choix": [
+        {"operations": [{"op": "relic"}, {"op": "curse", "id": "malediction_honte"}, {"op": "maxHp", "n": -5}]},
+        {
+          "operations": [],
+          "suite": {
+            "choix": [
+              {"operations": [{"op": "pick", "what": "remove", "n": 1}, {"op": "itemChoice", "rarity": "mythique"}]},
+              {
+                "operations": [
+                  {
+                    "op": "chance",
+                    "p": 0.5,
+                    "win": [],
+                    "lose": [{"op": "fight", "tier": "elite", "then": []}],
+                    "winText": "Elle hausse les épaules et disparaît dans la brume.",
+                    "loseText": "Elle se fâche."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {"operations": []}
+      ]
+    },
+    "a3_milice": {
+      "choix": [
+        {"operations": [{"op": "kamas", "n": -80}]},
+        {"operations": [{"op": "fight", "tier": "elite", "then": [{"op": "itemChoice", "rarity": "mythique"}]}]},
+        {"operations": [{"op": "pick", "what": "remove", "n": 1}, {"op": "loseHp", "n": 4}]}
+      ]
+    },
+    "a3_forge": {
+      "choix": [
+        {"operations": [{"op": "loseHp", "n": 10}, {"op": "upgradeAll", "type": "attaque"}]},
+        {"operations": [{"op": "kamas", "n": -150}, {"op": "relic"}]},
+        {"operations": []}
+      ]
+    },
+    "a3_koalaks": {
+      "choix": [
+        {"operations": [{"op": "healPct", "pct": 0.35}]},
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "kamas", "n": 100}]}]},
+        {"operations": []}
+      ]
+    },
+    "a3_corbeau": {
+      "choix": [
+        {"operations": [{"op": "cardChoice", "rarity": "rare"}]},
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "itemChoice", "rarity": "mythique"}],
+              "lose": [{"op": "loseHp", "n": 8}],
+              "winText": "Il te mène à une cache oubliée.",
+              "loseText": "Il te mène droit dans une embuscade, et disparaît."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a3_sanctuaire": {
+      "choix": [
+        {"operations": [{"op": "pick", "what": "remove", "n": 2}]},
+        {
+          "operations": [{"op": "relic"}, {"op": "curse", "id": "malediction_doute"}, {"op": "curse", "id": "malediction_honte"}]
+        },
+        {"operations": []}
+      ]
+    },
+    "a3_dragon": {
+      "choix": [
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.5,
+              "win": [{"op": "relic"}],
+              "lose": [{"op": "fight", "tier": "elite", "then": []}],
+              "winText": "Il ne se réveille pas. Incroyable.",
+              "loseText": "Il ouvre un œil. Il n'a pas l'air content."
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "op": "chance",
+              "p": 0.8,
+              "win": [{"op": "kamas", "n": 60}],
+              "lose": [{"op": "fight", "tier": "elite", "then": []}],
+              "winText": "Une poignée de kamas, il ne s'en apercevra pas.",
+              "loseText": "Une pièce tombe. Ding."
+            }
+          ]
+        },
+        {"operations": []}
+      ]
+    },
+    "a3_marais": {
+      "choix": [
+        {"operations": [{"op": "loseHp", "n": 10}, {"op": "itemChoice", "rarity": "rare"}]},
+        {"operations": [{"op": "heal", "n": 5}]}
+      ]
+    },
+    "a3_mansot": {
+      "choix": [
+        {"operations": [{"op": "fight", "tier": "normal", "then": [{"op": "maxHp", "n": 8}]}]},
+        {"operations": [{"op": "heal", "n": 10}]},
+        {"operations": []}
+      ]
+    },
+    "a3_taverne": {
+      "choix": [
+        {"operations": [{"op": "kamas", "n": -50}, {"op": "healPct", "pct": 1}]},
+        {
+          "operations": [
+            {"op": "kamas", "n": -60},
+            {
+              "op": "chance",
+              "p": 0.45,
+              "win": [{"op": "kamas", "n": 210}],
+              "lose": [],
+              "winText": "Double six ! Tu rafles la mise.",
+              "loseText": "Les dés ne t'aiment pas ce soir."
+            }
+          ]
+        },
+        {"operations": [{"op": "heal", "n": 15}]}
+      ]
+    },
+    "a3_statue": {
+      "choix": [
+        {"operations": [{"op": "loseHp", "n": 15}, {"op": "relic", "id": "anneau_rushu"}]},
+        {"operations": [{"op": "fight", "tier": "elite", "then": [{"op": "kamas", "n": 150}]}]},
+        {"operations": []}
+      ]
+    },
+    "a3_ermite": {
+      "choix": [
+        {"operations": [{"op": "upgrade", "n": 2}]},
+        {"operations": [{"op": "kamas", "n": -100}, {"op": "pick", "what": "upgrade", "n": 3}]},
+        {"operations": [{"op": "pick", "what": "remove", "n": 1}]}
+      ]
+    },
+    "a3_coffre": {
+      "choix": [
+        {"operations": [{"op": "relic"}, {"op": "curse", "id": "malediction_fardeau"}]},
+        {"operations": [{"op": "itemChoice", "rarity": "rare"}]},
+        {"operations": []}
+      ]
+    },
+    "a3_fontaine": {
+      "choix": [
+        {"operations": [{"op": "maxHp", "n": 10}, {"op": "curse", "id": "malediction_honte"}]},
+        {"operations": [{"op": "pick", "what": "remove", "n": 1}]},
+        {"operations": []}
+      ]
+    },
+    "a3_ombres": {
+      "choix": [
+        {"operations": [{"op": "kamas", "n": -180}, {"op": "relic"}]},
+        {"operations": [{"op": "kamas", "n": -110}, {"op": "itemChoice", "rarity": "mythique"}]},
+        {"operations": []}
+      ]
     }
   },
   "cartes": {
