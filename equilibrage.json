@@ -65,12 +65,12 @@
       "cout": 1,
       "rarete": "base",
       "effets": [
-        {"type": "damage", "amount": 6, "element": "terre"},
+        {"type": "damage", "amount": 8, "element": "terre"},
         {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
       ],
       "amelioration": {
         "effets": [
-          {"type": "damage", "amount": 8, "element": "terre"},
+          {"type": "damage", "amount": 10, "element": "terre"},
           {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
         ]
       }
@@ -90,8 +90,8 @@
       "type": "attaque",
       "cout": 1,
       "rarete": "commune",
-      "effets": [{"type": "damage", "amount": 9, "element": "terre"}],
-      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "terre"}]}
+      "effets": [{"type": "damage", "amount": 10, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 13, "element": "terre"}]}
     },
     "iop_epee_de_iop": {
       "nom": "Épée de Iop",
