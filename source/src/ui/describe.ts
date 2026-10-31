@@ -2,6 +2,7 @@
 import type { Combat, Enemy } from '../core/combat.ts';
 import type { CardDef, CardTarget, CondId, Effect, Element, ScaleId, StatusId, Stats } from '../core/types.ts';
 import { LIBRARY } from '../data/library.ts';
+import { PASSIVE_VALUES } from '../core/classes.ts';
 import { effectText as itemEffectText, ruleText, type ItemEffect, type RuleId } from '../core/effects.ts';
 
 /** Ce qui fait grossir une carte (« +3 par attaque déjà jouée ce tour »). */
@@ -55,7 +56,7 @@ export function liveAmount(c: Combat | null, fx: Effect, _cardElement: Element |
   let d = c.baseAmount(fx, undefined, def?.id) + (c.player.status.puissance ?? 0) + c.player.dom[fx.element];
   if (c.player.status.faiblesse) d *= 0.75;
   d = Math.max(0, Math.floor(d));
-  return def?.type === 'attaque' && c.aimReady() ? d * 2 : d;
+  return def?.type === 'attaque' && c.aimReady() ? d * PASSIVE_VALUES.visee.multiplicateur : d;
 }
 
 function amountHtml(base: number, live: number | null): string {

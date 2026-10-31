@@ -1,7 +1,7 @@
 // Interface du jeu : rendu DOM simple (re-rendu complet à chaque action) + délégation d'événements.
 // Toute la logique est dans src/game/run.ts et src/core ; ce fichier ne fait qu'afficher et relayer.
 import { BASE_ENERGY, resolveCard, type Combat, type Enemy } from '../core/combat.ts';
-import { COURROUX, PASSIVES, VISEE } from '../core/classes.ts';
+import { PASSIVE_VALUES, PASSIVES } from '../core/classes.ts';
 import { EL_NAME, effectText as itemEffectText, partText, perTurn, REWARD_BY_ID, ruleText, TRIGGER_BY_ID, type EffectPart, type ItemEffect } from '../core/effects.ts';
 import { lootChance, prospFactor } from '../core/offers.ts';
 import type { MapNode } from '../core/map.ts';
@@ -9,7 +9,8 @@ import type { CardDef, CardInstance, ClassId, Element, ItemDef, StatusMap } from
 import { ELEMENTS, SLOTS } from '../core/types.ts';
 import { DOFUS, itemIcon } from '../data/dofus.ts';
 import { ITEMS } from '../data/items.ts';
-import { CLASS_START_HP, LIBRARY } from '../data/library.ts';
+import { BALANCE_TARGETS, CLASS_START_HP, LIBRARY, balanceWarnings } from '../data/library.ts';
+import { applyBalance } from '../data/balance.ts';
 import { ACT1_SCALE, ACTS, ENCOUNTERS } from '../data/monsters.ts';
 import { EGG_BY_ID, eggImage } from '../data/eggs.ts';
 import { bestiaryAct, bx, viewBestiary, type BxHelpers } from './bestiary.ts';
@@ -251,6 +252,7 @@ function passiveBadge(classe: ClassId, o: { c?: Combat | null; flash?: boolean; 
   if (!p) return '';
   const c = o.c;
   let live = '', state = '', ready = false;
+  const COURROUX = PASSIVE_VALUES.courroux.attaques, VISEE = PASSIVE_VALUES.visee.attaques;
   if (c && classe === 'iop') {
     const n = Math.min(COURROUX, c.turnAttacks);
     ready = n >= COURROUX;
@@ -1630,6 +1632,18 @@ document.addEventListener('keydown', (ev) => {
     render();
   }
 });
+
+// Fichier d'équilibrage : le jeu relit equilibrage.json au démarrage (une modification faite sur GitHub s'applique
+// sans reconstruire). En cas d'erreur, les valeurs intégrées restent en place et la console dit pourquoi.
+if (balanceWarnings.length) console.warn('equilibrage.json (intégré) :', balanceWarnings);
+void fetch('equilibrage.json', { cache: 'no-cache' })
+  .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+  .then((b) => {
+    const w = applyBalance(b, BALANCE_TARGETS);
+    if (w.length) console.warn('equilibrage.json : valeurs ignorées', w);
+    if (!drag && !ui.busy) render();
+  })
+  .catch((e) => console.warn("equilibrage.json non relu, valeurs intégrées utilisées :", e));
 
 // Accès de débogage / tests automatisés (Playwright).
 (window as unknown as { __game: unknown }).__game = {

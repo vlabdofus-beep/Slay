@@ -8,14 +8,16 @@ export const LIBRARY: Library = {
   monsters: Object.fromEntries(MONSTERS.map((m) => [m.id, m])),
 };
 
-// Cra : 70 → 75 quand il était derrière le Iop, puis retour à 70 avec les vrais sorts (drain, cartes à 0 PA),
-// qui l'ont fait passer devant. Voir docs/BALANCE.md.
-export const CLASS_START_HP: Partial<Record<ClassId, number>> = { iop: 80, cra: 70 };
+export { CLASS_START_HP, STARTERS } from './classStart.ts';
+import { CLASS_START_HP, STARTERS } from './classStart.ts';
+import { applyBalance } from './balance.ts';
+import { PASSIVE_VALUES } from '../core/classes.ts';
+import { TIER_SCALE } from './monsters.ts';
+import BALANCE from '../../equilibrage.json' with { type: 'json' };
 
-const STARTERS: Partial<Record<ClassId, Record<string, number>>> = {
-  iop: { iop_coup_epee: 5, iop_vitalite: 4, iop_pression: 1 },
-  cra: { cra_coup_arc: 5, cra_tir_repli: 4, cra_fleche_glacee: 1 },
-};
+/** Le fichier d'équilibrage (equilibrage.json) fait foi : il s'applique dès le chargement des données. */
+export const BALANCE_TARGETS = { cards: LIBRARY.cards, monsters: LIBRARY.monsters, classHp: CLASS_START_HP, starters: STARTERS, passives: PASSIVE_VALUES, scale: TIER_SCALE };
+export const balanceWarnings = applyBalance(BALANCE, BALANCE_TARGETS);
 
 let uidCounter = 1;
 export function newCard(id: string, upgraded = false): CardInstance {

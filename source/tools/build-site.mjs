@@ -47,10 +47,14 @@ const html = readFileSync(join(root, 'index.html'), 'utf8')
   .replace('/src/ui/style.css', cssName)
   .replace('/src/ui/app.ts', jsName);
 writeFileSync(join(out, 'index.html'), html);
+// Fichier d'équilibrage : servi à la racine, relu par le jeu à chaque démarrage (modifiable directement sur GitHub).
+cpSync(join(root, 'equilibrage.json'), join(out, 'equilibrage.json'));
 writeFileSync(join(out, '_headers'), `# index.html n'est jamais gardé en cache : il pointe toujours vers les derniers fichiers.
 /
   Cache-Control: no-cache
 /index.html
+  Cache-Control: no-cache
+/equilibrage.json
   Cache-Control: no-cache
 `);
 console.log(`Version jouable écrite dans ${out} : ${jsName}, ${cssName}`);

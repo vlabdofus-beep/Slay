@@ -41,3 +41,5 @@ Dofus (15 images/s) sont doublées à la cuisson par interpolation du squelette.
 - `docs/DESIGN.md` : règles du jeu. `docs/BALANCE.md` : repères et résultats d'équilibrage.
 
 Les animations, lieux et effets (`public/game`) ne sont pas recopiés ici : ils viennent de Dofus Survivors via `tools/import-survivors-assets.mjs`.
+
+**Équilibrage** : le fichier à modifier est `equilibrage.json` à la racine du dépôt (pas dans `source/`). Mode d'emploi : `source/docs/EQUILIBRAGE.md`.

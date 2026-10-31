@@ -1,0 +1,3640 @@
+{
+  "_aide": [
+    "Fichier d'équilibrage de Dofus Slay. Modifie les nombres puis enregistre : le jeu en ligne relit ce fichier à chaque démarrage.",
+    "Garde la forme JSON : guillemets doubles, virgules entre les éléments, pas de virgule après le dernier. En cas d'erreur, le jeu garde ses valeurs par défaut et l'écrit dans la console du navigateur.",
+    "classes : PV de départ et deck de départ (identifiant de carte : nombre d'exemplaires). passifs : Courroux du Iop et Visée du Crâ.",
+    "echelle_monstres : multiplicateurs de PV et de dégâts des monstres, par acte (1, 2, 3) et par type de salle (faible, normal, elite, boss).",
+    "cartes : cout en PA, rarete (base, commune, rare), effets de la carte et de sa version améliorée (amelioration).",
+    "monstres : pv [minimum, maximum] avant échelle, resistances en % (négatif = faiblesse, 100 = insensible), mecaniques, actions et rythme.",
+    "Effets — damage : dégâts (amount, element : terre, feu, eau, air, neutre ; hits = nombre de coups ; bonus.per / bonus.n = +n par attaques, puissance, armure, ennemis, statuts, main, lancers, visee, epuisees ; pierce = ignore l'armure).",
+    "Effets — drain : dégâts dont les PV retirés soignent. block : armure. heal : soin. draw : pioche. energy : PA. loseHp : PV perdus par le lanceur. charge : Visée du Crâ.",
+    "Effets — status : statut (status : puissance, faiblesse, vulnerabilite, brulure, poison, bouclier, renvoi, erosion, esquive, etourdi ; on : self, target, all_enemies).",
+    "Effets — if : effets (then) joués seulement si la condition (cond) est vraie : cible_morte, cible_blessee, cible_vulnerable, cible_empoisonnee, cible_brule, pv_bas, apres_attaque, apres_competence, premiere_carte, main_vide.",
+    "Effets — grant : pouvoir (déclencheur → récompense, comme les objets). multiply, spread, detonate : poison et statuts. echo : prochaine attaque lancée deux fois. addCard : ajoute des cartes. summon : invocation (monstres).",
+    "Mécaniques de monstres — carapace n, epines n, colere n every (puissance toutes les « every » attaques jouées), rage n every (toutes les « every » cartes), enroulement n, rituel n, spores n, explosion turns dmg, division, voleur n turns, gardien, regeneration n, esquive n, cameleon, sommeil turns block, plafond n, artefact n.",
+    "Rythme — cycle : order = actions jouées dans l'ordre, en boucle. random : weights = poids de chaque action, maxRepeat = répétitions de suite au plus."
+  ],
+  "classes": {
+    "iop": {"pv": 80, "deck_depart": {"iop_coup_epee": 5, "iop_vitalite": 4, "iop_pression": 1}},
+    "cra": {"pv": 70, "deck_depart": {"cra_coup_arc": 5, "cra_tir_repli": 4, "cra_fleche_glacee": 1}}
+  },
+  "passifs": {"courroux": {"attaques": 3, "puissance": 1}, "visee": {"attaques": 5, "multiplicateur": 2}},
+  "echelle_monstres": {
+    "1": {
+      "faible": {"pv": 1.012, "degats": 1.1},
+      "normal": {"pv": 1.056, "degats": 1.1},
+      "elite": {"pv": 0.88, "degats": 1},
+      "boss": {"pv": 1.012, "degats": 1}
+    },
+    "2": {
+      "faible": {"pv": 1.144, "degats": 1.3},
+      "normal": {"pv": 1.144, "degats": 1.15},
+      "elite": {"pv": 0.942, "degats": 1.05},
+      "boss": {"pv": 1.03, "degats": 1}
+    },
+    "3": {
+      "faible": {"pv": 0.774, "degats": 0.95},
+      "normal": {"pv": 0.88, "degats": 1},
+      "elite": {"pv": 1.012, "degats": 1},
+      "boss": {"pv": 1.021, "degats": 1}
+    }
+  },
+  "cartes": {
+    "iop_coup_epee": {
+      "nom": "Coup d'épée",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [{"type": "damage", "amount": 6, "element": "neutre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "neutre"}]}
+    },
+    "iop_vitalite": {
+      "nom": "Vitalité",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [{"type": "block", "amount": 5}],
+      "amelioration": {"effets": [{"type": "block", "amount": 8}]}
+    },
+    "iop_pression": {
+      "nom": "Pression",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "terre"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "terre"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "iop_concentration": {
+      "nom": "Concentration",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 6, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "terre"}]}
+    },
+    "iop_accumulation": {
+      "nom": "Accumulation",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 9, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "terre"}]}
+    },
+    "iop_epee_de_iop": {
+      "nom": "Épée de Iop",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 14, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 20, "element": "terre"}]}
+    },
+    "iop_colere": {
+      "nom": "Colère de Iop",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 3,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 24, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 32, "element": "terre"}]}
+    },
+    "iop_sentence": {
+      "nom": "Sentence",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 5, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 2, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 7, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 3, "on": "target"}
+        ]
+      }
+    },
+    "iop_tempete": {
+      "nom": "Tempête de Puissance",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 9, "element": "feu"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "feu"}]}
+    },
+    "iop_epee_destin": {
+      "nom": "Épée du Destin",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 14, "element": "feu"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 18, "element": "feu"}]}
+    },
+    "iop_epee_destructrice": {
+      "nom": "Épée Destructrice",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 11, "element": "feu"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 15, "element": "feu"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "all_enemies"}
+        ]
+      }
+    },
+    "iop_souffle": {
+      "nom": "Souffle",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 5, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "air"}]}
+    },
+    "iop_epee_divine": {
+      "nom": "Épée Divine",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "air"},
+        {"type": "status", "status": "puissance", "amount": 1, "on": "self"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 9, "element": "air"},
+          {"type": "status", "status": "puissance", "amount": 1, "on": "self"}
+        ]
+      }
+    },
+    "iop_zenith": {
+      "nom": "Zénith",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 7, "element": "air", "hits": 2}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "air", "hits": 2}]}
+    },
+    "iop_epee_celeste": {
+      "nom": "Épée Céleste",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 14, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 20, "element": "air"}]}
+    },
+    "iop_ferveur": {
+      "nom": "Ferveur",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 4, "element": "eau"}, {"type": "block", "amount": 3}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 6, "element": "eau"}, {"type": "block", "amount": 5}]}
+    },
+    "iop_endurance": {
+      "nom": "Endurance",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 6, "element": "eau"}, {"type": "block", "amount": 5}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "eau"}, {"type": "block", "amount": 7}]}
+    },
+    "iop_epee_jugement": {
+      "nom": "Épée du Jugement",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 10, "element": "eau"}, {"type": "block", "amount": 8}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 13, "element": "eau"}, {"type": "block", "amount": 10}]}
+    },
+    "iop_determination": {
+      "nom": "Détermination",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "block", "amount": 4}],
+      "amelioration": {"effets": [{"type": "block", "amount": 7}]}
+    },
+    "iop_puissance": {
+      "nom": "Puissance",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}],
+      "amelioration": {"effets": [{"type": "status", "status": "puissance", "amount": 4, "on": "self"}]}
+    },
+    "iop_bond": {
+      "nom": "Bond",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "all_enemies"}, {"type": "draw", "amount": 1}],
+      "amelioration": {
+        "effets": [{"type": "status", "status": "vulnerabilite", "amount": 3, "on": "all_enemies"}, {"type": "draw", "amount": 1}]
+      }
+    },
+    "iop_intimidation": {
+      "nom": "Intimidation",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 5, "element": "neutre"},
+        {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 7, "element": "neutre"},
+          {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "iop_massacre": {
+      "nom": "Massacre",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 3, "element": "neutre", "bonus": {"per": "attaques", "n": 4}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 4, "element": "neutre", "bonus": {"per": "attaques", "n": 5}}]}
+    },
+    "iop_pugilat": {
+      "nom": "Pugilat",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 3, "element": "terre", "bonus": {"per": "attaques", "n": 2}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 4, "element": "terre", "bonus": {"per": "attaques", "n": 3}}]}
+    },
+    "iop_fureur": {
+      "nom": "Fureur",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 8, "element": "terre", "bonus": {"per": "lancers", "n": 5}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 10, "element": "terre", "bonus": {"per": "lancers", "n": 7}}]}
+    },
+    "iop_couperet": {
+      "nom": "Couperet",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 3, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 4, "on": "target"}
+        ]
+      }
+    },
+    "iop_rassemblement": {
+      "nom": "Rassemblement",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 2, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 3, "on": "all_enemies"}
+        ]
+      }
+    },
+    "iop_tumulte": {
+      "nom": "Tumulte",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 9, "element": "feu", "bonus": {"per": "ennemis", "n": 4}},
+        {"type": "loseHp", "amount": 3}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 12, "element": "feu", "bonus": {"per": "ennemis", "n": 5}},
+          {"type": "loseHp", "amount": 3}
+        ]
+      }
+    },
+    "iop_tannee": {
+      "nom": "Tannée",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "air"},
+        {"type": "status", "status": "faiblesse", "amount": 1, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 9, "element": "air"},
+          {"type": "status", "status": "faiblesse", "amount": 1, "on": "all_enemies"}
+        ]
+      }
+    },
+    "iop_anneau": {
+      "nom": "Anneau Destructeur",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 2}]}
+    },
+    "iop_fracture": {
+      "nom": "Fracture",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 12, "element": "air"},
+        {"type": "status", "status": "erosion", "amount": 2, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 16, "element": "air"},
+          {"type": "status", "status": "erosion", "amount": 3, "on": "all_enemies"}
+        ]
+      }
+    },
+    "iop_deferlement": {
+      "nom": "Déferlement",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 14, "element": "eau", "bonus": {"per": "puissance", "n": 3}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 18, "element": "eau", "bonus": {"per": "puissance", "n": 4}}]}
+    },
+    "iop_menace": {
+      "nom": "Menace",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "eau"},
+        {"type": "status", "status": "bouclier", "amount": 3, "on": "self"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "eau"},
+          {"type": "status", "status": "bouclier", "amount": 4, "on": "self"}
+        ]
+      }
+    },
+    "iop_fendoir": {
+      "nom": "Fendoir",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 13, "element": "eau"},
+        {"type": "block", "amount": 2, "bonus": {"per": "ennemis", "n": 3}}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 18, "element": "eau"},
+          {"type": "block", "amount": 3, "bonus": {"per": "ennemis", "n": 4}}
+        ]
+      }
+    },
+    "iop_fustigation": {
+      "nom": "Fustigation",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "eau"},
+        {"type": "status", "status": "erosion", "amount": 2, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "eau"},
+          {"type": "status", "status": "erosion", "amount": 3, "on": "all_enemies"}
+        ]
+      }
+    },
+    "iop_vindicte": {
+      "nom": "Vindicte",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "status", "status": "erosion", "amount": 3, "on": "target"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "erosion", "amount": 4, "on": "target"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "iop_friction": {
+      "nom": "Friction",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}, {"type": "draw", "amount": 1}],
+      "amelioration": {
+        "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}, {"type": "draw", "amount": 1}]
+      }
+    },
+    "iop_duel": {
+      "nom": "Duel",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "status", "status": "vulnerabilite", "amount": 3, "on": "target"},
+        {"type": "status", "status": "faiblesse", "amount": 3, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "vulnerabilite", "amount": 4, "on": "target"},
+          {"type": "status", "status": "faiblesse", "amount": 4, "on": "target"}
+        ]
+      }
+    },
+    "iop_emprise": {
+      "nom": "Emprise",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "etourdi", "amount": 1, "on": "target"}],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "etourdi", "amount": 1, "on": "target"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+        ]
+      },
+      "epuisee": true
+    },
+    "iop_coup_pour_coup": {
+      "nom": "Coup pour Coup",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "renvoi", "amount": 3, "on": "self"}, {"type": "block", "amount": 3}],
+      "amelioration": {"effets": [{"type": "status", "status": "renvoi", "amount": 4, "on": "self"}, {"type": "block", "amount": 4}]}
+    },
+    "iop_precipitation": {
+      "nom": "Précipitation",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "energy", "amount": 2}, {"type": "loseHp", "amount": 3}],
+      "amelioration": {"effets": [{"type": "energy", "amount": 2}, {"type": "draw", "amount": 1}, {"type": "loseHp", "amount": 3}]},
+      "epuisee": true
+    },
+    "iop_agitation": {
+      "nom": "Agitation",
+      "classe": "iop",
+      "type": "pouvoir",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "attaque", "reward": "armure", "amount": 2}]}]}],
+      "amelioration": {
+        "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "attaque", "reward": "armure", "amount": 3}]}]}]
+      }
+    },
+    "iop_vertu": {
+      "nom": "Vertu",
+      "classe": "iop",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "debut_tour", "reward": "bouclier", "amount": 3}]}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "debut_tour", "reward": "bouclier", "amount": 4}]}]
+          }
+        ]
+      }
+    },
+    "iop_violence": {
+      "nom": "Violence",
+      "classe": "iop",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "pv_perdus", "reward": "puissance", "amount": 1}]}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "pv_perdus", "reward": "puissance", "amount": 1}]}]
+          },
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "premier_tour", "reward": "puissance", "amount": 1}]}]
+          }
+        ]
+      }
+    },
+    "iop_conquete": {
+      "nom": "Conquête",
+      "classe": "iop",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "grant", "fx": [{"kind": "rule", "rule": "renvoi_moitie"}]}],
+      "amelioration": {"cout": 0, "effets": [{"type": "grant", "fx": [{"kind": "rule", "rule": "renvoi_moitie"}]}]}
+    },
+    "cra_coup_arc": {
+      "nom": "Coup d'arc",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [{"type": "damage", "amount": 6, "element": "neutre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "neutre"}]}
+    },
+    "cra_tir_repli": {
+      "nom": "Tir de Repli",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [{"type": "block", "amount": 5}],
+      "amelioration": {"effets": [{"type": "block", "amount": 8}]}
+    },
+    "cra_fleche_glacee": {
+      "nom": "Flèche Glacée",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "base",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "eau"},
+        {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "eau"},
+          {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_cinglante": {
+      "nom": "Flèche Cinglante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 6, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "air"}]}
+    },
+    "cra_fleche_recul": {
+      "nom": "Flèche de Recul",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 9, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "air"}]}
+    },
+    "cra_pluie_fleches": {
+      "nom": "Pluie de Flèches",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 8, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 11, "element": "air"}]}
+    },
+    "cra_fleche_harcelante": {
+      "nom": "Flèche Harcelante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "air"},
+        {"type": "status", "status": "brulure", "amount": 3, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "air"},
+          {"type": "status", "status": "brulure", "amount": 4, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_perforante": {
+      "nom": "Flèche Perforante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 15, "element": "air"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 20, "element": "air"}]}
+    },
+    "cra_fleche_immobilisation": {
+      "nom": "Flèche d'Immobilisation",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 5, "element": "eau"},
+        {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 7, "element": "eau"},
+          {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "cra_oeil_de_taupe": {
+      "nom": "Œil de Taupe",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "drain", "amount": 6, "element": "eau"}],
+      "amelioration": {"effets": [{"type": "drain", "amount": 10, "element": "eau"}]}
+    },
+    "cra_fleche_redemption": {
+      "nom": "Flèche de Rédemption",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "drain", "amount": 11, "element": "eau"}],
+      "amelioration": {"effets": [{"type": "drain", "amount": 15, "element": "eau"}]}
+    },
+    "cra_fleche_detonante": {
+      "nom": "Flèche Détonante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 5, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 2, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 7, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 3, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_devorante": {
+      "nom": "Flèche Dévorante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "drain", "amount": 7, "element": "feu"}],
+      "amelioration": {"effets": [{"type": "drain", "amount": 9, "element": "feu"}]}
+    },
+    "cra_fleche_explosive": {
+      "nom": "Flèche Explosive",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 14, "element": "feu"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 20, "element": "feu"}]}
+    },
+    "cra_fleche_tyrannique": {
+      "nom": "Flèche Tyrannique",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 6, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 9, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 8, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_abolition": {
+      "nom": "Flèche d'Abolition",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "drain", "amount": 5, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "drain", "amount": 8, "element": "terre"}]}
+    },
+    "cra_fleche_vagabonde": {
+      "nom": "Flèche Vagabonde",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 9, "element": "terre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "terre"}]}
+    },
+    "cra_fleche_punitive": {
+      "nom": "Flèche Punitive",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 12, "element": "terre"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 16, "element": "terre"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "cra_carreaux_destructeurs": {
+      "nom": "Carreaux Destructeurs",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 12, "element": "terre"},
+        {"type": "status", "status": "faiblesse", "amount": 1, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 16, "element": "terre"},
+          {"type": "status", "status": "faiblesse", "amount": 2, "on": "all_enemies"}
+        ]
+      }
+    },
+    "cra_tir_percant": {
+      "nom": "Tir Perçant",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}],
+      "amelioration": {"effets": [{"type": "status", "status": "vulnerabilite", "amount": 3, "on": "target"}]}
+    },
+    "cra_sentinelle": {
+      "nom": "Sentinelle",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "draw", "amount": 2}],
+      "amelioration": {"effets": [{"type": "draw", "amount": 3}]},
+      "epuisee": true
+    },
+    "cra_tirs_puissants": {
+      "nom": "Tirs Puissants",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}],
+      "amelioration": {"effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]}
+    },
+    "cra_fleche_evasive": {
+      "nom": "Flèche Évasive",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 5, "element": "eau"}, {"type": "charge", "amount": 1}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "eau"}, {"type": "charge", "amount": 1}]}
+    },
+    "cra_fleche_boomerang": {
+      "nom": "Flèche Boomerang",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 2}]}
+    },
+    "cra_fleche_dispersion": {
+      "nom": "Flèche de Dispersion",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 7, "element": "air"}, {"type": "charge", "amount": 1}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 10, "element": "air"}, {"type": "charge", "amount": 1}]}
+    },
+    "cra_fleche_persecutrice": {
+      "nom": "Flèche Persécutrice",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "drain", "amount": 8, "element": "air"},
+        {"type": "status", "status": "poison", "amount": 6, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "drain", "amount": 11, "element": "air"},
+          {"type": "status", "status": "poison", "amount": 8, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_expiation": {
+      "nom": "Flèche d'Expiation",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 13, "element": "eau"},
+        {"type": "status", "status": "erosion", "amount": 2, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 17, "element": "eau"},
+          {"type": "status", "status": "erosion", "amount": 3, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_ralentissante": {
+      "nom": "Flèche Ralentissante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 10, "element": "eau"},
+        {"type": "status", "status": "poison", "amount": 3, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 14, "element": "eau"},
+          {"type": "status", "status": "poison", "amount": 4, "on": "all_enemies"}
+        ]
+      }
+    },
+    "cra_fleche_paralysante": {
+      "nom": "Flèche Paralysante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 10, "element": "eau"},
+        {"type": "status", "status": "etourdi", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 15, "element": "eau"},
+          {"type": "status", "status": "etourdi", "amount": 1, "on": "target"}
+        ]
+      },
+      "epuisee": true
+    },
+    "cra_fleche_barrage": {
+      "nom": "Flèche de Barrage",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 6, "element": "feu"}, {"type": "block", "amount": 3}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 8, "element": "feu"}, {"type": "block", "amount": 4}]}
+    },
+    "cra_fleche_eclatante": {
+      "nom": "Flèche Éclatante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 2, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 3, "on": "all_enemies"}
+        ]
+      }
+    },
+    "cra_fleche_fulminante": {
+      "nom": "Flèche Fulminante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 10, "element": "feu"},
+        {"type": "status", "status": "brulure", "amount": 3, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 13, "element": "feu"},
+          {"type": "status", "status": "brulure", "amount": 4, "on": "all_enemies"}
+        ]
+      }
+    },
+    "cra_oeil_pour_oeil": {
+      "nom": "Œil pour Œil",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "drain", "amount": 6, "element": "terre"},
+        {"type": "status", "status": "renvoi", "amount": 2, "on": "self"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "drain", "amount": 8, "element": "terre"},
+          {"type": "status", "status": "renvoi", "amount": 3, "on": "self"}
+        ]
+      }
+    },
+    "cra_fleche_massacrante": {
+      "nom": "Flèche Massacrante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 9, "element": "terre", "bonus": {"per": "ennemis", "n": 4}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 12, "element": "terre", "bonus": {"per": "ennemis", "n": 5}}]}
+    },
+    "cra_fleche_assaillante": {
+      "nom": "Flèche Assaillante",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 8, "element": "terre", "bonus": {"per": "statuts", "n": 4}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 10, "element": "terre", "bonus": {"per": "statuts", "n": 5}}]}
+    },
+    "cra_fleche_jugement": {
+      "nom": "Flèche du Jugement",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 10, "element": "terre", "bonus": {"per": "main", "n": 3}}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 13, "element": "terre", "bonus": {"per": "main", "n": 4}}]}
+    },
+    "cra_vendetta": {
+      "nom": "Vendetta",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "multiply", "status": "poison", "factor": 2}],
+      "amelioration": {"effets": [{"type": "multiply", "status": "poison", "factor": 3}]},
+      "epuisee": true
+    },
+    "cra_pas_chasse": {
+      "nom": "Pas Chassé",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "esquive", "amount": 1, "on": "self"}],
+      "amelioration": {"effets": [{"type": "status", "status": "esquive", "amount": 1, "on": "self"}, {"type": "draw", "amount": 1}]},
+      "epuisee": true
+    },
+    "cra_balise_tactique": {
+      "nom": "Balise Tactique",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "charge", "amount": 2}, {"type": "draw", "amount": 1}],
+      "amelioration": {"effets": [{"type": "charge", "amount": 2}, {"type": "draw", "amount": 2}]}
+    },
+    "cra_balise_survie": {
+      "nom": "Balise de Survie",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "status", "status": "bouclier", "amount": 4, "on": "self"}],
+      "amelioration": {"effets": [{"type": "status", "status": "bouclier", "amount": 6, "on": "self"}]}
+    },
+    "cra_fleches_amoureuses": {
+      "nom": "Flèches Amoureuses",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "heal", "amount": 5}],
+      "amelioration": {"effets": [{"type": "heal", "amount": 8}]},
+      "epuisee": true
+    },
+    "cra_tirs_eloignes": {
+      "nom": "Tirs Éloignés",
+      "classe": "cra",
+      "type": "pouvoir",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "debut_tour", "reward": "visee", "amount": 1}]}]}],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [
+              {
+                "kind": "roll",
+                "parts": [
+                  {"trigger": "debut_tour", "reward": "visee", "amount": 1},
+                  {"trigger": "debut_tour", "reward": "armure", "amount": 3}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "cra_acuite_absolue": {
+      "nom": "Acuité Absolue",
+      "classe": "cra",
+      "type": "pouvoir",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [{"kind": "roll", "parts": [{"trigger": "cible_vulnerable", "reward": "pioche", "amount": 1}]}]
+        }
+      ],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "cible_vulnerable", "reward": "pioche", "amount": 1}]}]
+          },
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "debut_combat", "reward": "vulnerabilite", "amount": 2}]}]
+          }
+        ]
+      }
+    },
+    "cra_represailles": {
+      "nom": "Représailles",
+      "classe": "cra",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "pv_perdus", "reward": "poison", "amount": 3}]}]}],
+      "amelioration": {
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "pv_perdus", "reward": "poison", "amount": 4}]}]
+          }
+        ]
+      }
+    },
+    "cra_fleches_enflammees": {
+      "nom": "Flèches Enflammées",
+      "classe": "cra",
+      "type": "pouvoir",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "grant", "fx": [{"kind": "rule", "rule": "brule_empoisonne"}]}],
+      "amelioration": {"cout": 1, "effets": [{"type": "grant", "fx": [{"kind": "rule", "rule": "brule_empoisonne"}]}]}
+    },
+    "arme_dague": {
+      "nom": "Coup de dague",
+      "classe": "neutre",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 3, "element": "neutre", "hits": 2}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 4, "element": "neutre", "hits": 2}]}
+    },
+    "arme_baton": {
+      "nom": "Coup de bâton",
+      "classe": "neutre",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 7, "element": "neutre"}, {"type": "block", "amount": 4}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 10, "element": "neutre"}, {"type": "block", "amount": 6}]}
+    },
+    "arme_pelle": {
+      "nom": "Coup de pelle",
+      "classe": "neutre",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 8, "element": "neutre"}, {"type": "draw", "amount": 1}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 11, "element": "neutre"}, {"type": "draw", "amount": 1}]}
+    },
+    "arme_marteau": {
+      "nom": "Coup de marteau",
+      "classe": "neutre",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 14, "element": "neutre"}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 19, "element": "neutre"}]}
+    },
+    "arme_hache": {
+      "nom": "Coup de hache",
+      "classe": "neutre",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 14, "element": "neutre"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 18, "element": "neutre"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+        ]
+      }
+    },
+    "iop_enchainement": {
+      "nom": "Enchaînement",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 8, "element": "terre"},
+        {"type": "if", "cond": "apres_attaque", "then": [{"type": "damage", "amount": 7, "element": "terre"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 11, "element": "terre"},
+          {"type": "if", "cond": "apres_attaque", "then": [{"type": "damage", "amount": 9, "element": "terre"}]}
+        ]
+      }
+    },
+    "iop_coup_de_grace": {
+      "nom": "Coup de Grâce",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 7, "element": "feu"},
+        {"type": "if", "cond": "cible_morte", "then": [{"type": "energy", "amount": 1}, {"type": "draw", "amount": 1}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "feu"},
+          {"type": "if", "cond": "cible_morte", "then": [{"type": "energy", "amount": 1}, {"type": "draw", "amount": 1}]}
+        ]
+      }
+    },
+    "iop_tourbillon": {
+      "nom": "Tourbillon de Lames",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [{"type": "damage", "amount": 7, "element": "air", "hits": 2}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 9, "element": "air", "hits": 2}]},
+      "conservee": true
+    },
+    "iop_explosion_rage": {
+      "nom": "Explosion de Rage",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 10, "element": "feu", "bonus": {"per": "puissance", "n": 8}},
+        {"type": "spend", "what": "puissance"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 13, "element": "feu", "bonus": {"per": "puissance", "n": 10}},
+          {"type": "spend", "what": "puissance"}
+        ]
+      }
+    },
+    "iop_frappe_ecrasante": {
+      "nom": "Frappe Écrasante",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 14, "element": "terre", "pierce": true}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 19, "element": "terre", "pierce": true}]}
+    },
+    "iop_charge_blindee": {
+      "nom": "Charge Blindée",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 0, "element": "eau", "bonus": {"per": "armure", "n": 1}}],
+      "amelioration": {"cout": 0, "effets": [{"type": "damage", "amount": 0, "element": "eau", "bonus": {"per": "armure", "n": 1}}]}
+    },
+    "iop_tempete_coups": {
+      "nom": "Tempête de Coups",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 3, "element": "air", "hits": 3},
+        {"type": "if", "cond": "cible_vulnerable", "then": [{"type": "damage", "amount": 3, "element": "air", "hits": 2}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 4, "element": "air", "hits": 3},
+          {
+            "type": "if",
+            "cond": "cible_vulnerable",
+            "then": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}]
+          }
+        ]
+      }
+    },
+    "iop_rage_aveugle": {
+      "nom": "Rage Aveugle",
+      "classe": "iop",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "exhaustHand"}, {"type": "damage", "amount": 6, "element": "terre", "bonus": {"per": "epuisees", "n": 4}}],
+      "amelioration": {
+        "effets": [
+          {"type": "exhaustHand"},
+          {"type": "damage", "amount": 8, "element": "terre", "bonus": {"per": "epuisees", "n": 5}}
+        ]
+      }
+    },
+    "iop_vitalite_insolente": {
+      "nom": "Vitalité Insolente",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "block", "amount": 6}, {"type": "if", "cond": "pv_bas", "then": [{"type": "block", "amount": 6}]}],
+      "amelioration": {
+        "effets": [{"type": "block", "amount": 8}, {"type": "if", "cond": "pv_bas", "then": [{"type": "block", "amount": 8}]}]
+      }
+    },
+    "iop_cri_de_guerre": {
+      "nom": "Cri de Guerre",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "status", "status": "faiblesse", "amount": 2, "on": "all_enemies"},
+        {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "status", "status": "faiblesse", "amount": 3, "on": "all_enemies"},
+          {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "all_enemies"}
+        ]
+      },
+      "epuisee": true,
+      "innee": true
+    },
+    "iop_pacte_sang": {
+      "nom": "Pacte de Sang",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "rare",
+      "effets": [{"type": "loseHp", "amount": 6}, {"type": "energy", "amount": 2}, {"type": "draw", "amount": 2}],
+      "amelioration": {"effets": [{"type": "loseHp", "amount": 4}, {"type": "energy", "amount": 2}, {"type": "draw", "amount": 2}]},
+      "epuisee": true
+    },
+    "iop_dedoublement": {
+      "nom": "Dédoublement",
+      "classe": "iop",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "echo", "count": 1}],
+      "amelioration": {"cout": 0, "effets": [{"type": "echo", "count": 1}]},
+      "epuisee": true
+    },
+    "iop_fievre_combat": {
+      "nom": "Fièvre du Combat",
+      "classe": "iop",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "attaque", "reward": "degats", "amount": 2}]}]}],
+      "amelioration": {
+        "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "attaque", "reward": "degats", "amount": 3}]}]}]
+      }
+    },
+    "iop_furie_ecarlate": {
+      "nom": "Furie Écarlate",
+      "classe": "iop",
+      "type": "pouvoir",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {
+          "type": "grant",
+          "fx": [
+            {
+              "kind": "roll",
+              "parts": [
+                {"trigger": "debut_tour", "reward": "puissance", "amount": 2},
+                {"trigger": "debut_tour", "reward": "perte_pv", "amount": 2}
+              ]
+            }
+          ]
+        }
+      ],
+      "amelioration": {
+        "cout": 1,
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [
+              {
+                "kind": "roll",
+                "parts": [
+                  {"trigger": "debut_tour", "reward": "puissance", "amount": 2},
+                  {"trigger": "debut_tour", "reward": "perte_pv", "amount": 2}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "cra_carquois": {
+      "nom": "Carquois Garni",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "addCard", "card": "cra_fleche_improvisee", "count": 2, "pile": "hand"}],
+      "amelioration": {"effets": [{"type": "addCard", "card": "cra_fleche_improvisee", "count": 3, "pile": "hand"}]}
+    },
+    "cra_tir_charge": {
+      "nom": "Tir Chargé",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 6, "element": "air", "bonus": {"per": "visee", "n": 8}},
+        {"type": "spend", "what": "visee"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 8, "element": "air", "bonus": {"per": "visee", "n": 10}},
+          {"type": "spend", "what": "visee"}
+        ]
+      }
+    },
+    "cra_fleche_venimeuse": {
+      "nom": "Flèche Venimeuse",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 4, "element": "air"},
+        {"type": "status", "status": "poison", "amount": 3, "on": "target"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 6, "element": "air"},
+          {"type": "status", "status": "poison", "amount": 4, "on": "target"}
+        ]
+      }
+    },
+    "cra_fleche_contagieuse": {
+      "nom": "Flèche Contagieuse",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 7, "element": "eau"}, {"type": "spread", "status": "poison"}],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "eau"},
+          {"type": "status", "status": "poison", "amount": 2, "on": "target"},
+          {"type": "spread", "status": "poison"}
+        ]
+      }
+    },
+    "cra_fleche_necrotique": {
+      "nom": "Flèche Nécrotique",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "detonate", "status": "poison"}],
+      "amelioration": {"cout": 0, "effets": [{"type": "detonate", "status": "poison"}]},
+      "epuisee": true
+    },
+    "cra_pluie_empoisonnee": {
+      "nom": "Pluie Empoisonnée",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "rare",
+      "effets": [
+        {"type": "damage", "amount": 8, "element": "air"},
+        {"type": "status", "status": "poison", "amount": 4, "on": "all_enemies"}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "air"},
+          {"type": "status", "status": "poison", "amount": 6, "on": "all_enemies"}
+        ]
+      }
+    },
+    "cra_tir_execution": {
+      "nom": "Tir d'Exécution",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [
+        {"type": "damage", "amount": 8, "element": "terre"},
+        {"type": "if", "cond": "cible_blessee", "then": [{"type": "damage", "amount": 8, "element": "terre"}]}
+      ],
+      "amelioration": {
+        "effets": [
+          {"type": "damage", "amount": 10, "element": "terre"},
+          {"type": "if", "cond": "cible_blessee", "then": [{"type": "damage", "amount": 10, "element": "terre"}]}
+        ]
+      }
+    },
+    "cra_volee": {
+      "nom": "Volée de Flèches",
+      "classe": "cra",
+      "type": "attaque",
+      "cout": 2,
+      "rarete": "commune",
+      "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 4}],
+      "amelioration": {"effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 4}]}
+    },
+    "cra_repli_strategique": {
+      "nom": "Repli Stratégique",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "commune",
+      "effets": [{"type": "block", "amount": 7}, {"type": "charge", "amount": 1}],
+      "amelioration": {"effets": [{"type": "block", "amount": 10}, {"type": "charge", "amount": 1}]},
+      "conservee": true
+    },
+    "cra_oeil_lynx": {
+      "nom": "Œil de Lynx",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 0,
+      "rarete": "commune",
+      "effets": [{"type": "draw", "amount": 1}, {"type": "charge", "amount": 1}],
+      "amelioration": {"effets": [{"type": "draw", "amount": 2}, {"type": "charge", "amount": 1}]},
+      "innee": true
+    },
+    "cra_marque_chasseur": {
+      "nom": "Marque du Chasseur",
+      "classe": "cra",
+      "type": "competence",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}, {"type": "charge", "amount": 4}],
+      "amelioration": {
+        "effets": [{"type": "status", "status": "vulnerabilite", "amount": 3, "on": "target"}, {"type": "charge", "amount": 4}]
+      },
+      "epuisee": true
+    },
+    "cra_esprit_faucon": {
+      "nom": "Esprit du Faucon",
+      "classe": "cra",
+      "type": "pouvoir",
+      "cout": 1,
+      "rarete": "rare",
+      "effets": [{"type": "grant", "fx": [{"kind": "roll", "parts": [{"trigger": "competence", "reward": "visee", "amount": 1}]}]}],
+      "amelioration": {
+        "cout": 0,
+        "effets": [
+          {
+            "type": "grant",
+            "fx": [{"kind": "roll", "parts": [{"trigger": "competence", "reward": "visee", "amount": 1}]}]
+          }
+        ]
+      }
+    }
+  },
+  "monstres": {
+    "larve_bleue": {
+      "nom": "Larve Bleue",
+      "pv": [22, 26],
+      "resistances": {"neutre": 5, "terre": 10, "feu": 10, "eau": -5, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 8, "element": "eau"}]},
+        "cocon": {
+          "nom": "Cocon",
+          "effets": [{"type": "block", "amount": 7}, {"type": "status", "status": "puissance", "amount": 1, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["morsure", "cocon"]}
+    },
+    "arakne": {
+      "nom": "Arakne",
+      "pv": [18, 22],
+      "resistances": {"neutre": -5, "terre": 5, "feu": 15, "eau": -10, "air": 15},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 6, "element": "neutre"}]},
+        "toile": {
+          "nom": "Toile",
+          "effets": [
+            {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"},
+            {"type": "addCard", "card": "statut_toile", "count": 1, "pile": "draw"}
+          ]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 70, "toile": 30}, "maxRepeat": 2}
+    },
+    "moskito": {
+      "nom": "Moskito",
+      "pv": [12, 15],
+      "resistances": {"neutre": 0, "terre": 20, "feu": 0, "eau": 10, "air": -10},
+      "mecaniques": [],
+      "actions": {
+        "piqure": {"nom": "Piqûre", "effets": [{"type": "damage", "amount": 2, "element": "air", "hits": 3}]},
+        "aspiration": {"nom": "Aspiration", "effets": [{"type": "drain", "amount": 5, "element": "eau"}]}
+      },
+      "rythme": {"kind": "random", "weights": {"piqure": 60, "aspiration": 40}, "maxRepeat": 2}
+    },
+    "pissenlit": {
+      "nom": "Pissenlit Diabolique",
+      "pv": [30, 34],
+      "resistances": {"neutre": -5, "terre": 20, "feu": -5, "eau": 0, "air": 15},
+      "mecaniques": [],
+      "actions": {
+        "graines": {"nom": "Pluie de graines", "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}]},
+        "enracinement": {
+          "nom": "Enracinement",
+          "effets": [{"type": "block", "amount": 8}, {"type": "status", "status": "puissance", "amount": 2, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["graines", "enracinement", "graines"]}
+    },
+    "champ_champ": {
+      "nom": "Champ Champ",
+      "pv": [26, 30],
+      "resistances": {"neutre": -10, "terre": 0, "feu": -5, "eau": 25, "air": 10},
+      "mecaniques": [{"kind": "spores", "n": 1}],
+      "actions": {
+        "spores": {
+          "nom": "Spores",
+          "effets": [
+            {"type": "damage", "amount": 4, "element": "terre"},
+            {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+          ]
+        },
+        "coup": {"nom": "Coup de chapeau", "effets": [{"type": "damage", "amount": 9, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["spores", "coup"]}
+    },
+    "rose_demoniaque": {
+      "nom": "Rose Démoniaque",
+      "pv": [24, 28],
+      "resistances": {"neutre": 0, "terre": -15, "feu": 35, "eau": -5, "air": 10},
+      "mecaniques": [],
+      "actions": {
+        "epines": {
+          "nom": "Épines",
+          "effets": [
+            {"type": "damage", "amount": 5, "element": "feu"},
+            {"type": "status", "status": "brulure", "amount": 2, "on": "target"}
+          ]
+        },
+        "parfum": {
+          "nom": "Parfum envoûtant",
+          "effets": [{"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}, {"type": "block", "amount": 5}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["epines", "parfum"]}
+    },
+    "bouftou": {
+      "nom": "Bouftou",
+      "pv": [28, 32],
+      "resistances": {"neutre": 5, "terre": 15, "feu": -10, "eau": -5, "air": 20},
+      "mecaniques": [],
+      "actions": {
+        "charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 7, "element": "terre"}]},
+        "beuglement": {
+          "nom": "Beuglement",
+          "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}, {"type": "block", "amount": 5}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["charge", "charge", "beuglement"]}
+    },
+    "boufton_noir": {
+      "nom": "Boufton Noir",
+      "pv": [22, 26],
+      "resistances": {"neutre": 5, "terre": -10, "feu": 15, "eau": 20, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 6, "element": "feu"}]},
+        "belement": {
+          "nom": "Bêlement",
+          "effets": [{"type": "block", "amount": 4}, {"type": "status", "status": "puissance", "amount": 1, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 65, "belement": 35}, "maxRepeat": 2}
+    },
+    "prespic": {
+      "nom": "Prespic",
+      "pv": [32, 36],
+      "resistances": {"neutre": -5, "terre": -10, "feu": -15, "eau": -5, "air": -10},
+      "mecaniques": [{"kind": "epines", "n": 1}],
+      "actions": {
+        "charge": {"nom": "Charge épineuse", "effets": [{"type": "damage", "amount": 10, "element": "terre"}]},
+        "herisse": {"nom": "Hérissement", "effets": [{"type": "block", "amount": 10}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["charge", "herisse"]}
+    },
+    "sanglier": {
+      "nom": "Sanglier",
+      "pv": [34, 38],
+      "resistances": {"neutre": 10, "terre": 20, "feu": -10, "eau": 0, "air": 10},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 11, "element": "terre"}]},
+        "grognement": {"nom": "Grognement", "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["grognement", "charge", "charge"]}
+    },
+    "tofu": {
+      "nom": "Tofu",
+      "pv": [14, 18],
+      "resistances": {"neutre": 9, "terre": -5, "feu": 13, "eau": 13, "air": -5},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {
+        "picorer": {"nom": "Picorer", "effets": [{"type": "damage", "amount": 3, "element": "air", "hits": 2}]},
+        "envol": {"nom": "Envol", "effets": [{"type": "block", "amount": 6}]}
+      },
+      "rythme": {"kind": "random", "weights": {"picorer": 65, "envol": 35}, "maxRepeat": 2}
+    },
+    "chef_guerre_bouftou": {
+      "nom": "Chef de Guerre Bouftou",
+      "pv": [80, 86],
+      "resistances": {"neutre": 15, "terre": 0, "feu": 0, "eau": -5, "air": 15},
+      "mecaniques": [{"kind": "rage", "n": 2, "every": 4}],
+      "actions": {
+        "balayage": {"nom": "Balayage", "effets": [{"type": "damage", "amount": 6, "element": "terre", "hits": 2}]},
+        "cri": {"nom": "Cri de guerre", "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]},
+        "masse": {"nom": "Coup de masse", "effets": [{"type": "damage", "amount": 15, "element": "terre"}]},
+        "renforts": {"nom": "Renforts", "effets": [{"type": "summon", "monster": "boufton_noir"}, {"type": "block", "amount": 6}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["renforts", "balayage", "cri", "masse"]}
+    },
+    "tournesol_affame": {
+      "nom": "Tournesol Affamé",
+      "pv": [74, 80],
+      "resistances": {"neutre": 25, "terre": 25, "feu": 25, "eau": -10, "air": -15},
+      "mecaniques": [{"kind": "regeneration", "n": 2}],
+      "actions": {
+        "graines": {"nom": "Mitraille de graines", "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 3}]},
+        "photosynthese": {"nom": "Photosynthèse", "effets": [{"type": "heal", "amount": 8}, {"type": "block", "amount": 8}]},
+        "petale": {"nom": "Coup de pétale", "effets": [{"type": "damage", "amount": 14, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["graines", "photosynthese", "petale"]}
+    },
+    "bouftou_royal": {
+      "nom": "Bouftou Royal",
+      "pv": [190, 200],
+      "resistances": {"neutre": 35, "terre": 20, "feu": 20, "eau": 25, "air": 5},
+      "mecaniques": [],
+      "actions": {
+        "pietinement": {"nom": "Piétinement", "effets": [{"type": "damage", "amount": 8, "element": "terre", "hits": 2}]},
+        "appel_troupeau": {
+          "nom": "Appel du troupeau",
+          "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}, {"type": "block", "amount": 12}]
+        },
+        "coup_de_tete": {"nom": "Coup de tête", "effets": [{"type": "damage", "amount": 16, "element": "terre"}]},
+        "troupeau": {
+          "nom": "Le troupeau accourt",
+          "effets": [{"type": "summon", "monster": "bouftou"}, {"type": "block", "amount": 10}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["pietinement", "appel_troupeau", "coup_de_tete", "troupeau"]},
+      "phase2": {
+        "seuil": 0.5,
+        "puissance": 2,
+        "nom": "Colère royale",
+        "rythme": {"kind": "cycle", "order": ["troupeau", "pietinement", "coup_de_tete"]}
+      }
+    },
+    "abraknyde": {
+      "nom": "Abraknyde",
+      "pv": [44, 50],
+      "resistances": {"neutre": 20, "terre": 25, "feu": -4, "eau": 25, "air": -4},
+      "mecaniques": [{"kind": "carapace", "n": 2}],
+      "actions": {
+        "branche": {"nom": "Coup de branche", "effets": [{"type": "damage", "amount": 12, "element": "terre"}]},
+        "ecorce": {
+          "nom": "Écorce",
+          "effets": [{"type": "block", "amount": 12}, {"type": "status", "status": "puissance", "amount": 1, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["branche", "branche", "ecorce"]}
+    },
+    "tronknyde": {
+      "nom": "Tronknyde",
+      "pv": [36, 40],
+      "resistances": {"neutre": 17, "terre": 40, "feu": -5, "eau": 50, "air": 50},
+      "mecaniques": [],
+      "actions": {
+        "racines": {
+          "nom": "Racines",
+          "effets": [
+            {"type": "damage", "amount": 6, "element": "terre"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "seve": {"nom": "Sève", "effets": [{"type": "heal", "amount": 8}, {"type": "block", "amount": 4}]}
+      },
+      "rythme": {"kind": "random", "weights": {"racines": 65, "seve": 35}, "maxRepeat": 2}
+    },
+    "arakne_majeure": {
+      "nom": "Arakne Majeure",
+      "pv": [30, 34],
+      "resistances": {"neutre": -10, "terre": -10, "feu": 14, "eau": 14, "air": -10},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 9, "element": "neutre"}]},
+        "toile": {
+          "nom": "Toile collante",
+          "effets": [
+            {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"},
+            {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 65, "toile": 35}, "maxRepeat": 2}
+    },
+    "chafer": {
+      "nom": "Chafer",
+      "pv": [32, 36],
+      "resistances": {"neutre": 0, "terre": -10, "feu": 10, "eau": 0, "air": 5},
+      "mecaniques": [],
+      "actions": {
+        "coup": {"nom": "Coup d'os", "effets": [{"type": "damage", "amount": 11, "element": "neutre"}]},
+        "os": {"nom": "Bouclier d'os", "effets": [{"type": "block", "amount": 9}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["coup", "os", "coup"]}
+    },
+    "chafer_archer": {
+      "nom": "Chafer Archer",
+      "pv": [26, 30],
+      "resistances": {"neutre": 0, "terre": 15, "feu": -5, "eau": 10, "air": 20},
+      "mecaniques": [],
+      "actions": {
+        "fleche": {"nom": "Flèche", "effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 2}]},
+        "visee": {"nom": "Visée", "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["fleche", "visee", "fleche"]}
+    },
+    "kwak_flamme": {
+      "nom": "Kwak de Flamme",
+      "pv": [30, 34],
+      "resistances": {"neutre": 75, "terre": 10, "feu": 75, "eau": -50, "air": 10},
+      "mecaniques": [],
+      "actions": {
+        "flamme": {
+          "nom": "Flammèche",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "feu"},
+            {"type": "status", "status": "brulure", "amount": 2, "on": "target"},
+            {"type": "addCard", "card": "statut_braise", "count": 1, "pile": "discard"}
+          ]
+        },
+        "plumage": {"nom": "Plumage", "effets": [{"type": "block", "amount": 8}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["flamme", "plumage"]}
+    },
+    "kwak_glace": {
+      "nom": "Kwak de Glace",
+      "pv": [30, 34],
+      "resistances": {"neutre": 75, "terre": 10, "feu": -50, "eau": 75, "air": 10},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {
+        "glace": {
+          "nom": "Éclat de glace",
+          "effets": [
+            {"type": "damage", "amount": 9, "element": "eau"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "plumage": {"nom": "Plumage", "effets": [{"type": "block", "amount": 8}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["glace", "plumage"]}
+    },
+    "wabbit": {
+      "nom": "Wabbit",
+      "pv": [28, 32],
+      "resistances": {"neutre": 14, "terre": 9, "feu": 0, "eau": -1, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "carottes": {"nom": "Lancer de carottes", "effets": [{"type": "damage", "amount": 4, "element": "terre", "hits": 3}]},
+        "bond": {
+          "nom": "Bond",
+          "effets": [{"type": "block", "amount": 6}, {"type": "status", "status": "puissance", "amount": 1, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"carottes": 60, "bond": 40}, "maxRepeat": 2}
+    },
+    "bwork": {
+      "nom": "Bwork",
+      "pv": [46, 52],
+      "resistances": {"neutre": 9, "terre": 10, "feu": 13, "eau": -4, "air": 0},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "rage": {"nom": "Rage bwork", "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]},
+        "massue": {"nom": "Coup de massue", "effets": [{"type": "damage", "amount": 14, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["rage", "massue", "massue"]}
+    },
+    "bwork_mage": {
+      "nom": "Bwork Mage",
+      "pv": [34, 38],
+      "resistances": {"neutre": 10, "terre": 0, "feu": 13, "eau": 10, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "boule": {
+          "nom": "Boule de feu",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "feu"},
+            {"type": "status", "status": "brulure", "amount": 2, "on": "target"}
+          ]
+        },
+        "barriere": {"nom": "Barrière", "effets": [{"type": "block", "amount": 10}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["boule", "barriere"]}
+    },
+    "craqueleur": {
+      "nom": "Craqueleur",
+      "pv": [56, 62],
+      "resistances": {"neutre": 10, "terre": 18, "feu": 10, "eau": -2, "air": -12},
+      "mecaniques": [{"kind": "carapace", "n": 3}],
+      "actions": {
+        "carapace": {"nom": "Carapace", "effets": [{"type": "block", "amount": 14}]},
+        "poing": {"nom": "Poing de pierre", "effets": [{"type": "damage", "amount": 16, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["carapace", "poing"]}
+    },
+    "scarafeuille_bleu": {
+      "nom": "Scarafeuille Bleu",
+      "pv": [30, 34],
+      "resistances": {"neutre": 25, "terre": 0, "feu": -50, "eau": 100, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "eau", "hits": 2}]},
+        "carapace": {"nom": "Carapace", "effets": [{"type": "block", "amount": 10}]}
+      },
+      "rythme": {"kind": "random", "weights": {"mandibules": 65, "carapace": 35}, "maxRepeat": 2}
+    },
+    "crocodaille": {
+      "nom": "Crocodaille",
+      "pv": [44, 48],
+      "resistances": {"neutre": 39, "terre": 24, "feu": 0, "eau": 89, "air": 33},
+      "mecaniques": [],
+      "actions": {
+        "machoires": {"nom": "Mâchoires", "effets": [{"type": "damage", "amount": 13, "element": "eau"}]},
+        "vase": {
+          "nom": "Coup de vase",
+          "effets": [
+            {"type": "damage", "amount": 5, "element": "eau"},
+            {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["vase", "machoires"]}
+    },
+    "kanniboul_ark": {
+      "nom": "Kanniboul Ark",
+      "pv": [40, 44],
+      "resistances": {"neutre": -10, "terre": 10, "feu": 30, "eau": 10, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "lance": {"nom": "Lance", "effets": [{"type": "damage", "amount": 6, "element": "air", "hits": 2}]},
+        "transe": {
+          "nom": "Transe",
+          "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}, {"type": "block", "amount": 6}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["lance", "transe", "lance"]}
+    },
+    "abraknyde_sombre": {
+      "nom": "Abraknyde Sombre",
+      "pv": [130, 140],
+      "resistances": {"neutre": 43, "terre": 43, "feu": -15, "eau": 41, "air": 23},
+      "mecaniques": [{"kind": "sommeil", "turns": 3, "block": 10}],
+      "actions": {
+        "ecorce": {
+          "nom": "Écorce sombre",
+          "effets": [{"type": "block", "amount": 16}, {"type": "status", "status": "puissance", "amount": 2, "on": "self"}]
+        },
+        "branches": {"nom": "Branches", "effets": [{"type": "damage", "amount": 9, "element": "terre", "hits": 2}]},
+        "seve": {"nom": "Sève vampirique", "effets": [{"type": "drain", "amount": 12, "element": "eau"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["ecorce", "branches", "seve"]}
+    },
+    "craqueleur_legendaire": {
+      "nom": "Craqueleur Légendaire",
+      "pv": [150, 160],
+      "resistances": {"neutre": 58, "terre": -12, "feu": 58, "eau": 67, "air": -17},
+      "mecaniques": [{"kind": "cameleon"}, {"kind": "carapace", "n": 5}],
+      "actions": {
+        "carapace": {
+          "nom": "Carapace légendaire",
+          "effets": [{"type": "block", "amount": 20}, {"type": "status", "status": "puissance", "amount": 2, "on": "self"}]
+        },
+        "seisme": {"nom": "Séisme", "effets": [{"type": "damage", "amount": 22, "element": "terre"}]},
+        "eboulis": {"nom": "Éboulis", "effets": [{"type": "damage", "amount": 7, "element": "terre", "hits": 3}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["carapace", "seisme", "eboulis"]}
+    },
+    "wa_wabbit": {
+      "nom": "Wa Wabbit",
+      "pv": [120, 130],
+      "resistances": {"neutre": 28, "terre": 28, "feu": 18, "eau": -7, "air": -12},
+      "mecaniques": [{"kind": "gardien"}],
+      "actions": {
+        "carottes": {"nom": "Pluie de carottes", "effets": [{"type": "damage", "amount": 5, "element": "terre", "hits": 4}]},
+        "ordre": {
+          "nom": "Ordre royal",
+          "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}, {"type": "block", "amount": 10}]
+        },
+        "coup": {"nom": "Coup de sceptre", "effets": [{"type": "damage", "amount": 18, "element": "neutre"}]},
+        "garde": {
+          "nom": "Garde royale",
+          "effets": [{"type": "summon", "monster": "wabbit", "count": 1}, {"type": "block", "amount": 8}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["garde", "carottes", "ordre", "coup"]}
+    },
+    "bworkette": {
+      "nom": "Bworkette",
+      "pv": [125, 135],
+      "resistances": {"neutre": 33, "terre": 33, "feu": 48, "eau": 18, "air": 28},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "fouet": {
+          "nom": "Fouet ardent",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "feu"},
+            {"type": "status", "status": "brulure", "amount": 3, "on": "target"},
+            {"type": "addCard", "card": "statut_braise", "count": 1, "pile": "discard"}
+          ]
+        },
+        "cri": {
+          "nom": "Cri strident",
+          "effets": [
+            {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"},
+            {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+          ]
+        },
+        "massue": {"nom": "Massue", "effets": [{"type": "damage", "amount": 20, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["fouet", "cri", "massue"]}
+    },
+    "abraknyde_ancestral": {
+      "nom": "Abraknyde Ancestral",
+      "pv": [320, 330],
+      "resistances": {"neutre": 53, "terre": 53, "feu": -5, "eau": 53, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "racines": {
+          "nom": "Racines ancestrales",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "terre", "hits": 2},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "foret": {
+          "nom": "Appel de la forêt",
+          "effets": [{"type": "block", "amount": 25}, {"type": "status", "status": "puissance", "amount": 3, "on": "self"}]
+        },
+        "colere": {"nom": "Colère millénaire", "effets": [{"type": "damage", "amount": 30, "element": "terre"}]},
+        "seve": {
+          "nom": "Sève ancienne",
+          "effets": [{"type": "heal", "amount": 15}, {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}]
+        },
+        "branches": {
+          "nom": "Branches vivantes",
+          "effets": [{"type": "summon", "monster": "branche_soignante"}, {"type": "block", "amount": 10}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["branches", "racines", "foret", "colere", "seve"]},
+      "phase2": {
+        "seuil": 0.5,
+        "puissance": 3,
+        "nom": "Fureur de la forêt",
+        "rythme": {"kind": "cycle", "order": ["colere", "racines", "seve"]}
+      }
+    },
+    "kolerat": {
+      "nom": "Kolérat",
+      "pv": [52, 58],
+      "resistances": {"neutre": -10, "terre": 35, "feu": -10, "eau": 45, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 8, "element": "air", "hits": 2}]},
+        "cri": {"nom": "Cri", "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}]}
+      },
+      "rythme": {"kind": "random", "weights": {"griffes": 65, "cri": 35}, "maxRepeat": 2}
+    },
+    "croc_gland": {
+      "nom": "Croc Gland",
+      "pv": [56, 62],
+      "resistances": {"neutre": 25, "terre": -5, "feu": -5, "eau": 5, "air": 35},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 16, "element": "terre"}]},
+        "ecorce": {"nom": "Écorce", "effets": [{"type": "block", "amount": 14}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["morsure", "ecorce"]}
+    },
+    "rat_egoutant": {
+      "nom": "Rat d'Égoutant",
+      "pv": [40, 46],
+      "resistances": {"neutre": 9, "terre": 51, "feu": -20, "eau": 28, "air": -13},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {
+          "nom": "Morsure infectée",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "eau"},
+            {"type": "status", "status": "poison", "amount": 3, "on": "target"}
+          ]
+        },
+        "fuite": {"nom": "Fuite", "effets": [{"type": "block", "amount": 10}]}
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 65, "fuite": 35}, "maxRepeat": 2}
+    },
+    "craqueboule": {
+      "nom": "Craqueboule",
+      "pv": [64, 70],
+      "resistances": {"neutre": 24, "terre": 24, "feu": 24, "eau": 24, "air": 24},
+      "mecaniques": [],
+      "actions": {
+        "roulade": {"nom": "Roulade", "effets": [{"type": "damage", "amount": 20, "element": "neutre"}]},
+        "carapace": {"nom": "Carapace", "effets": [{"type": "block", "amount": 18}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["carapace", "roulade"]}
+    },
+    "kanigrou": {
+      "nom": "Kanigrou",
+      "pv": [54, 60],
+      "resistances": {"neutre": 26, "terre": 26, "feu": 26, "eau": -5, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "crocs": {"nom": "Crocs", "effets": [{"type": "damage", "amount": 9, "element": "feu", "hits": 2}]},
+        "hurlement": {
+          "nom": "Hurlement",
+          "effets": [
+            {"type": "status", "status": "puissance", "amount": 3, "on": "self"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["crocs", "hurlement", "crocs"]}
+    },
+    "piralak": {
+      "nom": "Piralak",
+      "pv": [58, 64],
+      "resistances": {"neutre": 18, "terre": 58, "feu": -6, "eau": -15, "air": -6},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 18, "element": "eau"}]},
+        "frenesie": {
+          "nom": "Frénésie",
+          "effets": [
+            {"type": "damage", "amount": 6, "element": "eau", "hits": 2},
+            {"type": "status", "status": "puissance", "amount": 1, "on": "self"}
+          ]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 55, "frenesie": 45}, "maxRepeat": 2}
+    },
+    "corbac": {
+      "nom": "Corbac",
+      "pv": [50, 56],
+      "resistances": {"neutre": 30, "terre": 30, "feu": 30, "eau": -15, "air": -15},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {
+        "bec": {"nom": "Coups de bec", "effets": [{"type": "damage", "amount": 7, "element": "air", "hits": 3}]},
+        "plumes": {"nom": "Plumes", "effets": [{"type": "block", "amount": 12}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["bec", "plumes"]}
+    },
+    "mulou": {
+      "nom": "Mulou",
+      "pv": [70, 76],
+      "resistances": {"neutre": 30, "terre": -10, "feu": 25, "eau": 10, "air": -5},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 22, "element": "neutre"}]},
+        "hurlement": {
+          "nom": "Hurlement",
+          "effets": [
+            {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"},
+            {"type": "status", "status": "puissance", "amount": 2, "on": "self"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["hurlement", "griffes", "griffes"]}
+    },
+    "fecorce": {
+      "nom": "Fécorce",
+      "pv": [76, 82],
+      "resistances": {"neutre": 23, "terre": 12, "feu": 38, "eau": 44, "air": 1},
+      "mecaniques": [],
+      "actions": {
+        "branches": {"nom": "Branches gelées", "effets": [{"type": "damage", "amount": 12, "element": "eau", "hits": 2}]},
+        "ecorce": {"nom": "Écorce de givre", "effets": [{"type": "block", "amount": 20}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["branches", "ecorce"]}
+    },
+    "poolay": {
+      "nom": "Poolay",
+      "pv": [60, 66],
+      "resistances": {"neutre": 17, "terre": 48, "feu": 9, "eau": -5, "air": -32},
+      "mecaniques": [{"kind": "regeneration", "n": 4}],
+      "actions": {
+        "coups": {
+          "nom": "Coups de bec brûlants",
+          "effets": [
+            {"type": "damage", "amount": 14, "element": "feu"},
+            {"type": "status", "status": "brulure", "amount": 3, "on": "target"}
+          ]
+        },
+        "ponte": {"nom": "Ponte", "effets": [{"type": "heal", "amount": 12}, {"type": "block", "amount": 10}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["coups", "coups", "ponte"]}
+    },
+    "kaskargo": {
+      "nom": "Kaskargo",
+      "pv": [80, 88],
+      "resistances": {"neutre": 5, "terre": 19, "feu": -21, "eau": 33, "air": 9},
+      "mecaniques": [{"kind": "carapace", "n": 4}],
+      "actions": {
+        "coquille": {"nom": "Coquille", "effets": [{"type": "block", "amount": 24}]},
+        "bave": {
+          "nom": "Bave corrosive",
+          "effets": [
+            {"type": "damage", "amount": 18, "element": "eau"},
+            {"type": "status", "status": "erosion", "amount": 2, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["coquille", "bave"]}
+    },
+    "maitre_corbac": {
+      "nom": "Maître Corbac",
+      "pv": [210, 224],
+      "resistances": {"neutre": 25, "terre": 25, "feu": 45, "eau": 55, "air": 55},
+      "mecaniques": [{"kind": "rituel", "n": 2}],
+      "actions": {
+        "nuee": {
+          "nom": "Nuée",
+          "effets": [{"type": "summon", "monster": "corbac"}, {"type": "damage", "amount": 8, "element": "air", "hits": 2}]
+        },
+        "ordre": {
+          "nom": "Ordre du Maître",
+          "effets": [{"type": "status", "status": "puissance", "amount": 4, "on": "self"}, {"type": "block", "amount": 16}]
+        },
+        "bec": {"nom": "Bec d'acier", "effets": [{"type": "damage", "amount": 30, "element": "air"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["nuee", "ordre", "bec"]}
+    },
+    "dragon_cochon": {
+      "nom": "Dragon Cochon",
+      "pv": [240, 256],
+      "resistances": {"neutre": 38, "terre": 38, "feu": 38, "eau": -5, "air": -5},
+      "mecaniques": [{"kind": "colere", "n": 2, "every": 3}],
+      "actions": {
+        "souffle": {
+          "nom": "Souffle ardent",
+          "effets": [
+            {"type": "damage", "amount": 18, "element": "feu"},
+            {"type": "status", "status": "brulure", "amount": 4, "on": "target"},
+            {"type": "addCard", "card": "statut_braise", "count": 2, "pile": "discard"}
+          ]
+        },
+        "groin": {
+          "nom": "Groin cuirassé",
+          "effets": [{"type": "block", "amount": 24}, {"type": "status", "status": "puissance", "amount": 3, "on": "self"}]
+        },
+        "charge": {"nom": "Charge porcine", "effets": [{"type": "damage", "amount": 34, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["souffle", "groin", "charge"]}
+    },
+    "koulosse": {
+      "nom": "Koulosse",
+      "pv": [250, 265],
+      "resistances": {"neutre": 78, "terre": 28, "feu": -12, "eau": -12, "air": 33},
+      "mecaniques": [{"kind": "plafond", "n": 45}, {"kind": "carapace", "n": 6}],
+      "actions": {
+        "carapace": {"nom": "Carapace", "effets": [{"type": "block", "amount": 30}]},
+        "poing": {"nom": "Poing colossal", "effets": [{"type": "damage", "amount": 36, "element": "terre"}]},
+        "seisme": {"nom": "Séisme", "effets": [{"type": "damage", "amount": 12, "element": "terre", "hits": 3}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["carapace", "poing", "seisme"]}
+    },
+    "minotoror": {
+      "nom": "Minotoror",
+      "pv": [470, 490],
+      "resistances": {"neutre": 40, "terre": -20, "feu": 50, "eau": 60, "air": 50},
+      "mecaniques": [{"kind": "plafond", "n": 70}],
+      "actions": {
+        "rage": {
+          "nom": "Rage du labyrinthe",
+          "effets": [{"type": "status", "status": "puissance", "amount": 5, "on": "self"}, {"type": "block", "amount": 30}]
+        },
+        "corne": {"nom": "Coups de corne", "effets": [{"type": "damage", "amount": 11, "element": "terre", "hits": 3}]},
+        "charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 32, "element": "terre"}]},
+        "labyrinthe": {
+          "nom": "Labyrinthe",
+          "effets": [
+            {"type": "damage", "amount": 12, "element": "terre"},
+            {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"},
+            {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["rage", "corne", "charge", "labyrinthe"]},
+      "phase2": {
+        "seuil": 0.5,
+        "puissance": 4,
+        "nom": "Fureur du labyrinthe",
+        "rythme": {"kind": "cycle", "order": ["corne", "charge", "labyrinthe"]}
+      }
+    },
+    "piou_rouge": {
+      "nom": "Piou Rouge",
+      "pv": [12, 15],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 33, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "picoree": {"nom": "Picorée", "effets": [{"type": "damage", "amount": 3, "element": "feu", "hits": 2}]},
+        "appel": {
+          "nom": "Appel de la nuée",
+          "effets": [{"type": "summon", "monster": "piou_rouge", "count": 1}, {"type": "block", "amount": 3}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"picoree": 85, "appel": 15}, "maxRepeat": 1}
+    },
+    "piou_bleu": {
+      "nom": "Piou Bleu",
+      "pv": [12, 15],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 33, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "picoree": {"nom": "Picorée", "effets": [{"type": "damage", "amount": 3, "element": "eau", "hits": 2}]},
+        "appel": {
+          "nom": "Appel de la nuée",
+          "effets": [{"type": "summon", "monster": "piou_bleu", "count": 1}, {"type": "block", "amount": 3}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"picoree": 85, "appel": 15}, "maxRepeat": 1}
+    },
+    "piou_vert": {
+      "nom": "Piou Vert",
+      "pv": [12, 15],
+      "resistances": {"neutre": 0, "terre": 33, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "picoree": {"nom": "Picorée", "effets": [{"type": "damage", "amount": 3, "element": "terre", "hits": 2}]},
+        "appel": {
+          "nom": "Appel de la nuée",
+          "effets": [{"type": "summon", "monster": "piou_vert", "count": 1}, {"type": "block", "amount": 3}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"picoree": 85, "appel": 15}, "maxRepeat": 1}
+    },
+    "piou_jaune": {
+      "nom": "Piou Jaune",
+      "pv": [12, 15],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 33},
+      "mecaniques": [],
+      "actions": {
+        "picoree": {"nom": "Picorée", "effets": [{"type": "damage", "amount": 3, "element": "air", "hits": 2}]},
+        "appel": {
+          "nom": "Appel de la nuée",
+          "effets": [{"type": "summon", "monster": "piou_jaune", "count": 1}, {"type": "block", "amount": 3}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"picoree": 85, "appel": 15}, "maxRepeat": 1}
+    },
+    "piou_violet": {
+      "nom": "Piou Violet",
+      "pv": [12, 15],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 17, "eau": 17, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "picoree": {"nom": "Picorée", "effets": [{"type": "damage", "amount": 3, "element": "neutre", "hits": 2}]},
+        "appel": {
+          "nom": "Appel de la nuée",
+          "effets": [{"type": "summon", "monster": "piou_violet", "count": 1}, {"type": "block", "amount": 3}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"picoree": 85, "appel": 15}, "maxRepeat": 1}
+    },
+    "gelee_bleuet": {
+      "nom": "Gelée Bleuet",
+      "pv": [40, 44],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "engluer": {
+          "nom": "Engluer",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "eau"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        },
+        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 11, "element": "eau"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["engluer", "masse"]},
+      "divise_en": "gelee_bleuet_petite"
+    },
+    "gelee_menthe": {
+      "nom": "Gelée Menthe",
+      "pv": [40, 44],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "engluer": {
+          "nom": "Engluer",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "air"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        },
+        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 11, "element": "air"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["engluer", "masse"]},
+      "divise_en": "gelee_menthe_petite"
+    },
+    "gelee_fraise": {
+      "nom": "Gelée Fraise",
+      "pv": [40, 44],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "engluer": {
+          "nom": "Engluer",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "feu"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        },
+        "masse": {"nom": "Masse gélatineuse", "effets": [{"type": "damage", "amount": 11, "element": "feu"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["engluer", "masse"]},
+      "divise_en": "gelee_fraise_petite"
+    },
+    "gelee_bleuet_petite": {
+      "nom": "Petite Gelée Bleuet",
+      "pv": [1, 1],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "gifle": {"nom": "Gifle collante", "effets": [{"type": "damage", "amount": 5, "element": "eau"}]},
+        "bave": {"nom": "Bave", "effets": [{"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}]}
+      },
+      "rythme": {"kind": "random", "weights": {"gifle": 70, "bave": 30}, "maxRepeat": 2}
+    },
+    "gelee_menthe_petite": {
+      "nom": "Petite Gelée Menthe",
+      "pv": [1, 1],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "gifle": {"nom": "Gifle collante", "effets": [{"type": "damage", "amount": 5, "element": "air"}]},
+        "bave": {"nom": "Bave", "effets": [{"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}]}
+      },
+      "rythme": {"kind": "random", "weights": {"gifle": 70, "bave": 30}, "maxRepeat": 2}
+    },
+    "gelee_fraise_petite": {
+      "nom": "Petite Gelée Fraise",
+      "pv": [1, 1],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "gifle": {"nom": "Gifle collante", "effets": [{"type": "damage", "amount": 5, "element": "feu"}]},
+        "bave": {"nom": "Bave", "effets": [{"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}]}
+      },
+      "rythme": {"kind": "random", "weights": {"gifle": 70, "bave": 30}, "maxRepeat": 2}
+    },
+    "larve_verte": {
+      "nom": "Larve Verte",
+      "pv": [18, 22],
+      "resistances": {"neutre": 0, "terre": 5, "feu": -5, "eau": 5, "air": 10},
+      "mecaniques": [{"kind": "enroulement", "n": 5}],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 6, "element": "terre"}]},
+        "bave": {
+          "nom": "Crachat",
+          "effets": [
+            {"type": "damage", "amount": 3, "element": "terre"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 70, "bave": 30}, "maxRepeat": 2}
+    },
+    "larve_orange": {
+      "nom": "Larve Orange",
+      "pv": [18, 22],
+      "resistances": {"neutre": 5, "terre": -5, "feu": -5, "eau": 25, "air": 10},
+      "mecaniques": [{"kind": "enroulement", "n": 5}],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 6, "element": "air"}]},
+        "bave": {
+          "nom": "Crachat",
+          "effets": [
+            {"type": "damage", "amount": 3, "element": "air"},
+            {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 70, "bave": 30}, "maxRepeat": 2}
+    },
+    "champa_explosif": {
+      "nom": "Champa Explosif",
+      "pv": [20, 24],
+      "resistances": {"neutre": 0, "terre": -5, "feu": -5, "eau": 68, "air": -5},
+      "mecaniques": [{"kind": "explosion", "turns": 3, "dmg": 18}],
+      "actions": {"gonfle": {"nom": "Gonfle", "effets": [{"type": "block", "amount": 4}]}},
+      "rythme": {"kind": "cycle", "order": ["gonfle"]}
+    },
+    "chafer_invisible": {
+      "nom": "Chafer Invisible",
+      "pv": [22, 26],
+      "resistances": {"neutre": 10, "terre": 0, "feu": 0, "eau": -10, "air": 22},
+      "mecaniques": [{"kind": "esquive", "n": 2}],
+      "actions": {
+        "frappe": {"nom": "Frappe sournoise", "effets": [{"type": "damage", "amount": 9, "element": "neutre"}]},
+        "fondu": {"nom": "Fondu", "effets": [{"type": "block", "amount": 6}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["frappe", "fondu"]}
+    },
+    "chafer_furtif": {
+      "nom": "Chafer Furtif",
+      "pv": [16, 20],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 14},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {"dague": {"nom": "Dague", "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}]}},
+      "rythme": {"kind": "cycle", "order": ["dague"]}
+    },
+    "chafer_debutant": {
+      "nom": "Chafer Débutant",
+      "pv": [14, 18],
+      "resistances": {"neutre": 14, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {
+        "coup": {"nom": "Coup d'os", "effets": [{"type": "damage", "amount": 6, "element": "neutre"}]},
+        "garde": {"nom": "Garde", "effets": [{"type": "block", "amount": 5}]}
+      },
+      "rythme": {"kind": "random", "weights": {"coup": 65, "garde": 35}, "maxRepeat": 2}
+    },
+    "boufton_blanc": {
+      "nom": "Boufton Blanc",
+      "pv": [22, 26],
+      "resistances": {"neutre": 5, "terre": 20, "feu": -5, "eau": -10, "air": 15},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 6, "element": "terre"}]},
+        "belement": {"nom": "Bêlement", "effets": [{"type": "block", "amount": 5}]}
+      },
+      "rythme": {"kind": "random", "weights": {"morsure": 65, "belement": 35}, "maxRepeat": 2}
+    },
+    "milimulou": {
+      "nom": "Milimulou",
+      "pv": [24, 28],
+      "resistances": {"neutre": 30, "terre": 0, "feu": 20, "eau": -5, "air": -15},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 7, "element": "neutre"}]},
+        "hurle": {"nom": "Petit hurlement", "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["griffes", "hurle", "griffes"]}
+    },
+    "scelerat_strubien": {
+      "nom": "Scélérat Strubien",
+      "pv": [24, 28],
+      "resistances": {"neutre": -15, "terre": -5, "feu": -15, "eau": 10, "air": 20},
+      "mecaniques": [{"kind": "voleur", "n": 8, "turns": 4}],
+      "actions": {
+        "vol": {"nom": "Vol à la tire", "effets": [{"type": "damage", "amount": 5, "element": "air"}]},
+        "esquive": {"nom": "Esquive", "effets": [{"type": "block", "amount": 8}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["vol", "vol", "esquive"]}
+    },
+    "milirat_strubien": {
+      "nom": "Milirat Strubien",
+      "pv": [20, 24],
+      "resistances": {"neutre": 10, "terre": -15, "feu": 10, "eau": 20, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {
+          "nom": "Morsure infectée",
+          "effets": [
+            {"type": "damage", "amount": 4, "element": "eau"},
+            {"type": "status", "status": "poison", "amount": 2, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "arakne_egouts": {
+      "nom": "Arakne des Égouts",
+      "pv": [20, 24],
+      "resistances": {"neutre": -5, "terre": 20, "feu": -5, "eau": -15, "air": 10},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 6, "element": "neutre"}]},
+        "toile": {"nom": "Toile", "effets": [{"type": "addCard", "card": "statut_toile", "count": 2, "pile": "draw"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["toile", "morsure", "morsure"]}
+    },
+    "boo": {
+      "nom": "Boo",
+      "pv": [24, 28],
+      "resistances": {"neutre": 18, "terre": 14, "feu": -4, "eau": 14, "air": -4},
+      "mecaniques": [],
+      "actions": {
+        "hantise": {
+          "nom": "Hantise",
+          "effets": [
+            {"type": "damage", "amount": 5, "element": "terre"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "frisson": {"nom": "Frisson", "effets": [{"type": "damage", "amount": 8, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["hantise", "frisson"]}
+    },
+    "citwouille": {
+      "nom": "Citwouille",
+      "pv": [30, 34],
+      "resistances": {"neutre": 5, "terre": -5, "feu": 5, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "carapace", "n": 3}],
+      "actions": {"coup": {"nom": "Coup de citrouille", "effets": [{"type": "damage", "amount": 8, "element": "feu"}]}},
+      "rythme": {"kind": "cycle", "order": ["coup"]}
+    },
+    "tofu_malefique": {
+      "nom": "Tofu Maléfique",
+      "pv": [16, 20],
+      "resistances": {"neutre": -10, "terre": 20, "feu": -20, "eau": 30, "air": -15},
+      "mecaniques": [{"kind": "rituel", "n": 1}],
+      "actions": {"bec": {"nom": "Bec maléfique", "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 2}]}},
+      "rythme": {"kind": "cycle", "order": ["bec"]}
+    },
+    "tofu_noir": {
+      "nom": "Tofu Noir",
+      "pv": [16, 20],
+      "resistances": {"neutre": 16, "terre": 13, "feu": -6, "eau": 20, "air": 21},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {"picorer": {"nom": "Picorer", "effets": [{"type": "damage", "amount": 3, "element": "air", "hits": 3}]}},
+      "rythme": {"kind": "cycle", "order": ["picorer"]}
+    },
+    "abraknyde_chetif": {
+      "nom": "Abraknyde Chétif",
+      "pv": [30, 34],
+      "resistances": {"neutre": 20, "terre": 25, "feu": -4, "eau": 25, "air": -4},
+      "mecaniques": [{"kind": "carapace", "n": 2}],
+      "actions": {
+        "branche": {"nom": "Branche frêle", "effets": [{"type": "damage", "amount": 7, "element": "terre"}]},
+        "ecorce": {"nom": "Écorce", "effets": [{"type": "block", "amount": 6}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["branche", "ecorce"]}
+    },
+    "gob_trotteur": {
+      "nom": "Gob-trotteur",
+      "pv": [26, 30],
+      "resistances": {"neutre": -2, "terre": 7, "feu": -8, "eau": -3, "air": 6},
+      "mecaniques": [{"kind": "voleur", "n": 6, "turns": 4}],
+      "actions": {"coup": {"nom": "Coup de bâton", "effets": [{"type": "damage", "amount": 7, "element": "neutre"}]}},
+      "rythme": {"kind": "cycle", "order": ["coup"]}
+    },
+    "ecurouille": {
+      "nom": "Écurouille",
+      "pv": [18, 22],
+      "resistances": {"neutre": -10, "terre": -5, "feu": 10, "eau": 15, "air": 20},
+      "mecaniques": [{"kind": "voleur", "n": 5, "turns": 3}, {"kind": "esquive", "n": 1}],
+      "actions": {"noisette": {"nom": "Lancer de noisette", "effets": [{"type": "damage", "amount": 5, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["noisette"]}
+    },
+    "campagnoll": {
+      "nom": "Campagnoll",
+      "pv": [10, 12],
+      "resistances": {"neutre": 15, "terre": -5, "feu": 10, "eau": -5, "air": 5},
+      "mecaniques": [],
+      "actions": {"morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 5, "element": "terre"}]}},
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "gardienne_champetre": {
+      "nom": "Gardienne Champêtre",
+      "pv": [54, 58],
+      "resistances": {"neutre": -5, "terre": -5, "feu": -10, "eau": 20, "air": 25},
+      "mecaniques": [{"kind": "gardien"}],
+      "actions": {
+        "appel": {
+          "nom": "Appel des champs",
+          "effets": [{"type": "summon", "monster": "campagnoll", "count": 1}, {"type": "block", "amount": 6}]
+        },
+        "fauche": {"nom": "Coup de faux", "effets": [{"type": "damage", "amount": 12, "element": "air"}]},
+        "sermon": {
+          "nom": "Sermon",
+          "effets": [{"type": "status", "status": "faiblesse", "amount": 2, "on": "target"}, {"type": "block", "amount": 10}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["appel", "fauche", "sermon", "fauche"]}
+    },
+    "rose_obscure": {
+      "nom": "Rose Obscure",
+      "pv": [70, 76],
+      "resistances": {"neutre": 10, "terre": 25, "feu": 0, "eau": 30, "air": 0},
+      "mecaniques": [{"kind": "regeneration", "n": 4}, {"kind": "artefact", "n": 2}],
+      "actions": {
+        "epines": {
+          "nom": "Épines ardentes",
+          "effets": [
+            {"type": "damage", "amount": 9, "element": "feu"},
+            {"type": "addCard", "card": "statut_braise", "count": 1, "pile": "discard"}
+          ]
+        },
+        "parfum": {
+          "nom": "Parfum vénéneux",
+          "effets": [
+            {"type": "status", "status": "poison", "amount": 4, "on": "target"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "ronces": {"nom": "Ronces", "effets": [{"type": "damage", "amount": 5, "element": "feu", "hits": 2}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["epines", "parfum", "ronces"]}
+    },
+    "sergent_chafer": {
+      "nom": "Sergent Chafer",
+      "pv": [52, 56],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 14, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "rituel", "n": 1}],
+      "actions": {
+        "ordre": {"nom": "En rang !", "effets": [{"type": "summon", "monster": "chafer_debutant", "count": 2}]},
+        "lance": {"nom": "Coup de lance", "effets": [{"type": "damage", "amount": 11, "element": "eau"}]},
+        "cri": {
+          "nom": "Cri de guerre",
+          "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}, {"type": "block", "amount": 8}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["ordre", "lance", "cri", "lance"]}
+    },
+    "shin_larve": {
+      "nom": "Shin Larve",
+      "pv": [180, 188],
+      "resistances": {"neutre": 54, "terre": 34, "feu": 34, "eau": -26, "air": -26},
+      "mecaniques": [{"kind": "enroulement", "n": 10}],
+      "actions": {
+        "ponte": {
+          "nom": "Ponte",
+          "effets": [
+            {"type": "summon", "monster": "larve_verte", "count": 1},
+            {"type": "summon", "monster": "larve_orange", "count": 1},
+            {"type": "block", "amount": 10}
+          ]
+        },
+        "morsure": {"nom": "Morsure géante", "effets": [{"type": "damage", "amount": 15, "element": "terre"}]},
+        "cocon": {
+          "nom": "Cocon",
+          "effets": [{"type": "block", "amount": 20}, {"type": "status", "status": "puissance", "amount": 2, "on": "self"}]
+        },
+        "crachat": {
+          "nom": "Crachat acide",
+          "effets": [
+            {"type": "damage", "amount": 6, "element": "terre", "hits": 2},
+            {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["morsure", "ponte", "crachat", "cocon", "morsure"]},
+      "phase2": {
+        "seuil": 0.5,
+        "puissance": 2,
+        "nom": "Mue furieuse",
+        "rythme": {"kind": "cycle", "order": ["morsure", "crachat", "ponte"]}
+      }
+    },
+    "coffre_maudit": {
+      "nom": "Coffre Maudit du Flib",
+      "pv": [186, 194],
+      "resistances": {"neutre": 19, "terre": -11, "feu": -11, "eau": -11, "air": -11},
+      "mecaniques": [{"kind": "carapace", "n": 4}, {"kind": "voleur", "n": 6, "turns": 99}],
+      "actions": {
+        "claque": {"nom": "Couvercle claquant", "effets": [{"type": "damage", "amount": 13, "element": "neutre"}]},
+        "pieces": {"nom": "Pluie de pièces", "effets": [{"type": "damage", "amount": 4, "element": "neutre", "hits": 3}]},
+        "verrou": {"nom": "Verrou", "effets": [{"type": "block", "amount": 18}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["verrou", "claque", "pieces"]},
+      "phase2": {"seuil": 0.5, "puissance": 2, "nom": "Avidité", "rythme": {"kind": "cycle", "order": ["pieces", "claque"]}}
+    },
+    "scarafeuille_rouge": {
+      "nom": "Scarafeuille Rouge",
+      "pv": [30, 34],
+      "resistances": {"neutre": 25, "terre": 0, "feu": 100, "eau": -50, "air": 0},
+      "mecaniques": [{"kind": "carapace", "n": 4}],
+      "actions": {"mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "feu", "hits": 2}]}},
+      "rythme": {"kind": "cycle", "order": ["mandibules"]}
+    },
+    "scarafeuille_vert": {
+      "nom": "Scarafeuille Vert",
+      "pv": [30, 34],
+      "resistances": {"neutre": 25, "terre": 100, "feu": 0, "eau": 0, "air": -50},
+      "mecaniques": [{"kind": "carapace", "n": 4}],
+      "actions": {"mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "terre", "hits": 2}]}},
+      "rythme": {"kind": "cycle", "order": ["mandibules"]}
+    },
+    "scarafeuille_blanc": {
+      "nom": "Scarafeuille Blanc",
+      "pv": [30, 34],
+      "resistances": {"neutre": 25, "terre": -50, "feu": 0, "eau": 0, "air": 100},
+      "mecaniques": [{"kind": "carapace", "n": 4}],
+      "actions": {"mandibules": {"nom": "Mandibules", "effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 2}]}},
+      "rythme": {"kind": "cycle", "order": ["mandibules"]}
+    },
+    "kwak_vent": {
+      "nom": "Kwak de Vent",
+      "pv": [30, 34],
+      "resistances": {"neutre": 75, "terre": -50, "feu": 10, "eau": 10, "air": 75},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {
+        "bourrasque": {"nom": "Bourrasque", "effets": [{"type": "damage", "amount": 9, "element": "air"}]},
+        "plumage": {"nom": "Plumage", "effets": [{"type": "block", "amount": 8}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["bourrasque", "plumage"]}
+    },
+    "kwak_terre": {
+      "nom": "Kwak de Terre",
+      "pv": [30, 34],
+      "resistances": {"neutre": 75, "terre": 75, "feu": 10, "eau": 10, "air": -50},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {
+        "eboulis": {"nom": "Éboulis", "effets": [{"type": "damage", "amount": 10, "element": "terre"}]},
+        "plumage": {"nom": "Plumage", "effets": [{"type": "block", "amount": 8}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["eboulis", "plumage"]}
+    },
+    "kwakere_flamme": {
+      "nom": "Kwakere de Flamme",
+      "pv": [44, 48],
+      "resistances": {"neutre": 100, "terre": 25, "feu": 100, "eau": -25, "air": 25},
+      "mecaniques": [],
+      "actions": {
+        "brasier": {
+          "nom": "Brasier",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "feu"},
+            {"type": "addCard", "card": "statut_braise", "count": 1, "pile": "discard"}
+          ]
+        },
+        "plumage": {
+          "nom": "Plumage ardent",
+          "effets": [{"type": "block", "amount": 10}, {"type": "status", "status": "puissance", "amount": 1, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["brasier", "plumage"]}
+    },
+    "blop_coco": {
+      "nom": "Blop Coco",
+      "pv": [56, 62],
+      "resistances": {"neutre": 23, "terre": -50, "feu": 23, "eau": 23, "air": 62},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "air"}]},
+        "englue": {
+          "nom": "Engluement",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "air"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["englue", "ecrase"]},
+      "divise_en": "biblop_coco"
+    },
+    "blop_indigo": {
+      "nom": "Blop Indigo",
+      "pv": [56, 62],
+      "resistances": {"neutre": 23, "terre": 23, "feu": -50, "eau": 62, "air": 23},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "eau"}]},
+        "englue": {
+          "nom": "Engluement",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "eau"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["englue", "ecrase"]},
+      "divise_en": "biblop_indigo"
+    },
+    "blop_griotte": {
+      "nom": "Blop Griotte",
+      "pv": [56, 62],
+      "resistances": {"neutre": 23, "terre": 23, "feu": 62, "eau": -50, "air": 23},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "feu"}]},
+        "englue": {
+          "nom": "Engluement",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "feu"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["englue", "ecrase"]},
+      "divise_en": "biblop_griotte"
+    },
+    "blop_reinette": {
+      "nom": "Blop Reinette",
+      "pv": [56, 62],
+      "resistances": {"neutre": 23, "terre": 62, "feu": 23, "eau": 23, "air": -50},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "ecrase": {"nom": "Écrasement", "effets": [{"type": "damage", "amount": 13, "element": "terre"}]},
+        "englue": {
+          "nom": "Engluement",
+          "effets": [
+            {"type": "damage", "amount": 7, "element": "terre"},
+            {"type": "addCard", "card": "statut_bave", "count": 1, "pile": "discard"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["englue", "ecrase"]},
+      "divise_en": "biblop_reinette"
+    },
+    "biblop_coco": {
+      "nom": "Biblop Coco",
+      "pv": [1, 1],
+      "resistances": {"neutre": 23, "terre": -50, "feu": 23, "eau": 23, "air": 62},
+      "mecaniques": [],
+      "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["rebond"]}
+    },
+    "biblop_indigo": {
+      "nom": "Biblop Indigo",
+      "pv": [1, 1],
+      "resistances": {"neutre": 23, "terre": 23, "feu": -50, "eau": 62, "air": 23},
+      "mecaniques": [],
+      "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "eau"}]}},
+      "rythme": {"kind": "cycle", "order": ["rebond"]}
+    },
+    "biblop_griotte": {
+      "nom": "Biblop Griotte",
+      "pv": [1, 1],
+      "resistances": {"neutre": 23, "terre": 23, "feu": 62, "eau": -50, "air": 23},
+      "mecaniques": [],
+      "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "feu"}]}},
+      "rythme": {"kind": "cycle", "order": ["rebond"]}
+    },
+    "biblop_reinette": {
+      "nom": "Biblop Reinette",
+      "pv": [1, 1],
+      "resistances": {"neutre": 23, "terre": 62, "feu": 23, "eau": 23, "air": -50},
+      "mecaniques": [],
+      "actions": {"rebond": {"nom": "Rebond", "effets": [{"type": "damage", "amount": 6, "element": "terre"}]}},
+      "rythme": {"kind": "cycle", "order": ["rebond"]}
+    },
+    "champa_vert": {
+      "nom": "Champa Vert",
+      "pv": [34, 38],
+      "resistances": {"neutre": 58, "terre": -5, "feu": -5, "eau": -5, "air": 68},
+      "mecaniques": [{"kind": "spores", "n": 2}],
+      "actions": {
+        "spores": {"nom": "Spores", "effets": [{"type": "damage", "amount": 8, "element": "air"}]},
+        "chapeau": {"nom": "Chapeau", "effets": [{"type": "block", "amount": 9}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["spores", "chapeau"]}
+    },
+    "champa_bleu": {
+      "nom": "Champa Bleu",
+      "pv": [34, 38],
+      "resistances": {"neutre": 58, "terre": -5, "feu": -5, "eau": 68, "air": -5},
+      "mecaniques": [{"kind": "spores", "n": 2}],
+      "actions": {
+        "spores": {"nom": "Spores", "effets": [{"type": "damage", "amount": 8, "element": "eau"}]},
+        "chapeau": {"nom": "Chapeau", "effets": [{"type": "block", "amount": 9}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["spores", "chapeau"]}
+    },
+    "champa_marron": {
+      "nom": "Champa Marron",
+      "pv": [34, 38],
+      "resistances": {"neutre": 58, "terre": 68, "feu": -5, "eau": -5, "air": -5},
+      "mecaniques": [{"kind": "spores", "n": 2}],
+      "actions": {
+        "spores": {"nom": "Spores", "effets": [{"type": "damage", "amount": 8, "element": "terre"}]},
+        "chapeau": {"nom": "Chapeau", "effets": [{"type": "block", "amount": 9}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["spores", "chapeau"]}
+    },
+    "tortue_rouge": {
+      "nom": "Tortue Rouge",
+      "pv": [36, 40],
+      "resistances": {"neutre": -10, "terre": 10, "feu": 40, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "carapace", "n": 7}],
+      "actions": {"morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 11, "element": "feu"}]}},
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "tortue_bleue": {
+      "nom": "Tortue Bleue",
+      "pv": [36, 40],
+      "resistances": {"neutre": -10, "terre": 0, "feu": 10, "eau": 40, "air": 0},
+      "mecaniques": [{"kind": "carapace", "n": 7}],
+      "actions": {"morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 11, "element": "eau"}]}},
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "kanniboul_eth": {
+      "nom": "Kanniboul Eth",
+      "pv": [40, 44],
+      "resistances": {"neutre": 10, "terre": 0, "feu": -10, "eau": 10, "air": 30},
+      "mecaniques": [{"kind": "rituel", "n": 2}],
+      "actions": {
+        "danse": {"nom": "Danse rituelle", "effets": [{"type": "block", "amount": 8}]},
+        "lance": {"nom": "Lance", "effets": [{"type": "damage", "amount": 9, "element": "air"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["danse", "lance", "lance"]}
+    },
+    "kanniboul_jav": {
+      "nom": "Kanniboul Jav",
+      "pv": [40, 44],
+      "resistances": {"neutre": 0, "terre": -10, "feu": 10, "eau": 30, "air": 10},
+      "mecaniques": [],
+      "actions": {
+        "javelot": {"nom": "Javelot", "effets": [{"type": "damage", "amount": 15, "element": "eau"}]},
+        "visee": {"nom": "Visée", "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["visee", "javelot"]}
+    },
+    "kanniboul_sarbak": {
+      "nom": "Kanniboul Sarbak",
+      "pv": [34, 38],
+      "resistances": {"neutre": 10, "terre": 30, "feu": 10, "eau": 0, "air": -10},
+      "mecaniques": [],
+      "actions": {
+        "flechette": {
+          "nom": "Fléchette empoisonnée",
+          "effets": [
+            {"type": "damage", "amount": 4, "element": "terre"},
+            {"type": "status", "status": "poison", "amount": 4, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["flechette"]}
+    },
+    "fantome_hicide": {
+      "nom": "Fantôme Hicide",
+      "pv": [36, 40],
+      "resistances": {"neutre": 10, "terre": 20, "feu": -5, "eau": 10, "air": -5},
+      "mecaniques": [{"kind": "artefact", "n": 1}, {"kind": "esquive", "n": 1}],
+      "actions": {
+        "lame": {"nom": "Lame spectrale", "effets": [{"type": "damage", "amount": 12, "element": "terre"}]},
+        "voile": {"nom": "Voile", "effets": [{"type": "block", "amount": 10}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["lame", "voile"]}
+    },
+    "fantome_egerie": {
+      "nom": "Fantôme Égérie",
+      "pv": [36, 40],
+      "resistances": {"neutre": -15, "terre": -5, "feu": 10, "eau": -15, "air": 20},
+      "mecaniques": [{"kind": "artefact", "n": 1}],
+      "actions": {
+        "chant": {
+          "nom": "Chant funèbre",
+          "effets": [
+            {"type": "status", "status": "faiblesse", "amount": 2, "on": "target"},
+            {"type": "status", "status": "vulnerabilite", "amount": 1, "on": "target"}
+          ]
+        },
+        "toucher": {"nom": "Toucher glacé", "effets": [{"type": "damage", "amount": 10, "element": "air"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["chant", "toucher"]}
+    },
+    "crabe": {
+      "nom": "Crabe",
+      "pv": [36, 40],
+      "resistances": {"neutre": -5, "terre": 25, "feu": 25, "eau": -20, "air": 30},
+      "mecaniques": [{"kind": "carapace", "n": 4}, {"kind": "epines", "n": 2}],
+      "actions": {"pince": {"nom": "Pince", "effets": [{"type": "damage", "amount": 10, "element": "eau"}]}},
+      "rythme": {"kind": "cycle", "order": ["pince"]}
+    },
+    "black_wabbit": {
+      "nom": "Black Wabbit",
+      "pv": [38, 42],
+      "resistances": {"neutre": 14, "terre": -1, "feu": 9, "eau": 15, "air": 20},
+      "mecaniques": [],
+      "actions": {
+        "carottes": {"nom": "Carottes noires", "effets": [{"type": "damage", "amount": 5, "element": "air", "hits": 3}]},
+        "bond": {
+          "nom": "Bond",
+          "effets": [{"type": "block", "amount": 8}, {"type": "status", "status": "puissance", "amount": 1, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "random", "weights": {"carottes": 60, "bond": 40}, "maxRepeat": 2}
+    },
+    "wabbit_squelette": {
+      "nom": "Wabbit Squelette",
+      "pv": [40, 44],
+      "resistances": {"neutre": 58, "terre": 44, "feu": 14, "eau": -10, "air": 19},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "os": {"nom": "Lancer d'os", "effets": [{"type": "damage", "amount": 13, "element": "terre"}]},
+        "cliquetis": {"nom": "Cliquetis", "effets": [{"type": "status", "status": "faiblesse", "amount": 2, "on": "target"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["os", "cliquetis", "os"]}
+    },
+    "tiwabbit": {
+      "nom": "Tiwabbit",
+      "pv": [24, 28],
+      "resistances": {"neutre": 10, "terre": 5, "feu": 0, "eau": -1, "air": 0},
+      "mecaniques": [{"kind": "voleur", "n": 10, "turns": 3}, {"kind": "esquive", "n": 1}],
+      "actions": {"carotte": {"nom": "Carotte", "effets": [{"type": "damage", "amount": 6, "element": "terre"}]}},
+      "rythme": {"kind": "cycle", "order": ["carotte"]}
+    },
+    "bandit_roublard": {
+      "nom": "Bandit du clan des Roublards",
+      "pv": [40, 44],
+      "resistances": {"neutre": 0, "terre": 0, "feu": 0, "eau": 0, "air": 0},
+      "mecaniques": [{"kind": "voleur", "n": 12, "turns": 4}],
+      "actions": {
+        "surin": {"nom": "Coup de surin", "effets": [{"type": "damage", "amount": 9, "element": "neutre"}]},
+        "fumigene": {"nom": "Fumigène", "effets": [{"type": "block", "amount": 12}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["surin", "surin", "fumigene"]}
+    },
+    "bwork_archer": {
+      "nom": "Bwork Archer",
+      "pv": [34, 38],
+      "resistances": {"neutre": 0, "terre": -11, "feu": 5, "eau": 0, "air": 0},
+      "mecaniques": [],
+      "actions": {"volee": {"nom": "Volée de flèches", "effets": [{"type": "damage", "amount": 4, "element": "air", "hits": 3}]}},
+      "rythme": {"kind": "cycle", "order": ["volee"]}
+    },
+    "cochon_de_lait": {
+      "nom": "Cochon de Lait",
+      "pv": [40, 44],
+      "resistances": {"neutre": 15, "terre": 0, "feu": -15, "eau": -20, "air": 60},
+      "mecaniques": [{"kind": "colere", "n": 2, "every": 3}],
+      "actions": {"charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 11, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["charge"]}
+    },
+    "dragoeuf_ardoise": {
+      "nom": "Dragoeuf Ardoise",
+      "pv": [48, 52],
+      "resistances": {"neutre": 17, "terre": 12, "feu": -10, "eau": 22, "air": 9},
+      "mecaniques": [{"kind": "carapace", "n": 3}],
+      "actions": {
+        "souffle": {"nom": "Souffle d'ardoise", "effets": [{"type": "damage", "amount": 14, "element": "eau"}]},
+        "coquille": {"nom": "Coquille", "effets": [{"type": "block", "amount": 12}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["coquille", "souffle"]}
+    },
+    "dragoeuf_calcaire": {
+      "nom": "Dragoeuf Calcaire",
+      "pv": [48, 52],
+      "resistances": {"neutre": 17, "terre": 22, "feu": 12, "eau": 9, "air": -10},
+      "mecaniques": [{"kind": "carapace", "n": 3}],
+      "actions": {
+        "souffle": {"nom": "Souffle de calcaire", "effets": [{"type": "damage", "amount": 14, "element": "terre"}]},
+        "coquille": {"nom": "Coquille", "effets": [{"type": "block", "amount": 12}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["coquille", "souffle"]}
+    },
+    "abrakne": {
+      "nom": "Abrakne",
+      "pv": [32, 36],
+      "resistances": {"neutre": 18, "terre": -12, "feu": 28, "eau": -5, "air": 14},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 9, "element": "feu"}]},
+        "toile": {
+          "nom": "Grande toile",
+          "effets": [
+            {"type": "addCard", "card": "statut_toile", "count": 2, "pile": "draw"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["toile", "morsure", "morsure"]}
+    },
+    "larve_saphir": {
+      "nom": "Larve Saphir",
+      "pv": [34, 38],
+      "resistances": {"neutre": 14, "terre": 14, "feu": 0, "eau": 14, "air": 14},
+      "mecaniques": [{"kind": "enroulement", "n": 9}],
+      "actions": {"morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 11, "element": "eau"}]}},
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "larve_rubis": {
+      "nom": "Larve Rubis",
+      "pv": [34, 38],
+      "resistances": {"neutre": 24, "terre": 24, "feu": -6, "eau": 24, "air": 24},
+      "mecaniques": [{"kind": "enroulement", "n": 9}],
+      "actions": {"morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 11, "element": "feu"}]}},
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "larve_emeraude": {
+      "nom": "Larve Émeraude",
+      "pv": [34, 38],
+      "resistances": {"neutre": 19, "terre": 19, "feu": -6, "eau": 19, "air": 0},
+      "mecaniques": [{"kind": "enroulement", "n": 9}],
+      "actions": {"morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 11, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "chef_crocodaille": {
+      "nom": "Chef Crocodaille",
+      "pv": [100, 106],
+      "resistances": {"neutre": 23, "terre": 48, "feu": 43, "eau": 58, "air": 23},
+      "mecaniques": [{"kind": "rage", "n": 1, "every": 4}],
+      "actions": {
+        "appel": {"nom": "Appel du marais", "effets": [{"type": "summon", "monster": "crocodaille", "count": 1}]},
+        "machoires": {"nom": "Mâchoires d'acier", "effets": [{"type": "damage", "amount": 18, "element": "eau"}]},
+        "vase": {
+          "nom": "Vase",
+          "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}, {"type": "block", "amount": 14}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["appel", "machoires", "vase", "machoires"]}
+    },
+    "chafer_elite": {
+      "nom": "Chafer d'Élite",
+      "pv": [150, 158],
+      "resistances": {"neutre": 0, "terre": 20, "feu": 25, "eau": 10, "air": 15},
+      "mecaniques": [{"kind": "artefact", "n": 2}, {"kind": "rituel", "n": 2}],
+      "actions": {
+        "rituel": {"nom": "Rituel des os", "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]},
+        "taille": {"nom": "Taille", "effets": [{"type": "damage", "amount": 8, "element": "feu", "hits": 2}]},
+        "garde": {"nom": "Garde d'élite", "effets": [{"type": "block", "amount": 16}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["rituel", "taille", "garde", "taille"]}
+    },
+    "branche_invocatrice": {
+      "nom": "Branche Invocatrice",
+      "pv": [40, 44],
+      "resistances": {"neutre": 50, "terre": -16, "feu": 50, "eau": 50, "air": -16},
+      "mecaniques": [],
+      "actions": {
+        "appel": {"nom": "Appel des racines", "effets": [{"type": "summon", "monster": "tronknyde", "count": 1}]},
+        "fouet": {"nom": "Fouet", "effets": [{"type": "damage", "amount": 9, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["fouet", "appel", "fouet"]}
+    },
+    "branche_soignante": {
+      "nom": "Branche Soignante",
+      "pv": [40, 44],
+      "resistances": {"neutre": 50, "terre": 50, "feu": -16, "eau": -16, "air": 50},
+      "mecaniques": [],
+      "actions": {
+        "seve": {"nom": "Sève", "effets": [{"type": "heal", "amount": 10}, {"type": "block", "amount": 8}]},
+        "fouet": {"nom": "Fouet", "effets": [{"type": "damage", "amount": 8, "element": "eau"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["seve", "fouet"]}
+    },
+    "blop_griotte_royal": {
+      "nom": "Blop Griotte Royal",
+      "pv": [300, 310],
+      "resistances": {"neutre": -12, "terre": -12, "feu": 94, "eau": -12, "air": -12},
+      "mecaniques": [{"kind": "division"}],
+      "actions": {
+        "ecrase": {"nom": "Écrasement royal", "effets": [{"type": "damage", "amount": 24, "element": "feu"}]},
+        "gelee": {
+          "nom": "Gelée royale",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "feu"},
+            {"type": "addCard", "card": "statut_bave", "count": 2, "pile": "discard"}
+          ]
+        },
+        "appel": {"nom": "Appel des Blops", "effets": [{"type": "summon", "monster": "blop_griotte", "count": 1}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["gelee", "ecrase", "appel"]},
+      "divise_en": "blop_griotte"
+    },
+    "chene_mou": {
+      "nom": "Chêne Mou",
+      "pv": [330, 340],
+      "resistances": {"neutre": 82, "terre": 52, "feu": 52, "eau": -5, "air": -5},
+      "mecaniques": [{"kind": "plafond", "n": 45}, {"kind": "regeneration", "n": 8}],
+      "actions": {
+        "racines": {
+          "nom": "Racines",
+          "effets": [
+            {"type": "damage", "amount": 9, "element": "terre", "hits": 2},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "ecorce": {"nom": "Écorce millénaire", "effets": [{"type": "block", "amount": 30}]},
+        "branches": {"nom": "Branches", "effets": [{"type": "damage", "amount": 26, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["racines", "ecorce", "branches"]}
+    },
+    "rat_hyoactif": {
+      "nom": "Rat d'Hyoactif",
+      "pv": [44, 48],
+      "resistances": {"neutre": 21, "terre": -27, "feu": 29, "eau": -12, "air": 44},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {
+          "nom": "Morsure radioactive",
+          "effets": [
+            {"type": "damage", "amount": 8, "element": "eau"},
+            {"type": "status", "status": "poison", "amount": 5, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["morsure"]}
+    },
+    "ramane_egoutant": {
+      "nom": "Ramane d'Égoutant",
+      "pv": [44, 48],
+      "resistances": {"neutre": 5, "terre": 45, "feu": 9, "eau": 27, "air": -6},
+      "mecaniques": [{"kind": "voleur", "n": 15, "turns": 4}],
+      "actions": {
+        "griffe": {"nom": "Griffe", "effets": [{"type": "damage", "amount": 12, "element": "feu"}]},
+        "fuite": {"nom": "Fuite", "effets": [{"type": "block", "amount": 14}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["griffe", "griffe", "fuite"]}
+    },
+    "corbac_chef": {
+      "nom": "Corbac Chef",
+      "pv": [56, 60],
+      "resistances": {"neutre": 30, "terre": 30, "feu": 30, "eau": -15, "air": -15},
+      "mecaniques": [{"kind": "rituel", "n": 1}],
+      "actions": {
+        "ordre": {
+          "nom": "Ordre",
+          "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}, {"type": "block", "amount": 10}]
+        },
+        "bec": {"nom": "Bec", "effets": [{"type": "damage", "amount": 8, "element": "air", "hits": 2}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["ordre", "bec", "bec"]}
+    },
+    "corbac_dresse": {
+      "nom": "Corbac Dressé",
+      "pv": [46, 50],
+      "resistances": {"neutre": 25, "terre": -10, "feu": 30, "eau": 30, "air": -25},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {"plongeon": {"nom": "Plongeon", "effets": [{"type": "damage", "amount": 16, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["plongeon"]}
+    },
+    "koalak_coco": {
+      "nom": "Koalak Coco",
+      "pv": [58, 62],
+      "resistances": {"neutre": 18, "terre": -12, "feu": -12, "eau": -12, "air": 78},
+      "mecaniques": [],
+      "actions": {
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 9, "element": "air", "hits": 2}]},
+        "cri": {"nom": "Cri", "effets": [{"type": "status", "status": "puissance", "amount": 2, "on": "self"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["griffes", "griffes", "cri"]}
+    },
+    "koalak_griotte": {
+      "nom": "Koalak Griotte",
+      "pv": [58, 62],
+      "resistances": {"neutre": 18, "terre": -12, "feu": 78, "eau": -12, "air": -12},
+      "mecaniques": [],
+      "actions": {
+        "morsure": {"nom": "Morsure", "effets": [{"type": "damage", "amount": 18, "element": "feu"}]},
+        "cri": {"nom": "Cri", "effets": [{"type": "block", "amount": 14}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["morsure", "cri"]}
+    },
+    "warko_marron": {
+      "nom": "Warko Marron",
+      "pv": [60, 66],
+      "resistances": {"neutre": 28, "terre": 29, "feu": -10, "eau": -6, "air": 68},
+      "mecaniques": [{"kind": "colere", "n": 2, "every": 3}],
+      "actions": {"charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 17, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["charge"]}
+    },
+    "mama_koalak": {
+      "nom": "Mama Koalak",
+      "pv": [70, 76],
+      "resistances": {"neutre": 38, "terre": 58, "feu": 38, "eau": -2, "air": -10},
+      "mecaniques": [{"kind": "gardien"}],
+      "actions": {
+        "appel": {"nom": "Appel des petits", "effets": [{"type": "summon", "monster": "koalak_coco", "count": 1}]},
+        "gifle": {"nom": "Gifle", "effets": [{"type": "damage", "amount": 16, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["gifle", "appel", "gifle", "gifle"]}
+    },
+    "koalak_forestier": {
+      "nom": "Koalak Forestier",
+      "pv": [60, 66],
+      "resistances": {"neutre": 18, "terre": 14, "feu": 24, "eau": -21, "air": -11},
+      "mecaniques": [],
+      "actions": {
+        "hache": {"nom": "Hache", "effets": [{"type": "damage", "amount": 19, "element": "eau"}]},
+        "bois": {"nom": "Fagot", "effets": [{"type": "block", "amount": 16}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["hache", "bois"]}
+    },
+    "dragoss_ardoise": {
+      "nom": "Dragoss Ardoise",
+      "pv": [70, 76],
+      "resistances": {"neutre": 22, "terre": 11, "feu": -15, "eau": 32, "air": 16},
+      "mecaniques": [{"kind": "carapace", "n": 6}],
+      "actions": {"souffle": {"nom": "Souffle", "effets": [{"type": "damage", "amount": 18, "element": "eau"}]}},
+      "rythme": {"kind": "cycle", "order": ["souffle"]}
+    },
+    "dragoss_charbon": {
+      "nom": "Dragoss Charbon",
+      "pv": [66, 72],
+      "resistances": {"neutre": 22, "terre": 16, "feu": 32, "eau": -15, "air": 11},
+      "mecaniques": [],
+      "actions": {
+        "braise": {
+          "nom": "Crache-braise",
+          "effets": [
+            {"type": "damage", "amount": 12, "element": "feu"},
+            {"type": "addCard", "card": "statut_braise", "count": 2, "pile": "discard"}
+          ]
+        },
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 8, "element": "feu", "hits": 2}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["braise", "griffes"]}
+    },
+    "sanglacier": {
+      "nom": "Sanglacier",
+      "pv": [66, 72],
+      "resistances": {"neutre": 18, "terre": 14, "feu": 9, "eau": 34, "air": -19},
+      "mecaniques": [{"kind": "enroulement", "n": 14}],
+      "actions": {"charge": {"nom": "Charge glacée", "effets": [{"type": "damage", "amount": 20, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["charge"]}
+    },
+    "mansobese": {
+      "nom": "Mansobèse",
+      "pv": [90, 96],
+      "resistances": {"neutre": 9, "terre": 35, "feu": 14, "eau": -25, "air": 11},
+      "mecaniques": [{"kind": "carapace", "n": 5}],
+      "actions": {
+        "ventre": {"nom": "Coup de ventre", "effets": [{"type": "damage", "amount": 22, "element": "feu"}]},
+        "sieste": {"nom": "Sieste", "effets": [{"type": "block", "amount": 20}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["ventre", "sieste"]}
+    },
+    "fricochere": {
+      "nom": "Fricochère",
+      "pv": [56, 60],
+      "resistances": {"neutre": 5, "terre": 18, "feu": 17, "eau": -22, "air": 26},
+      "mecaniques": [{"kind": "esquive", "n": 1}],
+      "actions": {"bec": {"nom": "Bec gelé", "effets": [{"type": "damage", "amount": 7, "element": "eau", "hits": 3}]}},
+      "rythme": {"kind": "cycle", "order": ["bec"]}
+    },
+    "kaniglou": {
+      "nom": "Kaniglou",
+      "pv": [62, 66],
+      "resistances": {"neutre": -17, "terre": 19, "feu": 14, "eau": 18, "air": 35},
+      "mecaniques": [{"kind": "colere", "n": 2, "every": 3}],
+      "actions": {
+        "crocs": {"nom": "Crocs", "effets": [{"type": "damage", "amount": 10, "element": "air", "hits": 2}]},
+        "hurle": {"nom": "Hurlement", "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["crocs", "hurle", "crocs"]}
+    },
+    "yokai_givrefoux": {
+      "nom": "Yokaï Givrefoux",
+      "pv": [60, 64],
+      "resistances": {"neutre": 16, "terre": 14, "feu": -36, "eau": 65, "air": 17},
+      "mecaniques": [{"kind": "esquive", "n": 2}, {"kind": "artefact", "n": 1}],
+      "actions": {
+        "feux": {"nom": "Feux follets", "effets": [{"type": "damage", "amount": 7, "element": "air", "hits": 3}]},
+        "voile": {"nom": "Voile", "effets": [{"type": "block", "amount": 14}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["feux", "voile"]}
+    },
+    "boufcoul": {
+      "nom": "Boufcoul",
+      "pv": [72, 78],
+      "resistances": {"neutre": 38, "terre": 62, "feu": -12, "eau": -13, "air": 28},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "charge": {"nom": "Charge", "effets": [{"type": "damage", "amount": 19, "element": "feu"}]},
+        "beugle": {"nom": "Beuglement", "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["beugle", "charge", "charge"]}
+    },
+    "muloubard": {
+      "nom": "Muloubard",
+      "pv": [64, 70],
+      "resistances": {"neutre": 15, "terre": 20, "feu": 30, "eau": -10, "air": -5},
+      "mecaniques": [],
+      "actions": {
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 20, "element": "eau"}]},
+        "blessure": {
+          "nom": "Lacération",
+          "effets": [
+            {"type": "damage", "amount": 10, "element": "eau"},
+            {"type": "addCard", "card": "statut_blessure", "count": 1, "pile": "discard"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["griffes", "blessure"]}
+    },
+    "bitouf_sombre": {
+      "nom": "Bitouf Sombre",
+      "pv": [64, 70],
+      "resistances": {"neutre": 25, "terre": 25, "feu": 25, "eau": -25, "air": 33},
+      "mecaniques": [{"kind": "regeneration", "n": 5}],
+      "actions": {
+        "ailes": {
+          "nom": "Ailes sombres",
+          "effets": [
+            {"type": "damage", "amount": 9, "element": "air", "hits": 2},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["ailes"]}
+    },
+    "bitouf_aerien": {
+      "nom": "Bitouf Aérien",
+      "pv": [54, 58],
+      "resistances": {"neutre": -5, "terre": -27, "feu": -3, "eau": -2, "air": 35},
+      "mecaniques": [{"kind": "esquive", "n": 2}],
+      "actions": {"pique": {"nom": "Piqué", "effets": [{"type": "damage", "amount": 18, "element": "air"}]}},
+      "rythme": {"kind": "cycle", "order": ["pique"]}
+    },
+    "timansot": {
+      "nom": "Timansot",
+      "pv": [30, 34],
+      "resistances": {"neutre": 18, "terre": -22, "feu": 14, "eau": 36, "air": 12},
+      "mecaniques": [],
+      "actions": {"bec": {"nom": "Petit bec", "effets": [{"type": "damage", "amount": 9, "element": "eau"}]}},
+      "rythme": {"kind": "cycle", "order": ["bec"]}
+    },
+    "mansot_royal": {
+      "nom": "Mansot Royal",
+      "pv": [200, 210],
+      "resistances": {"neutre": 29, "terre": 25, "feu": 24, "eau": 34, "air": 22},
+      "mecaniques": [{"kind": "artefact", "n": 3}, {"kind": "gardien"}],
+      "actions": {
+        "couvee": {"nom": "Couvée royale", "effets": [{"type": "summon", "monster": "timansot", "count": 2}]},
+        "glissade": {"nom": "Glissade", "effets": [{"type": "damage", "amount": 24, "element": "eau"}]},
+        "banquise": {
+          "nom": "Banquise",
+          "effets": [{"type": "block", "amount": 24}, {"type": "status", "status": "puissance", "amount": 2, "on": "self"}]
+        }
+      },
+      "rythme": {"kind": "cycle", "order": ["couvee", "glissade", "banquise", "glissade"]}
+    },
+    "dok_alako": {
+      "nom": "Dok Alako",
+      "pv": [220, 230],
+      "resistances": {"neutre": 38, "terre": -3, "feu": 38, "eau": -20, "air": 68},
+      "mecaniques": [{"kind": "rage", "n": 3, "every": 4}],
+      "actions": {
+        "rage": {"nom": "Rage du Dok", "effets": [{"type": "status", "status": "puissance", "amount": 3, "on": "self"}]},
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 12, "element": "air", "hits": 2}]},
+        "massacre": {"nom": "Massacre", "effets": [{"type": "damage", "amount": 32, "element": "air"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["rage", "griffes", "massacre"]}
+    },
+    "gardienne_egouts": {
+      "nom": "Gardienne des Égouts",
+      "pv": [190, 200],
+      "resistances": {"neutre": 98, "terre": 45, "feu": 43, "eau": 28, "air": 18},
+      "mecaniques": [{"kind": "gardien"}, {"kind": "regeneration", "n": 6}],
+      "actions": {
+        "appel": {"nom": "Appel des égouts", "effets": [{"type": "summon", "monster": "rat_egoutant", "count": 2}]},
+        "peste": {
+          "nom": "Peste",
+          "effets": [
+            {"type": "status", "status": "poison", "amount": 8, "on": "target"},
+            {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
+          ]
+        },
+        "queue": {"nom": "Coup de queue", "effets": [{"type": "damage", "amount": 26, "element": "terre"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["appel", "peste", "queue", "queue"]}
+    },
+    "meulou": {
+      "nom": "Meulou",
+      "pv": [450, 470],
+      "resistances": {"neutre": 20, "terre": 30, "feu": -5, "eau": 40, "air": 40},
+      "mecaniques": [{"kind": "colere", "n": 1, "every": 3}],
+      "actions": {
+        "meute": {"nom": "Appel de la meute", "effets": [{"type": "summon", "monster": "mulou", "count": 1}]},
+        "griffes": {"nom": "Griffes", "effets": [{"type": "damage", "amount": 14, "element": "eau", "hits": 2}]},
+        "hurlement": {
+          "nom": "Hurlement lunaire",
+          "effets": [
+            {"type": "status", "status": "puissance", "amount": 4, "on": "self"},
+            {"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}
+          ]
+        },
+        "devore": {"nom": "Dévorer", "effets": [{"type": "drain", "amount": 28, "element": "eau"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["meute", "griffes", "hurlement", "devore"]},
+      "phase2": {
+        "seuil": 0.5,
+        "puissance": 4,
+        "nom": "Pleine lune",
+        "rythme": {"kind": "cycle", "order": ["griffes", "devore", "griffes", "meute"]}
+      }
+    },
+    "tofu_royal": {
+      "nom": "Tofu Royal",
+      "pv": [430, 450],
+      "resistances": {"neutre": 38, "terre": 23, "feu": 18, "eau": 23, "air": 58},
+      "mecaniques": [{"kind": "esquive", "n": 3}, {"kind": "rituel", "n": 1}],
+      "actions": {
+        "nuee": {"nom": "Nuée de Tofus", "effets": [{"type": "summon", "monster": "tofu", "count": 2}]},
+        "bec": {"nom": "Bec royal", "effets": [{"type": "damage", "amount": 10, "element": "air", "hits": 3}]},
+        "plumes": {"nom": "Plumes dorées", "effets": [{"type": "block", "amount": 26}]},
+        "pique": {"nom": "Piqué royal", "effets": [{"type": "damage", "amount": 34, "element": "air"}]}
+      },
+      "rythme": {"kind": "cycle", "order": ["nuee", "bec", "plumes", "pique"]},
+      "phase2": {"seuil": 0.5, "puissance": 2, "nom": "Envol royal", "rythme": {"kind": "cycle", "order": ["bec", "pique", "nuee"]}}
+    }
+  }
+}

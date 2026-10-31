@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Combat, type PlayerInit } from './combat.ts';
-import { VISEE } from './classes.ts';
+import { PASSIVE_VALUES } from './classes.ts';
+const VISEE = PASSIVE_VALUES.visee.attaques;
 import type { ClassId } from './types.ts';
 import { ALL_CARDS } from '../data/cards.ts';
 import { LIBRARY, newCard, rewardPool, starterDeck } from '../data/library.ts';

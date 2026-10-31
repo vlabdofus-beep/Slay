@@ -3,3 +3,5 @@
   Cache-Control: no-cache
 /index.html
   Cache-Control: no-cache
+/equilibrage.json
+  Cache-Control: no-cache

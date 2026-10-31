@@ -1,6 +1,7 @@
 import { REWARD_BY_ID, TRIGGER_BY_ID, perTurn, type EventId, type EvCtx, type ItemEffect, type RewardDef, type RuleId, type TriggerDef } from './effects.ts';
 import { Rng } from './rng.ts';
-import { COURROUX, VISEE } from './classes.ts';
+import { PASSIVE_VALUES } from './classes.ts';
+const VISEE = () => PASSIVE_VALUES.visee.attaques;
 import type {
   CardDef,
   ClassId,
@@ -287,7 +288,7 @@ export class Combat {
 
   /** Visée : la prochaine attaque sera-t-elle doublée ? */
   aimReady(): boolean {
-    return this.classe === 'cra' && this.aim >= VISEE - 1;
+    return this.classe === 'cra' && this.aim >= VISEE() - 1;
   }
 
   living(): Enemy[] {
@@ -328,7 +329,7 @@ export class Combat {
   /** Dégâts qu'infligerait cet effet à cet ennemi, maintenant. */
   estimateDamage(fx: Effect, enemy: Enemy, card?: CardDef): number {
     if (fx.type !== 'damage' && fx.type !== 'drain') return 0;
-    const mul = card?.type === 'attaque' && this.aimReady() ? 2 : 1;
+    const mul = card?.type === 'attaque' && this.aimReady() ? PASSIVE_VALUES.visee.multiplicateur : 1;
     const per = this.playerHit(enemy, this.baseAmount(fx, enemy, card?.id), fx.element) * mul;
     return per * (fx.type === 'damage' ? (fx.hits ?? 1) : 1);
   }
@@ -419,7 +420,7 @@ export class Combat {
     this.dmgMul = 1;
     const spendsAim = def.effects.some((f) => f.type === 'spend' && f.what === 'visee');
     if (this.classe === 'cra' && def.type === 'attaque' && !spendsAim) {
-      if (this.aimReady()) { this.dmgMul = 2; this.aim = 0; this.fired['classe'] = (this.fired['classe'] ?? 0) + 1; this.log.push('Visée : dégâts doublés'); }
+      if (this.aimReady()) { this.dmgMul = PASSIVE_VALUES.visee.multiplicateur; this.aim = 0; this.fired['classe'] = (this.fired['classe'] ?? 0) + 1; this.log.push('Visée : dégâts doublés'); }
       else this.aim++;
     }
     const hits = this.resolveEffects(def, target);
@@ -463,8 +464,8 @@ export class Combat {
 
   endTurn(): void {
     if (this.outcome !== 'ongoing') throw new Error('Combat terminé');
-    if (this.classe === 'iop' && this.turnAttacks >= COURROUX) {
-      this.addStatus(this.player, 'puissance', 1);
+    if (this.classe === 'iop' && this.turnAttacks >= PASSIVE_VALUES.courroux.attaques) {
+      this.addStatus(this.player, 'puissance', PASSIVE_VALUES.courroux.puissance);
       this.fired['classe'] = (this.fired['classe'] ?? 0) + 1;
       this.log.push('Courroux : +1 puissance');
     }
@@ -537,7 +538,7 @@ export class Combat {
 
   /** Visée : rapproche le prochain tir doublé (s'arrête juste avant). */
   fxCharge(n: number): void {
-    if (this.classe === 'cra') this.aim = Math.min(VISEE - 1, this.aim + n);
+    if (this.classe === 'cra') this.aim = Math.min(VISEE() - 1, this.aim + n);
   }
 
   fxLoseHp(n: number): void {
