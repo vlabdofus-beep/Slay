@@ -34,7 +34,7 @@ export type RunOp =
   | { op: 'kamas'; n: number }
   | { op: 'prosp'; n: number }
   | { op: 'upgrade'; n: number }
-  | { op: 'upgradeAll'; type: CardType }
+  | { op: 'upgradeAll'; type: CardType; protection?: boolean }
   | { op: 'pick'; what: PickWhat; n: number }
   | { op: 'cardChoice'; rarity: 'rare' | 'commune' | 'toute'; neutral?: boolean }
   | { op: 'curse'; id: string }
@@ -80,7 +80,7 @@ export function opText(o: RunOp): string {
     case 'kamas': return o.n > 0 ? `Gagne ${o.n} kamas` : `Paie ${-o.n} kamas`;
     case 'prosp': return `+${o.n} prospection pour le reste de la run`;
     case 'upgrade': return o.n > 1 ? `Améliore ${o.n} cartes au hasard` : 'Améliore une carte au hasard';
-    case 'upgradeAll': return `Améliore toutes tes ${TYPE_PL[o.type]}`;
+    case 'upgradeAll': return `Améliore toutes tes ${TYPE_PL[o.type]}${o.protection ? ' qui donnent de l\'armure ou du bouclier' : ''}`;
     case 'pick': return PICK_TEXT[o.what][o.n > 1 ? 1 : 0].replace('{n}', String(o.n));
     case 'cardChoice': return `Choisis une carte${o.rarity === 'rare' ? ' rare' : o.rarity === 'commune' ? ' commune' : ''}${o.neutral ? ' d\'arme' : ''} parmi trois`;
     case 'curse': return `Ajoute la malédiction ${CURSE_NAME[o.id] ?? o.id} à ton deck`;

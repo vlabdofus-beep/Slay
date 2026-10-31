@@ -209,7 +209,7 @@ function effectLines(h: BxHelpers): EffectLine[] {
   const out: EffectLine[] = [];
   for (const [id, s] of Object.entries(STATUS_INFO)) out.push({ group: 'Statuts', text: `${s.name} ${s.help}`, html: `<img src="${h.statusIcon(id)}" alt="" class="bx-st-ico"><span><b>${esc(s.name)}</b> ${esc(s.help)}</span>` });
   for (const cl of Object.keys(PASSIVES) as ClassId[]) { const p = PASSIVES[cl]!; out.push({ group: 'Passifs de classe', text: `${p.name} ${cl === 'iop' ? 'Iop' : 'Crâ'} ${p.text}`, html: `${h.passiveBadge(cl)}<span><b>${esc(p.name)}</b> (${cl === 'iop' ? 'Iop' : 'Crâ'}) ${esc(p.text)}</span>` }); }
-  for (const t of TRIGGERS) out.push({ group: "Déclencheurs d'objets", text: t.text, html: esc(t.text) });
+  for (const t of TRIGGERS.filter((x) => !x.noRoll)) out.push({ group: "Déclencheurs d'objets", text: t.text, html: esc(t.text) });
   for (const r of Object.values(RULES)) out.push({ group: 'Règles légendaires', text: r, html: esc(r) });
   for (const r of Object.values(DOFUS_RULES)) out.push({ group: 'Règles des Dofus', text: r, html: esc(r) });
   return out;

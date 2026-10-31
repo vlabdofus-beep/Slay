@@ -20,7 +20,7 @@ export interface BalanceTargets {
 
 /** Effet de combat d'une bénédiction, lisible : un déclencheur et une récompense, ou une règle. */
 export type BalanceBoonFx =
-  | { declencheur: string; recompense: string; quantite: number; par_tour?: number; une_fois?: boolean }
+  | { declencheur: string; recompense: string; quantite: number; par_tour?: number; une_fois?: boolean; recharge?: number }
   | { regle: string };
 export interface BalanceBoon {
   nom: string;
@@ -72,9 +72,9 @@ export const HELP = [
   "Mécaniques de monstres — carapace n, epines n, colere n every (puissance toutes les « every » attaques jouées), rage n every (toutes les « every » cartes), enroulement n, rituel n, spores n, explosion turns dmg, division, voleur n turns, gardien, regeneration n, esquive n, cameleon, sommeil turns block, plafond n, artefact n.",
   "Rythme — cycle : order = actions jouées dans l'ordre, en boucle. random : weights = poids de chaque action, maxRepeat = répétitions de suite au plus.",
   "dieux : les douze dieux (nom, titre, phrase d'accueil) et leurs six bénédictions. Chaque bénédiction peut avoir des effets de combat, des stats, des avantages de run et des effets immédiats.",
-  "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
+  "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat, recharge = une fois puis rien pendant ce nombre de tours), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
   "dieux — avantages : kamas (0.35 = +35 % après chaque combat), remise_marchand (0.25 = −25 %), cartes_en_plus (aux récompenses), resurrection (nombre), soin_zaap (0.2 = +20 % de PV au Zaap).",
-  "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type, pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
+  "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type (+ protection: true = seulement celles qui donnent de l'armure ou du bouclier), pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
   `Déclencheurs : ${TRIGGERS.map((t) => t.id).join(', ')}.`,
   `Récompenses : ${REWARDS.map((r) => r.id).join(', ')}.`,
   `Règles : ${Object.keys(RULE_TEXT).join(', ')}.`,
@@ -125,6 +125,7 @@ function boonFx(fx: ItemEffect[]): BalanceBoonFx[] {
     const o: BalanceBoonFx = { declencheur: p.trigger, recompense: p.reward, quantite: p.amount };
     if (p.limit !== undefined) o.par_tour = p.limit;
     if (p.once) o.une_fois = true;
+    if (p.recharge) o.recharge = p.recharge;
     return o;
   }));
 }
@@ -255,7 +256,7 @@ export function applyBalance(raw: unknown, t: BalanceTargets): string[] {
 const OPS: Record<string, (o: Record<string, unknown>) => boolean> = {
   heal: (o) => isNum(o.n), healPct: (o) => isNum(o.pct), maxHp: (o) => isNum(o.n), loseHp: (o) => isNum(o.n) && (o.n as number) > 0,
   kamas: (o) => isNum(o.n), prosp: (o) => isNum(o.n), upgrade: (o) => isNum(o.n) && (o.n as number) > 0,
-  upgradeAll: (o) => ['attaque', 'competence', 'pouvoir'].includes(o.type as string),
+  upgradeAll: (o) => ['attaque', 'competence', 'pouvoir'].includes(o.type as string) && (o.protection === undefined || typeof o.protection === 'boolean'),
   pick: (o) => ['remove', 'upgrade', 'transform', 'duplicate'].includes(o.what as string) && isNum(o.n) && (o.n as number) > 0,
   cardChoice: (o) => ['rare', 'commune', 'toute'].includes(o.rarity as string),
   curse: (o) => ['malediction_doute', 'malediction_honte', 'malediction_fardeau'].includes(o.id as string),
@@ -278,8 +279,8 @@ function applyBoon(boon: Boon, v: BalanceBoon, at: string, warn: string[]): void
       if (e && 'regle' in e) {
         if (e.regle in RULE_TEXT) fx.push({ kind: 'rule', rule: e.regle as RuleId });
         else { ok = false; warn.push(`${at}.effets : règle inconnue ${e.regle}`); }
-      } else if (e && TRIGGER_BY_ID[e.declencheur] && REWARD_BY_ID[e.recompense] && isNum(e.quantite) && (e.par_tour === undefined || (isNum(e.par_tour) && e.par_tour >= 1))) {
-        fx.push({ kind: 'roll', parts: [{ trigger: e.declencheur, reward: e.recompense, amount: e.quantite, ...(e.par_tour !== undefined ? { limit: Math.round(e.par_tour) } : {}), ...(e.une_fois ? { once: true } : {}) }] });
+      } else if (e && TRIGGER_BY_ID[e.declencheur] && REWARD_BY_ID[e.recompense] && isNum(e.quantite) && (e.par_tour === undefined || (isNum(e.par_tour) && e.par_tour >= 1)) && (e.recharge === undefined || (isNum(e.recharge) && e.recharge >= 1))) {
+        fx.push({ kind: 'roll', parts: [{ trigger: e.declencheur, reward: e.recompense, amount: e.quantite, ...(e.par_tour !== undefined ? { limit: Math.round(e.par_tour) } : {}), ...(e.une_fois ? { once: true } : {}), ...(e.recharge ? { recharge: Math.round(e.recharge) } : {}) }] });
       } else { ok = false; warn.push(`${at}.effets : effet invalide (déclencheur, récompense ou quantité)`); }
     }
     if (ok) boon.effects = fx.length ? fx : undefined;

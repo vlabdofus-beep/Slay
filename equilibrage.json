@@ -14,10 +14,10 @@
     "Mécaniques de monstres — carapace n, epines n, colere n every (puissance toutes les « every » attaques jouées), rage n every (toutes les « every » cartes), enroulement n, rituel n, spores n, explosion turns dmg, division, voleur n turns, gardien, regeneration n, esquive n, cameleon, sommeil turns block, plafond n, artefact n.",
     "Rythme — cycle : order = actions jouées dans l'ordre, en boucle. random : weights = poids de chaque action, maxRepeat = répétitions de suite au plus.",
     "dieux : les douze dieux (nom, titre, phrase d'accueil) et leurs six bénédictions. Chaque bénédiction peut avoir des effets de combat, des stats, des avantages de run et des effets immédiats.",
-    "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
+    "dieux — effets : {declencheur, recompense, quantite} (+ par_tour = déclenchements par tour au plus, une_fois = une seule fois par combat, recharge = une fois puis rien pendant ce nombre de tours), ou {regle}. stats : pv, armure (à chaque gain d'armure), prospection, degats {terre, feu, eau, air, neutre}.",
     "dieux — avantages : kamas (0.35 = +35 % après chaque combat), remise_marchand (0.25 = −25 %), cartes_en_plus (aux récompenses), resurrection (nombre), soin_zaap (0.2 = +20 % de PV au Zaap).",
-    "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type, pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
-    "Déclencheurs : carte_terre, premiere_terre, deuxieme_terre, ouverture_terre, acheve_terre, carte_feu, premiere_feu, deuxieme_feu, ouverture_feu, acheve_feu, carte_eau, premiere_eau, deuxieme_eau, ouverture_eau, acheve_eau, carte_air, premiere_air, deuxieme_air, ouverture_air, acheve_air, debut_tour, debut_combat, premier_tour, tous_3_tours, pv_bas, fin_pa, fin_armure, fin_main, ennemi_meurt, pv_perdus, armure_gagnee, toutes_3_cartes, attaque, competence, gratuite, chere, premiere_carte, dernier_pa, trois_elements, zone, cible_brule, cible_empoisonnee, cible_vulnerable, victoire, victoire_intacte.",
+    "dieux — immediat (à la prise de la bénédiction) : heal n, healPct pct, maxHp n, loseHp n, kamas n, prosp n, upgrade n (au hasard), upgradeAll type (+ protection: true = seulement celles qui donnent de l'armure ou du bouclier), pick what (remove, upgrade, transform, duplicate) n, cardChoice rarity (rare, commune, toute), curse id, itemChoice rarity, relic id, chance p win lose winText loseText.",
+    "Déclencheurs : carte_terre, premiere_terre, deuxieme_terre, ouverture_terre, acheve_terre, carte_feu, premiere_feu, deuxieme_feu, ouverture_feu, acheve_feu, carte_eau, premiere_eau, deuxieme_eau, ouverture_eau, acheve_eau, carte_air, premiere_air, deuxieme_air, ouverture_air, acheve_air, debut_tour, debut_combat, premier_tour, tous_3_tours, tous_4_tours, pv_bas, fin_pa, fin_armure, fin_main, ennemi_meurt, pv_perdus, armure_gagnee, toutes_3_cartes, attaque, competence, gratuite, chere, premiere_carte, dernier_pa, trois_elements, zone, cible_brule, cible_empoisonnee, cible_vulnerable, victoire, victoire_intacte.",
     "Récompenses : puissance, armure, bouclier, soin, pioche, pa, reduction, esquive, renvoi, brulure, poison, vulnerabilite, faiblesse, erosion, etourdi, brulure_zone, poison_zone, degats, degats_zone, perte_pv, visee, prospection, prospection_run.",
     "Règles : brulure_tenace, poison_tenace, premiere_gratuite, eau_vampire, armure_persistante, pa_plus, main_gardee, contagion, ricochet, puissance_armure, air_perce, vulne_forte, brule_empoisonne, etourdi_fragile, renvoi_moitie, triple_element, soin_bouclier, double_premier, faiblesse_forte, prospecteur, armure_offensive, braises, ivoire, pioche_plus, resurrection, ocre, cauchemar, critique, sablier, retenue, sang, poison_affaiblit, premier_double, pioche_vide, brulure_double, epines_armure, colosse."
   ],
@@ -197,7 +197,7 @@
         "fec_epines": {"nom": "Armure d'épines", "effets": [{"regle": "epines_armure"}]},
         "fec_armure": {"nom": "Armure terrestre", "stats": {"armure": 2}},
         "fec_treve": {"nom": "Trêve", "effets": [{"regle": "puissance_armure"}]},
-        "fec_rempart": {"nom": "Rempart", "immediat": [{"op": "upgradeAll", "type": "competence"}]}
+        "fec_rempart": {"nom": "Rempart", "immediat": [{"op": "upgradeAll", "type": "competence", "protection": true}]}
       }
     },
     "osamodas": {
@@ -228,7 +228,7 @@
           "effets": [{"declencheur": "pv_perdus", "recompense": "bouclier", "quantite": 3, "par_tour": 1}]
         },
         "sad_arbre": {"nom": "Arbre de vie", "effets": [{"declencheur": "victoire", "recompense": "soin", "quantite": 2}]},
-        "sad_racines": {"nom": "Racines profondes", "stats": { "degats": {"terre": 2}}},
+        "sad_racines": {"nom": "Racines profondes", "stats": {"degats": {"terre": 2}}},
         "sad_seve": {"nom": "Sève vénéneuse", "effets": [{"declencheur": "carte_terre", "recompense": "poison", "quantite": 1}]}
       }
     },
@@ -239,7 +239,7 @@
       "benedictions": {
         "pan_ivresse": {"nom": "Ivresse", "effets": [{"regle": "etourdi_fragile"}]},
         "pan_lait": {"nom": "Lait de bambou", "stats": {"pv": 5}, "immediat": [{"op": "healPct", "pct": 1}]},
-        "pan_karcham": {"nom": "Karcham", "effets": [{"declencheur": "chere", "recompense": "etourdi", "quantite": 1, "par_tour": 1}]},
+        "pan_karcham": {"nom": "Karcham", "effets": [{"declencheur": "chere", "recompense": "etourdi", "quantite": 1, "recharge": 3}]},
         "pan_souffle": {"nom": "Souffle alcoolisé", "effets": [{"regle": "brulure_double"}]},
         "pan_flamme": {"nom": "Flamme du bambou", "stats": {"degats": {"feu": 2}}},
         "pan_vapeurs": {"nom": "Vapeurs", "effets": [{"declencheur": "zone", "recompense": "vulnerabilite", "quantite": 1}]}

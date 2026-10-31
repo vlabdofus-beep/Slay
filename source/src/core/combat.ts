@@ -158,7 +158,7 @@ export function resolveCard(lib: Library, inst: CardInstance): CardDef {
 }
 
 /** Effet d'un objet : chaque objet ne peut se déclencher qu'un nombre limité de fois par tour (RewardDef.perTurn). */
-interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number; src: string; limit: number; once: boolean }
+interface Handler { trigger: TriggerDef; reward: RewardDef; amount: number; used: number; src: string; limit: number; once: boolean; cd: number; ready: number }
 
 /** Résultat d'une prévisualisation de carte : PV et armure retirés à chaque ennemi touché, effet sur le joueur. */
 export interface Preview {
@@ -273,7 +273,7 @@ export class Combat {
       if (this.rules.has('cauchemar')) this.addStatus(e, 'vulnerabilite', 3);
       if (this.rules.has('colosse')) this.addStatus(e, 'puissance', 2);
     }
-    if (this.rules.has('colosse')) this.addStatus(this.player, 'puissance', 2);
+    if (this.rules.has('colosse')) this.addStatus(this.player, 'puissance', 3);
     this.drawPile = this.rng.shuffle([...deck]);
     // Cartes innées : sur le dessus de la pioche (la pioche se fait par la fin du tableau).
     const innate = this.drawPile.filter((i) => this.cardDef(i).innate);
@@ -290,7 +290,7 @@ export class Combat {
     for (const p of e.parts as EffectPart[]) {
       const trigger = TRIGGER_BY_ID[p.trigger], reward = REWARD_BY_ID[p.reward];
       if (!trigger || !reward) continue;
-      (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src, limit: p.once ? 1 : p.limit ?? perTurn(reward), once: !!p.once });
+      (this.handlers[trigger.event] ??= []).push({ trigger, reward, amount: p.amount, used: 0, src, limit: p.once || p.recharge ? 1 : p.limit ?? perTurn(reward), once: !!p.once, cd: p.recharge ?? 0, ready: 0 });
     }
   }
 
@@ -636,7 +636,9 @@ export class Combat {
     for (const h of list) {
       if (h.trigger.test && !h.trigger.test(this, x)) continue;
       if (h.used >= h.limit) continue;
+      if (h.cd && this.turn < h.ready) continue;
       h.used++;
+      if (h.cd) h.ready = this.turn + h.cd;
       if (h.src) this.fired[h.src] = (this.fired[h.src] ?? 0) + 1;
       h.reward.apply(this, h.amount, x, h.trigger);
     }
@@ -797,10 +799,9 @@ export class Combat {
       const a = Math.min(t.block, rest);
       t.block -= a;
       rest -= a;
-      // Épines (règle) : ce que l'armure du joueur absorbe d'un coup revient à l'attaquant.
+      // Épines (règle) : la moitié de ce que l'armure du joueur absorbe d'un coup revient à l'attaquant.
       if (a > 0 && t === this.player && o.attacker && !o.attacker.dead && !o.dot && this.rules.has('epines_armure')) {
-        this.applyHit(o.attacker, a, { dot: true });
-        this.markIfDead(o.attacker);
+        if (a >= 2) { this.applyHit(o.attacker, Math.floor(a / 2), { dot: true }); this.markIfDead(o.attacker); }
       }
       const sh = Math.min(t.status.bouclier ?? 0, rest);
       if (sh) { t.status.bouclier = (t.status.bouclier ?? 0) - sh; rest -= sh; }
@@ -875,7 +876,7 @@ export class Combat {
     if (this.player.status.erosion) n = Math.floor(n / 2);
     const room = this.player.maxHp - this.player.hp;
     this.player.hp += Math.min(room, n);
-    if (n > room && this.rules.has('soin_bouclier')) this.addStatus(this.player, 'bouclier', n - room);
+    if (n - room >= 2 && this.rules.has('soin_bouclier')) this.addStatus(this.player, 'bouclier', Math.floor((n - room) / 2));
   }
 
   private markIfDead(e: Enemy): void {

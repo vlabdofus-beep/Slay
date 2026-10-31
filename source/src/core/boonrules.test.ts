@@ -6,9 +6,9 @@ import type { RuleId } from './effects.ts';
 
 const make = (rules: RuleId[], seed = 3) => new Combat(LIBRARY, starterDeck('iop'), { hp: 80, maxHp: 80, effects: rules.map((rule) => ({ kind: 'rule', rule })) }, ['bouftou'], seed);
 
-test('Colosse : 2 puissance pour le joueur et pour les monstres', () => {
+test('Colosse : 3 puissance pour le joueur, 2 pour les monstres', () => {
   const c = make(['colosse']);
-  assert.equal(c.player.status.puissance, 2);
+  assert.equal(c.player.status.puissance, 3);
   assert.equal(c.enemies[0].status.puissance, 2);
 });
 
@@ -34,4 +34,28 @@ test('Rembobinage : main vidée pendant le tour, on repioche 2 cartes une fois',
   const before = c.drawPile.length + c.discardPile.length;
   c.playCard(0, c.living()[0]?.uid);
   if (c.outcome === 'ongoing' && before >= 2) assert.equal(c.hand.length, 2);
+});
+
+test('Karcham : une fois tous les 3 tours (recharge)', () => {
+  const c = new Combat(LIBRARY, starterDeck('iop'), { hp: 80, maxHp: 80, effects: [{ kind: 'roll', parts: [{ trigger: 'debut_tour', reward: 'esquive', amount: 1, recharge: 3 }] }] }, ['bouftou'], 3);
+  const seen: number[] = [];
+  for (let t = 0; t < 7 && c.outcome === 'ongoing'; t++) {
+    if ((c.player.status.esquive ?? 0) > 0) seen.push(c.turn);
+    c.player.status.esquive = 0;
+    c.player.hp = c.player.maxHp = 999;
+    c.endTurn();
+  }
+  assert.deepEqual(seen.slice(0, 3), [1, 4, 7].slice(0, seen.length));
+});
+
+test('Armure d\'épines : la moitié de ce que l\'armure absorbe ; soin en trop : la moitié en bouclier', () => {
+  const c = make(['epines_armure', 'soin_bouclier'], 4);
+  const e = c.enemies[0];
+  c.player.block = 40;
+  const hp = e.hp;
+  (c as unknown as { applyHit(t: unknown, d: number, o: unknown): number }).applyHit(c.player, 10, { attacker: e });
+  assert.equal(hp - e.hp, 5);
+  c.player.hp = c.player.maxHp;
+  c.fxHeal(9);
+  assert.equal(c.player.status.bouclier, 4);
 });

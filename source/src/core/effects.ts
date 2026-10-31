@@ -50,6 +50,8 @@ export interface TriggerDef {
   lootFreq?: number;
   /** Ne peut survenir qu'une fois par tour (la limite par objet ne s'affiche pas). */
   single?: boolean;
+  /** Réservé aux bénédictions et reliques : jamais tiré sur un objet (les effets d'objets d'une run restent stables). */
+  noRoll?: boolean;
 }
 
 export interface RewardDef {
@@ -95,6 +97,7 @@ export const TRIGGERS: TriggerDef[] = [
   { id: 'debut_combat', event: 'combatStart', freq: 1.6, text: 'Au début du combat' },
   { id: 'premier_tour', event: 'turnStart', freq: 1.6, text: 'Au premier tour', test: (c) => c.turn === 1 },
   { id: 'tous_3_tours', event: 'turnStart', freq: 1.0, text: 'Tous les 3 tours', test: (c) => c.turn % 3 === 0 },
+  { id: 'tous_4_tours', event: 'turnStart', freq: 0.8, noRoll: true, text: 'Tous les 4 tours', test: (c) => c.turn % 4 === 0 },
   { id: 'pv_bas', event: 'turnStart', freq: 2.0, text: 'Au début de ton tour, si tu as moins de la moitié de tes PV',
     test: (c) => c.player.hp * 2 < c.player.maxHp },
   { id: 'fin_pa', event: 'turnEnd', kind: 'end', freq: 0.6, text: 'Si tu finis ton tour avec au moins 1 PA',
@@ -204,7 +207,7 @@ export const RULES = {
   etourdi_fragile: 'Les ennemis étourdis subissent le double de dégâts.',
   renvoi_moitie: 'Tu renvoies la moitié des dégâts que tu subis à l\'attaquant.',
   triple_element: 'La première fois que tu joues 3 éléments différents dans un tour : +2 PA et pioche 2 cartes.',
-  soin_bouclier: 'Les soins au-delà de tes PV max deviennent du bouclier.',
+  soin_bouclier: 'La moitié des soins au-delà de tes PV max devient du bouclier.',
   double_premier: 'Ta première carte de chaque combat est lancée deux fois.',
   faiblesse_forte: 'Les ennemis affaiblis infligent 50 % de dégâts en moins au lieu de 25 %.',
   prospecteur: '+60 prospection. Chaque combat gagné sans perdre de PV donne +20 prospection pour le reste de la run.',
@@ -229,8 +232,8 @@ export const BOON_RULES = {
   premier_double: 'Ta première attaque de chaque tour est lancée deux fois.',
   pioche_vide: 'Quand ta main est vide pendant ton tour, pioche 2 cartes (une fois par tour).',
   brulure_double: 'La brûlure inflige le double de dégâts.',
-  epines_armure: 'Quand un ennemi frappe ton armure, il subit autant de dégâts qu\'elle en absorbe.',
-  colosse: 'Tu commences chaque combat avec 2 puissance, mais les monstres aussi.',
+  epines_armure: 'Quand un ennemi frappe ton armure, il subit la moitié des dégâts qu\'elle absorbe.',
+  colosse: 'Tu commences chaque combat avec 3 puissance, et les monstres avec 2.',
 } as const;
 export type RuleId = keyof typeof RULES | keyof typeof DOFUS_RULES | keyof typeof BOON_RULES;
 export const RULE_IDS = Object.keys(RULES) as (keyof typeof RULES)[];
@@ -238,8 +241,9 @@ export const ruleText = (r: RuleId): string => (r in RULES ? RULES[r as keyof ty
 
 // ───────────── tirage ─────────────
 
-/** limit : déclenchements par tour (remplace celui de la récompense) ; once : une seule fois par combat. */
-export interface EffectPart { trigger: string; reward: string; amount: number; limit?: number; once?: boolean }
+/** limit : déclenchements par tour (remplace celui de la récompense) ; once : une seule fois par combat ;
+ *  recharge : une fois, puis plus rien pendant ce nombre de tours (« une fois tous les 3 tours »). */
+export interface EffectPart { trigger: string; reward: string; amount: number; limit?: number; once?: boolean; recharge?: number }
 export type ItemEffect = { kind: 'roll'; parts: EffectPart[] } | { kind: 'rule'; rule: RuleId };
 
 /** Budget de chaque rareté, en points par combat. Le mythique répartit le sien sur deux récompenses. */
@@ -271,6 +275,7 @@ export function amountFor(t: TriggerDef, r: RewardDef, budget: number): number |
 export function combos(budget: number): EffectPart[] {
   const out: EffectPart[] = [];
   for (const t of TRIGGERS) for (const r of REWARDS) {
+    if (t.noRoll) continue;
     const n = amountFor(t, r, budget);
     if (n !== null) out.push({ trigger: t.id, reward: r.id, amount: n });
   }
@@ -311,6 +316,7 @@ export function partText(p: EffectPart): string {
 export function effectText(e: ItemEffect): string {
   if (e.kind === 'rule') return ruleText(e.rule);
   const t = TRIGGER_BY_ID[e.parts[0].trigger];
+  if (e.parts.some((p) => p.recharge)) return `${t.text} : ${e.parts.map(partText).join(' et ')} (une fois tous les ${e.parts.find((p) => p.recharge)!.recharge} tours).`;
   const lim = (p: EffectPart) => { if (p.once) return 'une fois par combat'; const n = p.limit ?? perTurn(REWARD_BY_ID[p.reward]); return n === 1 ? 'une fois par tour' : `${n} fois par tour au plus`; };
   if (e.parts.some((p) => p.once)) return `${t.text} : ${e.parts.map(partText).join(' et ')} (une fois par combat).`;
   if (!REPEATABLE.includes(t.event) || t.single) return `${t.text} : ${e.parts.map(partText).join(' et ')}.`;

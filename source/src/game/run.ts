@@ -16,6 +16,11 @@ import { RELICS, RELIC_BY_ID } from '../data/relics.ts';
 import { EVENTS, EVENT_BY_ID } from '../data/events.ts';
 import { NO_PERKS, type Boon, type PickWhat, type RunOp, type RunPerks } from './boons.ts';
 
+/** Une carte donne-t-elle de l'armure ou du bouclier (y compris sous condition) ? */
+function givesProtection(fx: import('../core/types.ts').Effect[]): boolean {
+  return fx.some((e) => e.type === 'block' || (e.type === 'status' && e.status === 'bouclier' && e.on === 'self') || (e.type === 'if' && givesProtection(e.then)));
+}
+
 export type Phase = 'dieu' | 'map' | 'combat' | 'reward' | 'zaap' | 'marchand' | 'evenement' | 'dofus' | 'victory' | 'defeat';
 
 /** Un choix en attente pendant une bénédiction ou un événement. */
@@ -608,7 +613,7 @@ export class Run {
         break;
       }
       case 'upgradeAll': {
-        const can = this.pickCandidates('upgrade').filter((c) => LIBRARY.cards[c.id].type === o.type);
+        const can = this.pickCandidates('upgrade').filter((c) => LIBRARY.cards[c.id].type === o.type && (!o.protection || givesProtection(LIBRARY.cards[c.id].effects)));
         for (const c of can) c.upgraded = true;
         this.note(`${can.length} carte${can.length > 1 ? 's' : ''} améliorée${can.length > 1 ? 's' : ''}`);
         break;
