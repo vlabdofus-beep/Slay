@@ -1615,13 +1615,14 @@ function render(): void {
   const net = ui.online?.party && ui.online.status === 'coupé' ? '<p class="net-banner" role="status">Connexion au salon perdue, on réessaie…</p>' : '';
   root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) + viewPending(run) : '') + net;
   if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
-  if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
-  // À plusieurs : les autres héros sur la scène, derrière le joueur
-  if (run?.phase === 'combat' && run.combat && ui.online?.party && run.combat.partySize > 1) {
-    const c = run.combat, party = ui.online.party;
-    stage.setAllies(c.seats.map((_, i) => i).filter((i) => i !== run.seat).map((i) => ({ classe: party.members[i].classe, gender: party.members[i].gender, down: c.isDown(i) })));
-  }
-  else stage.hide();
+  if (run?.phase === 'combat' && run.encounter) {
+    stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
+    // À plusieurs : les autres héros sur la scène, derrière le joueur
+    if (run.combat && ui.online?.party && run.combat.partySize > 1) {
+      const c = run.combat, party = ui.online.party;
+      stage.setAllies(c.seats.map((_, i) => i).filter((i) => i !== run.seat).map((i) => ({ classe: party.members[i].classe, gender: party.members[i].gender, down: c.isDown(i) })));
+    }
+  } else stage.hide();
   if (!run) { startPreviews(); mountLand(); }
   if (run?.phase === 'map') mountBoard(run);
   if (run?.phase === 'map') {
