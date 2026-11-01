@@ -56,6 +56,10 @@ export interface Enemy extends Entity {
     count: number;
     /** S'est enfui (voleur) ou s'est divisé : ne compte pas comme une victoire sur lui. */
     gone?: 'fui' | 'divise' | 'explose';
+    /** Héros qui a posé en dernier chaque statut à dégâts (poison, brûlure, échéance) : ses dégâts lui reviennent. */
+    dotBy?: Partial<Record<StatusId, number>>;
+    /** Achevé : la victoire est déjà comptée au héros qui l'a tué. */
+    counted?: boolean;
   };
 }
 
@@ -200,6 +204,11 @@ const ZERO_EL = (): Record<Element, number> => ({ terre: 0, feu: 0, eau: 0, air:
  * ses compteurs. Le combat lit et écrit toujours ceux du héros « en main » (`seatIndex`) : le code du moteur reste celui
  * d'un combat à un joueur, et il suffit de changer de héros pour agir pour un autre.
  */
+/** Bilan d'un héros : dégâts infligés (PV retirés aux monstres), reçus (PV perdus), absorbés (armure et bouclier),
+ *  soins (PV regagnés) et monstres achevés. */
+export interface Tally { dealt: number; taken: number; blocked: number; healed: number; kills: number }
+export const NO_TALLY = (): Tally => ({ dealt: 0, taken: 0, blocked: 0, healed: 0, kills: 0 });
+
 export interface Seat {
   player: Player;
   drawPile: CardInstance[];
@@ -237,6 +246,7 @@ export interface Seat {
   reviveAvailable: boolean;
   revived: boolean;
   ready: boolean;
+  tally: Tally;
 }
 
 function newSeat(player: Player, classe: ClassId | null): Seat {
@@ -277,6 +287,7 @@ function newSeat(player: Player, classe: ClassId | null): Seat {
     reviveAvailable: false,
     revived: false,
     ready: false,
+    tally: NO_TALLY(),
   };
 }
 
@@ -369,6 +380,7 @@ export class Combat {
   private set reviveAvailable(v: boolean) { this.seat.reviveAvailable = v; }
   get revived(): boolean { return this.seat.revived; }
   set revived(v: boolean) { this.seat.revived = v; }
+  get tally(): Tally { return this.seat.tally; }
   get ready(): boolean { return this.seat.ready; }
   set ready(v: boolean) { this.seat.ready = v; }
 
@@ -912,6 +924,10 @@ export class Combat {
     else if (id === 'telefrag') e.status.telefrag = 1;
     else this.addStatus(e, id, n);
     if (id === 'brulure' && this.rules.has('brule_empoisonne')) this.addStatus(e, 'poison', n);
+    if (id === 'poison' || id === 'brulure' || id === 'echeance') {
+      e.m.dotBy = { ...e.m.dotBy, [id]: this.cur };
+      if (id === 'brulure' && this.rules.has('brule_empoisonne')) e.m.dotBy.poison = this.cur;
+    }
   }
 
   private resolveTarget(mode: CardTarget, targetUid?: number): Enemy | undefined {
@@ -1030,7 +1046,7 @@ export class Combat {
     return {
       status: e.status, res: this.resOf(e),
       vulnMul: this.rules.has('vulne_forte') ? 1.75 : 1.5,
-      stunMul: this.rules.has('etourdi_fragile') ? 2 : 1,
+      stunMul: this.rules.has('etourdi_fragile') ? 1.5 : 1,
     };
   }
 
@@ -1052,7 +1068,7 @@ export class Combat {
    * Un coup ou des dégâts de statut sur une entité. Ordre : esquive (coups seulement), armure, bouclier, PV.
    * `pierce` ignore armure et bouclier (poison, Air avec la règle). Renvoie les PV réellement perdus.
    */
-  private applyHit(t: Entity, dmg: number, o: { attacker?: Enemy; pierce?: boolean; dot?: boolean } = {}): number {
+  private applyHit(t: Entity, dmg: number, o: { attacker?: Enemy; pierce?: boolean; dot?: boolean; by?: number } = {}): number {
     // Un héros qui n'est pas « en main » : ses objets et ses règles comptent pour ce coup.
     const si = this.seatOf(t);
     if (si >= 0 && si !== this.cur) {
@@ -1068,8 +1084,10 @@ export class Combat {
     const foe = t !== this.player ? (t as Enemy) : null;
     if (foe && power(foe, 'gardien') && this.living().some((x) => x !== foe)) dmg = Math.ceil(dmg / 2);
     let rest = dmg;
+    const heroHit = !foe;
     if (!o.pierce) {
       const a = Math.min(t.block, rest);
+      if (heroHit) this.tally.blocked += a;
       t.block -= a;
       rest -= a;
       // Épines (règle) : la moitié de ce que l'armure du joueur absorbe d'un coup revient à l'attaquant.
@@ -1077,7 +1095,7 @@ export class Combat {
         if (a >= 2) { this.applyHit(o.attacker, Math.floor(a / 2), { dot: true }); this.markIfDead(o.attacker); }
       }
       const sh = Math.min(t.status.bouclier ?? 0, rest);
-      if (sh) { t.status.bouclier = (t.status.bouclier ?? 0) - sh; rest -= sh; }
+      if (sh) { t.status.bouclier = (t.status.bouclier ?? 0) - sh; rest -= sh; if (heroHit) this.tally.blocked += sh; }
     }
     let lost = Math.min(t.hp, rest);
     if (foe) {
@@ -1086,6 +1104,13 @@ export class Combat {
       foe.m.lostThisTurn += lost;
     }
     t.hp -= lost;
+    if (foe) {
+      // Bilan : les dégâts vont au héros en main (ou à celui qui a posé le statut qui vient de faire mal)
+      const by = o.by ?? this.cur;
+      const st = this.seats[by] ?? this.seat;
+      st.tally.dealt += lost;
+      if (foe.hp <= 0 && !foe.m.counted) { foe.m.counted = true; st.tally.kills++; }
+    } else this.tally.taken += lost;
     if (foe) this.onEnemyHurt(foe, lost, !!o.dot);
     if (t === this.player && lost > 0) {
       this.hpLostThisCombat += lost;
@@ -1150,6 +1175,7 @@ export class Combat {
     if (this.player.status.erosion) n = Math.floor(n / 2);
     const room = this.player.maxHp - this.player.hp;
     this.player.hp += Math.min(room, n);
+    this.tally.healed += Math.max(0, Math.min(room, n));
     if (n - room >= 2 && this.rules.has('soin_bouclier')) this.addStatus(this.player, 'bouclier', Math.floor((n - room) / 2));
   }
 
@@ -1475,7 +1501,9 @@ export class Combat {
   private tickPoison(t: Entity): void {
     const poison = t.status.poison ?? 0;
     if (poison <= 0 || t.hp <= 0) return;
-    const mine = t !== this.player; // statuts posés par le joueur : les règles légendaires s'appliquent
+    const owner = this.seatOf(t) < 0 ? (t as Enemy).m.dotBy?.poison : undefined;
+    if (owner !== undefined && owner !== this.cur) { const prev = this.cur; this.cur = owner; try { this.tickPoison(t); } finally { this.cur = prev; } return; }
+    const mine = this.seatOf(t) < 0; // statuts posés par le joueur : les règles légendaires s'appliquent
     this.srcElement = null;
     this.applyHit(t, poison, { dot: true, pierce: true });
     t.status.poison = mine && this.rules.has('poison_tenace') ? poison - 1 : Math.floor(poison / 2);
@@ -1486,7 +1514,9 @@ export class Combat {
   private tickBurn(t: Entity): void {
     const burn = t.status.brulure ?? 0;
     if (burn <= 0 || t.hp <= 0) return;
-    const mine = t !== this.player;
+    const owner = this.seatOf(t) < 0 ? (t as Enemy).m.dotBy?.brulure : undefined;
+    if (owner !== undefined && owner !== this.cur) { const prev = this.cur; this.cur = owner; try { this.tickBurn(t); } finally { this.cur = prev; } return; }
+    const mine = this.seatOf(t) < 0;
     this.srcElement = 'feu';
     this.applyHit(t, mine && this.rules.has('brulure_double') ? burn * 2 : burn, { dot: true });
     if (!(mine && this.rules.has('brulure_tenace'))) t.status.brulure = burn - 1;
@@ -1500,7 +1530,7 @@ export class Combat {
     if (n <= 0 || e.dead) return;
     delete e.status.echeance;
     this.srcElement = 'feu';
-    this.applyHit(e, n, { dot: true });
+    this.applyHit(e, n, { dot: true, by: e.m.dotBy?.echeance });
     this.srcElement = null;
     this.markIfDead(e);
   }

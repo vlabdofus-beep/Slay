@@ -181,6 +181,8 @@ export class Online {
           // La fin d'un combat se règle à l'application du dernier geste ; une case de la carte se vote.
           if (name === 'checkCombatEnd') return undefined;
           if (name === 'enterNode' && args[0] !== 'dieu') return this.act('vote', args[0] as string);
+          // Les réponses d'un événement se votent aussi
+          if (name === 'chooseOption') return this.act('eventVote', args[0] as number);
           return this.act(name, ...(args as (string | number | undefined)[]));
         };
       }

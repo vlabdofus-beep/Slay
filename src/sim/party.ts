@@ -43,8 +43,10 @@ function nextAction(p: Party, i: number, rng: Rng): PartyAction | null {
     case 'evenement': {
       const ev = run.event!;
       if (ev.chosen !== null) return [i, 'leaveEvent'];
-      const ok = run.eventPage()!.options.map((_, k) => k).filter((k) => run.optionState(k).ok);
-      return [i, 'chooseOption', rng.pick(ok)];
+      // Événement joué ensemble : on vote une réponse possible pour toute la table
+      const ok = p.eventOptions();
+      if (!ok.length || p.eventVotes[i] !== null) return null;
+      return [i, 'eventVote', rng.pick(ok)];
     }
     case 'map': {
       if (run.availableNodes()[0] === 'dieu') return [i, 'enterNode', 'dieu'];

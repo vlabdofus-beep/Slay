@@ -262,6 +262,32 @@ class Stage {
   prev: { name: string; t: number; at: number } | null = null;
   sparks: Spark[] = [];
   private raf = 0;
+  /** Jeu à plusieurs : les autres héros, un peu en retrait derrière le joueur (attente, ou effondrés). */
+  allies: { key: string; char: Character | null; down: boolean; t0: number }[] = [];
+
+  /** Les autres héros du combat. Chacun garde son personnage d'un rendu à l'autre. */
+  setAllies(list: { classe: ClassId; gender: 'm' | 'f'; down: boolean }[]): void {
+    const next = list.map((a, i) => {
+      const key = `${a.classe}${a.gender}`;
+      const old = this.allies[i];
+      const same = old && old.key === key;
+      const slot = same ? old : { key, char: null as Character | null, down: false, t0: performance.now() };
+      if (!same) void buildCharacter(BREED[a.classe], a.gender).then((c) => { slot.char = c; });
+      if (a.down && !slot.down) slot.t0 = performance.now();
+      slot.down = a.down;
+      return slot;
+    });
+    this.allies = next;
+  }
+
+  /** Place d'un allié : derrière le joueur, en quinconce, un peu plus petit (il est plus loin). */
+  private allySpot(i: number): { x: number; y: number; h: number } {
+    const p = this.player;
+    const dx = [0.075, -0.075, 0.0][i % 3] * this.W * (this.W < 720 ? 0.8 : 1);
+    const back = [0.075, 0.06, 0.12][i % 3] * this.H;
+    const k = i === 2 ? 0.78 : 0.86;
+    return { x: p.x + dx, y: p.y - back, h: p.h * k };
+  }
 
   private mount(): void {
     if (this.canvas) return;
@@ -314,6 +340,7 @@ class Stage {
 
   hide(): void {
     this.visible = false;
+    this.allies = [];
     this.canvas?.classList.remove('on');
     this.sparks = [];
     cancelAnimationFrame(this.raf); this.raf = 0;
@@ -403,6 +430,17 @@ class Stage {
     if (this.backdrop) x.drawImage(this.backdrop, 0, 0, this.W, this.H);
     else { x.fillStyle = '#152028'; x.fillRect(0, 0, this.W, this.H); }
     const p = this.player;
+    // Les alliés d'abord : ils sont derrière le joueur
+    this.allies.forEach((a, i) => {
+      if (!a.char) return;
+      const s = this.allySpot(i);
+      x.fillStyle = 'rgba(0,0,0,.28)';
+      x.beginPath(); x.ellipse(s.x, s.y + 2, s.h * 0.2, s.h * 0.045, 0, 0, Math.PI * 2); x.fill();
+      const t = (now - a.t0) / 1000;
+      const len = animLength(a.char, 'death');
+      if (a.down) { x.globalAlpha = 0.85; drawAnim(x, a.char, 'death', Math.min(t, len || 1), s.x, s.y, s.h); x.globalAlpha = 1; }
+      else drawAnim(x, a.char, 'idle', t + i * 0.37, s.x, s.y, s.h);
+    });
     // ombre au sol
     x.fillStyle = 'rgba(0,0,0,.35)';
     x.beginPath(); x.ellipse(p.x, p.y + 2, p.h * 0.22, p.h * 0.05, 0, 0, Math.PI * 2); x.fill();

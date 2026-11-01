@@ -1,6 +1,6 @@
 // Une partie (run) : carte de l'acte, combats, récompenses, Zaap. Aucune dépendance au DOM :
 // l'interface ne fait qu'appeler ces méthodes et afficher l'état.
-import { Combat, type PlayerInit } from '../core/combat.ts';
+import { Combat, NO_TALLY, type PlayerInit, type Tally } from '../core/combat.ts';
 import { rollEffect } from '../core/effects.ts';
 import { computeLoadout, type EffectTable, type Equipment, type Loadout } from '../core/loadout.ts';
 import { generateMap, type ActMap, type MapNode } from '../core/map.ts';
@@ -133,6 +133,9 @@ export class Run {
   /** Simulation : désactive le passif de classe (pour le chiffrer). */
   noPassive = false;
   stats = { combats: 0, elites: 0, floor: 0, kamas: 0 };
+  /** Bilan des combats de la run (dégâts infligés, reçus, absorbés, soins, monstres achevés), et celui du dernier. */
+  tally: Tally = NO_TALLY();
+  lastTally: Tally = NO_TALLY();
   /** Rang d'un combat lancé par un événement (sinon celui de la case). */
   private fightTier: EncounterTier | null = null;
   /** Rencontre de chaque case de combat, tirée dès la génération : la carte peut l'afficher au survol. */
@@ -144,6 +147,10 @@ export class Run {
   seat = 0;
   /** Le combat en cours est celui de la table (case de la carte), pas un combat d'événement joué seul. */
   sharedFight = false;
+  /** À plusieurs, un combat lancé par l'événement se joue avec la table : la run attend ce combat (rang demandé). */
+  wantFight: EncounterTier | null = null;
+  /** L'événement en cours se joue avec la table (réponses votées). */
+  sharedEvent = false;
 
   /**
    * `o.rngSeed` : graine du tirage personnel (butin, marchand, événements). À plusieurs, chaque joueur a la sienne,
@@ -320,6 +327,9 @@ export class Run {
     const c = this.combat;
     if (this.phase !== 'combat' || !c || c.outcome === 'ongoing') return;
     const shared = this.sharedFight;
+    // Bilan du combat qui vient de finir, ajouté à celui de la run
+    this.lastTally = { ...(c.seats[this.seat]?.tally ?? NO_TALLY()) };
+    for (const k of Object.keys(this.tally) as (keyof Tally)[]) this.tally[k] += this.lastTally[k];
     if (c.outcome === 'lost') {
       // À plusieurs, un combat d'événement (joué seul) perdu ne finit pas la run : le héros revient avec 1 PV.
       if (this.party && !shared) {
@@ -429,6 +439,7 @@ export class Run {
     if (this.pending) throw new Error('Un choix est en attente');
     this.reward = null;
     this.combat = null;
+    this.sharedEvent = false;
     this.phase = 'map';
   }
 
@@ -604,9 +615,21 @@ export class Run {
 
   // ───────────── événements ─────────────
 
-  private openEvent(): void {
+  /** Événements que la run peut encore rencontrer dans l'acte. */
+  eventPool(): string[] {
     const pool = EVENTS.filter((e) => e.act === this.act && !this.eventsSeen.includes(e.id));
-    const ev = this.rng.pick(pool.length ? pool : EVENTS.filter((e) => e.act === this.act));
+    return (pool.length ? pool : EVENTS.filter((e) => e.act === this.act)).map((e) => e.id);
+  }
+
+  /** À plusieurs : la table entre sur une case d'événement, le même pour tout le monde (tiré par la partie). */
+  joinEvent(node: string, eventId: string): void {
+    if (!this.availableNodes().includes(node) || this.map.nodes[node].type !== 'evenement') throw new Error(`${node} n'est pas un événement`);
+    this.moveTo(node);
+    this.openEvent(eventId);
+  }
+
+  private openEvent(id?: string): void {
+    const ev = EVENT_BY_ID[id ?? this.rng.pick(this.eventPool())];
     this.eventsSeen.push(ev.id);
     this.event = { id: ev.id, chosen: null, result: '', gains: [], path: [] };
     this.phase = 'evenement';
@@ -653,6 +676,7 @@ export class Run {
   leaveEvent(): void {
     if (this.phase !== 'evenement' || !this.event || this.event.chosen === null || this.pending) throw new Error('Événement en cours');
     this.event = null;
+    this.sharedEvent = false;
     this.phase = 'map';
   }
 
@@ -724,6 +748,14 @@ export class Run {
         this.fightTier = o.tier;
         this.eventPrize = [...(o.then ?? []), ...this.queue];
         this.queue = [];
+        if (this.party && this.event && this.sharedEvent) {
+          // Événement joué à plusieurs : la partie crée le combat avec toute la table
+          this.wantFight = o.tier;
+          this.combat = null;
+          this.sharedFight = true;
+          this.phase = 'combat';
+          break;
+        }
         this.startCombat(this.rng.pick(pool));
         break;
       }

@@ -12,7 +12,7 @@ import { Combat } from '../core/combat.ts';
 import { Rng } from '../core/rng.ts';
 import type { ClassId } from '../core/types.ts';
 import { LIBRARY } from '../data/library.ts';
-import { ENCOUNTERS, TIER_SCALE, scaleForParty } from '../data/monsters.ts';
+import { ENCOUNTERS, TIER_SCALE, encountersOfTier, scaleForParty } from '../data/monsters.ts';
 import { Run } from './run.ts';
 
 export const MAX_PLAYERS = 4;
@@ -26,7 +26,7 @@ export type PartyAction = [number, string, ...(string | number | null)[]];
 const RUN_ACTIONS = new Set([
   'takeCard', 'takeItem', 'leaveReward', 'takeDofus',
   'buyCard', 'buyItem', 'removeCard', 'leaveShop', 'zaapRest', 'zaapUpgrade', 'leaveZaap',
-  'takeBoon', 'leaveGod', 'chooseOption', 'leaveEvent', 'resolvePick', 'chooseCard', 'chooseItem', 'skipPending',
+  'takeBoon', 'leaveGod', 'leaveEvent', 'resolvePick', 'chooseCard', 'chooseItem', 'skipPending',
 ]);
 
 export class Party {
@@ -39,6 +39,8 @@ export class Party {
   votes: (string | null)[];
   /** Combat commun en cours (null hors combat). */
   combat: Combat | null = null;
+  /** Événement joué ensemble : vote de chaque joueur pour une réponse de la scène en cours (null : pas encore voté). */
+  eventVotes: (number | null)[];
 
   constructor(members: Member[], seed: number) {
     if (members.length < 1 || members.length > MAX_PLAYERS) throw new Error(`De 1 à ${MAX_PLAYERS} joueurs`);
@@ -47,6 +49,7 @@ export class Party {
     this.rng = new Rng((seed ^ 0x6a09e667) >>> 0);
     this.runs = members.map((m, i) => new Run(m.classe, seed, m.gender, { party: true, rngSeed: (seed + 0x9e3779b9 * (i + 1)) >>> 0 }));
     this.votes = members.map(() => null);
+    this.eventVotes = members.map(() => null);
   }
 
   get size(): number { return this.runs.length; }
@@ -79,6 +82,48 @@ export class Party {
     return t;
   }
 
+  /**
+   * Réponses de l'événement sur lesquelles la table peut voter : toute la table est sur la même scène, sans choix
+   * en attente, et la réponse est possible pour chacun (un prix affiché que l'un ne peut pas payer la ferme).
+   */
+  eventOptions(): number[] {
+    if (this.over) return [];
+    const [a] = this.runs;
+    const key = (r: Run) => (r.phase === 'evenement' && r.event && r.event.chosen === null && !r.pending && r.sharedEvent ? `${r.event.id}|${r.event.path.join(',')}` : null);
+    const k = key(a);
+    if (!k || !this.runs.every((r) => key(r) === k)) return [];
+    return a.eventPage()!.options.map((_, i) => i).filter((i) => this.runs.every((r) => r.optionState(i).ok));
+  }
+
+  /** Vote pour une réponse de l'événement : la majorité l'emporte, sinon quand tout le monde a voté (égalité : tirage). */
+  eventVote(player: number, option: number): void {
+    if (!this.eventOptions().includes(option)) throw new Error('Réponse impossible maintenant');
+    this.eventVotes[player] = option;
+    const t: Record<number, number> = {};
+    for (const v of this.eventVotes) if (v !== null) t[v] = (t[v] ?? 0) + 1;
+    const best = Math.max(...Object.values(t));
+    const leaders = Object.keys(t).filter((k) => t[Number(k)] === best).map(Number).sort((x, y) => x - y);
+    if (best * 2 > this.size) return this.answer(leaders[0]);
+    if (this.eventVotes.every((v) => v !== null)) this.answer(leaders.length === 1 ? leaders[0] : this.rng.pick(leaders));
+  }
+
+  /** La table répond : chacun applique la réponse à sa run (ses prix, ses gains). Un combat se joue ensemble. */
+  private answer(option: number): void {
+    this.eventVotes = this.eventVotes.map(() => null);
+    for (const r of this.runs) r.chooseOption(option);
+    const fighters = this.runs.filter((r) => r.wantFight !== null);
+    if (!fighters.length) return;
+    const first = fighters[0];
+    const tier = first.wantFight!;
+    const enc = this.rng.pick(encountersOfTier(tier, first.act));
+    const members = fighters.map((r) => r.combatMember());
+    const scale = scaleForParty(TIER_SCALE[first.act][tier], fighters.length);
+    const c = new Combat(LIBRARY, members[0].deck, members[0].init, ENCOUNTERS[enc].monsters, this.rng.int(2 ** 31), scale, members.slice(1));
+    this.combat = c;
+    fighters.forEach((r, i) => { r.combat = c; r.seat = i; r.encounter = enc; r.wantFight = null; });
+    this.afterCombat(c);
+  }
+
   /** Combat où joue ce joueur : le combat commun, ou un combat d'événement qu'il joue seul. */
   combatOf(i: number): Combat | null {
     return this.runs[i].combat;
@@ -92,6 +137,7 @@ export class Party {
     if (!run) throw new Error(`Pas de joueur ${player}`);
     const args = raw.map((x) => (x === null ? undefined : x));
     if (name === 'vote') return this.vote(player, String(args[0]));
+    if (name === 'eventVote') return this.eventVote(player, Number(args[0]));
     if (name === 'enterNode') {
       // Seul le sanctuaire du dieu se visite seul ; les cases de la carte se votent.
       if (args[0] !== 'dieu') throw new Error('Les cases se choisissent au vote');
@@ -129,7 +175,14 @@ export class Party {
   private go(node: string): void {
     this.votes = this.votes.map(() => null);
     const n = this.runs[0].map.nodes[node];
-    if (n.type === 'zaap' || n.type === 'marchand' || n.type === 'evenement') {
+    if (n.type === 'evenement') {
+      // Un seul événement pour toute la table, tiré parmi ceux que personne n'a encore vus
+      const ev = this.rng.pick(this.runs[0].eventPool());
+      for (const r of this.runs) { r.sharedEvent = true; r.joinEvent(node, ev); }
+      this.eventVotes = this.eventVotes.map(() => null);
+      return;
+    }
+    if (n.type === 'zaap' || n.type === 'marchand') {
       for (const r of this.runs) r.enterNode(node);
       return;
     }

@@ -400,3 +400,7 @@ Les PV et les dégâts de l'échelle montent pour revenir à ces taux d'avant. P
 | 3 | ×1,50 | ×1,32 |
 
 Bot glouton, 72 graines, dieux et objets. Boss 1 / boss 2 / victoire, étage : Iop 40 / 13 / 1 % (14,9), Crâ 33 / 14 / 4 % (13,6), Xélor 36 / 10 / 3 % (14,3). La cible était 38 / 8 / 2 (14,6), 34 / 12 / 3 (14,6) et 36 / 12 / 2 (14,7). Le boss 1 et l'étage y sont. Le boss 2 du Iop reste un peu au-dessus (13 contre 8), celui du Xélor un peu en dessous (10 contre 12).
+
+## Étourdissement des objets (01/11/2026)
+Les objets qui étourdissent bloquaient des monstres tour après tour : la récompense « étourdi » sortait sur des déclencheurs qu'on provoque à chaque tour (fin de tour avec un PA, avec de l'armure, main vide ; 2e carte d'un élément ; zone ; cible empoisonnée), jusqu'à 3 fois par tour et 2 étourdis à la fois. Désormais : 18 points par étourdi (au lieu de 11), 1 au plus, une fois par tour, et jamais sur ces déclencheurs. Il reste 5 effets possibles par rareté au lieu de 12 à 20 (achever un ennemi d'un élément, trois éléments dans un tour). La règle légendaire « ennemis étourdis fragiles » passe de ×2 à ×1,5 dégâts. Les bénédictions qui étourdissent (Ralentissement, Karcham) et le Dofus des Glaces ne changent pas.
+Bot, 150 runs par classe (boss 1 / boss 2 / victoire) : Iop 39/7/1 → 35/11/1, Crâ 29/9/3 → 31/11/0 ; l'écart est dans le bruit de la mesure (le bot ne cherche pas les combinaisons d'étourdissement).
