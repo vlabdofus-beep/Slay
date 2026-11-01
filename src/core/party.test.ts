@@ -148,3 +148,28 @@ test('Table : même graine, mêmes actions, même combat', () => {
   };
   assert.equal(play(), play());
 });
+
+test('Bilan : chaque héros compte ses dégâts infligés, reçus, absorbés, ses soins et ses victimes', () => {
+  const c = party(['iop', 'cra'], [{ type: 'damage', amount: 10, element: 'neutre' }]);
+  c.useSeat(0);
+  c.seats[0].hand = [newCard('iop_coup_epee'), newCard('iop_vitalite')];
+  c.playCard(0, c.enemies[0].uid);
+  c.playCard(0);
+  c.useSeat(1);
+  c.seats[1].hand = [newCard('cra_fleche_venimeuse')];
+  c.playCard(0, c.enemies[0].uid);
+  for (const i of [0, 1]) { c.useSeat(i); c.endTurn(); }
+  const [a, b] = c.seats.map((s) => s.tally);
+  assert.equal(a.dealt, 6);
+  assert.equal(a.blocked, 5);
+  assert.equal(a.taken, 5);
+  // Le poison de la Flèche Venimeuse tique au tour du monstre : il compte pour le Crâ qui l'a posé
+  assert.equal(b.dealt, 4 + 3);
+  assert.equal(b.taken, 10);
+  c.enemies[0].hp = 1;
+  c.useSeat(1);
+  c.seats[1].hand = [newCard('cra_coup_arc')];
+  c.playCard(0, c.enemies[0].uid);
+  assert.equal(c.seats[1].tally.kills, 1);
+  assert.equal(c.seats[0].tally.kills, 0);
+});

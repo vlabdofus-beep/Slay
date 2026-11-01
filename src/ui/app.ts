@@ -29,12 +29,13 @@ import SKINS from '../data/skins.json' with { type: 'json' };
 import { BREED, STAGE, stage } from './scene/stage.ts';
 import { paintBoard, paintTitle } from './scene/paint.ts';
 import { Online, newCode } from './online.ts';
+import { NO_TALLY, type Tally } from '../core/combat.ts';
 import type { PartyAction } from '../game/party.ts';
 
 // ───────────── état de l'interface ─────────────
 
 type Selecting = { kind: 'card'; index: number } | null;
-type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'remove' } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' };
+type Modal = null | { kind: 'deck' } | { kind: 'upgrade' } | { kind: 'remove' } | { kind: 'pile'; pile: 'draw' | 'discard' | 'exhaust' } | { kind: 'tally' };
 
 /** Classes jouables, dans l'ordre de l'accueil. */
 type Hero = 'iop' | 'cra' | 'xelor';
@@ -905,7 +906,9 @@ function viewMap(run: Run): string {
     const go = state === 'avail' ? `data-act="go" data-id="${n.id}"` : 'aria-disabled="true" tabindex="-1"';
     return `<div class="node-wrap t-${n.type} s-${state}" style="left:${p.x}px;top:${p.y}px" ${state === 'avail' ? '' : 'tabindex="0"'}>
       <button class="node t-${n.type} s-${state}" ${go} aria-label="${label}">${icon}</button>
-      ${n.id === run.position ? `<span class="you" title="Tu es ici"><img src="${asset(`classes/${breed.id}.png`)}" alt="Ta position"></span>` : ''}
+      ${n.id === run.position ? (party
+        ? `<span class="you party" title="La table est ici">${party.members.map((m) => `<img src="${asset(`classes/${DOFUS.breeds[m.classe].id}.png`)}" alt="${esc(m.name)}" title="${esc(m.name)}">`).join('')}</span>`
+        : `<span class="you" title="Tu es ici"><img src="${asset(`classes/${breed.id}.png`)}" alt="Ta position"></span>`) : ''}
       ${party ? (() => {
         const who = party.votes.map((v, i) => (v === n.id ? i : -1)).filter((i) => i >= 0);
         return who.length ? `<span class="votes" aria-label="${who.length} vote${who.length > 1 ? 's' : ''}">${who.map((i) => `<img src="${asset(`classes/${DOFUS.breeds[party.members[i].classe].id}.png`)}" alt="${esc(party.members[i].name)}" title="${esc(party.members[i].name)}">`).join('')}</span>` : '';
@@ -1035,6 +1038,7 @@ function topbarHtml(run: Run): string {
         <button class="tb-btn" data-act="modal-deck">${uiIcon('deck')}Deck ${run.deck.length}</button>
         ${c.exhaustPile.length ? `<button class="link" data-act="pile" data-pile="exhaust">Épuisées ${c.exhaustPile.length}</button>` : ''}
         <button class="tb-btn" data-act="toggle-log" aria-pressed="${ui.logOpen}">${uiIcon('journal')}Journal</button>
+        <button class="tb-btn" data-act="tally">${uiIcon('combat')}Bilan</button>
         <button class="tb-btn" data-act="bestiary" ${ui.busy ? 'disabled' : ''}>${uiIcon('deck')}Bestiaire</button>
         ${soundButton('tb-btn')}
       </span>
@@ -1285,15 +1289,25 @@ function viewEvent(run: Run): string {
   const ev = EVENT_BY_ID[v.id];
   const page = run.eventPage()!;
   const done = v.chosen !== null;
+  // À plusieurs : la table vote ses réponses ; on montre qui a voté quoi et qui on attend.
+  const party = ui.online?.party;
+  const open = party ? party.eventOptions() : null;
   const opts = page.options.map((o, i) => {
-    const st = run.optionState(i);
+    const own = run.optionState(i);
+    const blockedFor = party && open && !open.includes(i) && own.ok ? party.runs.map((r, k) => (r.optionState(i).ok ? '' : party.members[k].name)).filter(Boolean) : [];
+    const st = party && !done ? (open && open.length ? { ok: open.includes(i), why: own.ok ? `Impossible pour ${blockedFor.join(', ')}` : own.why } : { ok: false, why: own.why }) : own;
+    const voters = party ? party.eventVotes.map((v, k) => (v === i ? k : -1)).filter((k) => k >= 0) : [];
+    const badges = voters.length ? `<span class="ev-votes">${voters.map((k) => `<img src="${asset(`classes/${DOFUS.breeds[party!.members[k].classe].id}.png`)}" alt="${esc(party!.members[k].name)}" title="${esc(party!.members[k].name)}">`).join('')}</span>` : '';
     const show = o.show ?? 'rien';
     const hint = show === 'tout' ? (o.ops.length ? `${o.ops.map(opText).join('. ')}.` : 'Rien ne se passe.')
       : show === 'prix' ? `<span class="ev-price">${esc(priceOf(o.ops))}.</span> La suite est inconnue.` : '';
     const on = v.chosen === i;
     return `<button class="ev-opt ev-${show}${on ? ' on' : ''}${done && !on ? ' off' : ''}" data-act="event-opt" data-i="${i}" ${done || !st.ok ? 'disabled' : ''}>
-      <b>${esc(o.label)}</b>${hint ? `<span>${show === 'prix' ? hint : esc(hint)}</span>` : ''}${!done && !st.ok ? `<em>${esc(st.why)}</em>` : ''}</button>`;
+      <b>${esc(o.label)}</b>${hint ? `<span>${show === 'prix' ? hint : esc(hint)}</span>` : ''}${!done && !st.ok && st.why ? `<em>${esc(st.why)}</em>` : ''}${badges}</button>`;
   }).join('');
+  const waitingEv = party && !done && open && !open.length
+    ? party.runs.map((r, k) => (r.phase === 'evenement' && r.event?.id === v.id && r.event.path.join() === v.path.join() && !r.pending ? '' : party.members[k].name)).filter(Boolean) : [];
+  const voteNote = party && !done ? `<p class="ev-vote-note" role="status">${waitingEv.length ? `On attend ${esc(waitingEv.join(', '))}.` : party.eventVotes[ui.online!.me] !== null ? 'Ton vote est pris. La réponse qui a la majorité l\'emporte ; à égalité, le sort tranche.' : 'La table vote sa réponse : la majorité l\'emporte. Chacun paie et gagne pour lui.'}</p>` : '';
   const lead = v.path.length && v.result ? `<p class="ev-lead">${esc(v.result)}</p>` : '';
   const result = done ? `<div class="ev-result" role="status"><p>${esc(v.result || 'C\'est fait.')}</p>
       ${v.gains.length ? `<ul class="ev-gains">${v.gains.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
@@ -1304,6 +1318,7 @@ function viewEvent(run: Run): string {
         <div><p class="god-kicker">Événement, étage ${run.stats.floor}</p><h2>${esc(ev.title)}</h2></div></div>
       ${lead}
       <p class="ev-text">${esc(page.text)}</p>
+      ${voteNote}
       <div class="ev-opts">${opts}</div>
       ${result}
     </section>
@@ -1346,10 +1361,46 @@ function viewEnd(run: Run): string {
       <p>${won ? 'Les trois actes sont terminés : Amakna, la forêt des Abraknydes et les landes de Brâkmar.' : `Tu es tombé à l'acte ${run.act} (${esc(actName(run))}), étage ${run.stats.floor}.`}</p>
       ${run.dofus.length ? `<p class="egg-row">${run.dofus.map((id) => `<span title="${esc(EGG_BY_ID[id].name)}">${eggIcon(id)}</span>`).join('')}</p>` : ''}
       <p class="muted">${run.stats.combats} combats gagnés, dont ${run.stats.elites} élites. Deck de ${run.deck.length} cartes, ${Object.keys(run.equipment).length} objets équipés, ${KAMAS(run.stats.kamas)} gagnés.</p>
+      <div class="end-tally">${tallyHtml(run).split('<table').slice(0, 2).join('<table')}</div>
       <button class="primary" data-act="title">Nouvelle partie</button>
     </section>
     ${sheet(run)}
   </main>`;
+}
+
+// ───────────── bilan des dégâts ─────────────
+// Chaque héros compte ses dégâts infligés (PV retirés aux monstres, poison et brûlure compris pour celui qui les a
+// posés), les PV perdus, ce que son armure et son bouclier ont absorbé, ses soins et ses monstres achevés.
+const TALLY_COLS: [keyof Tally, string][] = [['dealt', 'Infligés'], ['taken', 'Reçus'], ['blocked', 'Absorbés'], ['healed', 'Soins'], ['kills', 'Achevés']];
+
+/** Bilan d'une table de héros : la run entière, et le combat en cours (ou le dernier). */
+function tallyHtml(run: Run): string {
+  const party = ui.online?.party;
+  const runs = party ? party.runs : [run];
+  const names = party ? party.members.map((m) => m.name) : [cap(heroName(run.classe))];
+  const c = run.phase === 'combat' ? run.combat : null;
+  const now = (r: Run, i: number): Tally => (c ? c.seats[party ? i : 0]?.tally ?? NO_TALLY() : r.lastTally);
+  // Pendant un combat, la run n'a pas encore ajouté ce combat : on l'ajoute pour l'affichage.
+  const total = (r: Run, i: number): Tally => {
+    if (!c) return r.tally;
+    const t = now(r, i);
+    return Object.fromEntries(TALLY_COLS.map(([k]) => [k, r.tally[k] + t[k]])) as unknown as Tally;
+  };
+  const table = (caption: string, get: (r: Run, i: number) => Tally) => {
+    const rows = runs.map((r, i) => ({ r, i, t: get(r, i) }));
+    const best = Math.max(1, ...rows.map((x) => x.t.dealt));
+    const body = rows.map(({ r, i, t }) => {
+      const b = DOFUS.breeds[r.classe];
+      const me = party ? i === ui.online!.me : true;
+      return `<tr class="${me ? 'me' : ''}"><th scope="row"><img src="${asset(`classes/${b.id}.png`)}" alt="">${esc(names[i])}</th>
+        ${TALLY_COLS.map(([k]) => `<td>${t[k]}${k === 'dealt' && runs.length > 1 ? `<span class="tally-bar" style="width:${Math.round((t.dealt / best) * 100)}%"></span>` : ''}</td>`).join('')}</tr>`;
+    }).join('');
+    return `<table class="tally"><caption>${caption}</caption><thead><tr><th scope="col">Héros</th>${TALLY_COLS.map(([, l]) => `<th scope="col">${l}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+  };
+  const fights = run.stats.combats;
+  return table(`Sur la run (${fights} combat${fights > 1 ? 's' : ''} gagné${fights > 1 ? 's' : ''})`, total)
+    + table(c ? 'Ce combat' : 'Dernier combat', now)
+    + '<p class="muted tally-note">Infligés : PV retirés aux monstres (le poison, la brûlure et l\'échéance comptent pour celui qui les a posés). Absorbés : par l\'armure et le bouclier.</p>';
 }
 
 function viewModal(run: Run): string {
@@ -1364,6 +1415,9 @@ function viewModal(run: Run): string {
   } else if (m.kind === 'remove') {
     title = `Retirer une carte (${run.shop?.removePrice ?? 0} kamas)`;
     body = run.deck.map((inst) => cardHtml(resolveCard(LIBRARY, inst), { inst, act: 'remove-card', data: `data-uid="${inst.uid}"` })).join('');
+  } else if (m.kind === 'tally') {
+    title = ui.online?.party ? 'Bilan de la table' : 'Bilan de la run';
+    body = tallyHtml(run);
   } else if (m.kind === 'upgrade') {
     title = 'Améliorer une carte';
     body = run.deck.filter((c) => !c.upgraded).map((inst) =>
@@ -1371,7 +1425,7 @@ function viewModal(run: Run): string {
   }
   return `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-box">
     <header><h2>${esc(title)}</h2><button class="link" data-act="close-modal">Fermer</button></header>
-    <div class="modal-grid">${body}</div></div></div>`;
+    <div class="${m.kind === 'tally' ? 'modal-body' : 'modal-grid'}">${body}</div></div></div>`;
 }
 
 // ───────────── guide de style (#styleguide) ─────────────
@@ -1501,7 +1555,7 @@ function viewStyleguide(): string {
 /** En-tête gravé, comme sur Dofusle : nom au centre, lieu et étage en dessous. */
 function brandBar(run: Run): string {
   const where = `Acte ${run.act}, ${actName(run)}${run.stats.floor ? `, étage ${run.stats.floor} sur ${run.map.floors}` : ', au départ'}`;
-  return `<header class="brandbar"><p class="brand-name">La Main des Douze</p><p class="brand-sub">${where}</p><span class="bb-tools">${soundButton('tb-btn')}<button class="tb-btn" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></span></header>`;
+  return `<header class="brandbar"><p class="brand-name">La Main des Douze</p><p class="brand-sub">${where}</p><span class="bb-tools">${soundButton('tb-btn')}<button class="tb-btn" data-act="tally">${uiIcon('combat')}Bilan</button><button class="tb-btn" data-act="bestiary">${uiIcon('journal')}Bestiaire</button></span></header>`;
 }
 
 const BX: BxHelpers = {
@@ -1562,6 +1616,11 @@ function render(): void {
   root.innerHTML = (run && run.phase !== 'combat' ? brandBar(run) : '') + html + (run ? viewModal(run) + viewPending(run) : '') + net;
   if (run?.phase === 'combat') { animateHand(handBefore); tweenBars(barsBefore); }
   if (run?.phase === 'combat' && run.encounter) stage.show(run.encounter, run.classe, run.gender, appearanceOf(run));
+  // À plusieurs : les autres héros sur la scène, derrière le joueur
+  if (run?.phase === 'combat' && run.combat && ui.online?.party && run.combat.partySize > 1) {
+    const c = run.combat, party = ui.online.party;
+    stage.setAllies(c.seats.map((_, i) => i).filter((i) => i !== run.seat).map((i) => ({ classe: party.members[i].classe, gender: party.members[i].gender, down: c.isDown(i) })));
+  }
   else stage.hide();
   if (!run) { startPreviews(); mountLand(); }
   if (run?.phase === 'map') mountBoard(run);
@@ -2114,6 +2173,9 @@ function handle(act: string, d: DOMStringMap): void {
       break;
     case 'modal-deck':
       ui.modal = { kind: 'deck' };
+      break;
+    case 'tally':
+      ui.modal = { kind: 'tally' };
       break;
     case 'modal-upgrade':
       ui.modal = { kind: 'upgrade' };

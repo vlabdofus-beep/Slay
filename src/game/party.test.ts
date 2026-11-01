@@ -87,6 +87,10 @@ test('Partie : à la fin du combat, chacun a sa récompense ; un héros tombé r
   assert.equal(p.combat, null);
   assert.ok(p.runs.every((r) => r.phase === 'reward' && r.reward));
   assert.equal(p.runs[1].hp, 1);
+  // Bilan : le héros qui a joué a infligé des dégâts, et la run garde le bilan du combat
+  assert.ok(p.runs[0].tally.dealt > 0);
+  assert.deepEqual(p.runs[0].lastTally, p.runs[0].tally);
+  assert.equal(p.runs[1].tally.dealt, 0);
   assert.notDeepEqual(p.runs[0].reward!.cards, null);
 });
 
@@ -99,4 +103,55 @@ test('Partie : des parties entières à 1, 2, 3 et 4 joueurs se terminent, et le
     assert.equal(p.over, r.end);
     assert.equal((p.runs[0].act - 1) * p.runs[0].map.floors + p.runs[0].stats.floor, r.floor);
   }
+});
+
+import { EVENTS } from '../data/events.ts';
+
+/** Met toute la table devant le même événement (comme une case d'événement votée). */
+function atEvent(p: Party, id: string): void {
+  for (const r of p.runs) {
+    r.sharedEvent = true;
+    r.event = { id, chosen: null, result: '', gains: [], path: [] };
+    r.phase = 'evenement';
+  }
+}
+
+test('Événement à plusieurs : même événement pour tous, réponse votée, appliquée à chacun', () => {
+  const p = new Party(table(3), 21);
+  passGods(p);
+  const ev = EVENTS.find((e) => e.options.some((o) => o.ops.length && !o.next && !o.ops.some((x) => x.op === 'fight' || x.op === 'chance')))!;
+  const i = ev.options.findIndex((o) => o.ops.length && !o.next && !o.ops.some((x) => x.op === 'fight' || x.op === 'chance'));
+  atEvent(p, ev.id);
+  assert.ok(p.eventOptions().includes(i));
+  assert.throws(() => p.apply([0, 'chooseOption', i]), /inconnue/);
+  p.apply([0, 'eventVote', i]);
+  assert.ok(p.runs.every((r) => r.event!.chosen === null));
+  p.apply([2, 'eventVote', i]);
+  // 2 voix sur 3 : la réponse s'applique à toute la table
+  assert.ok(p.runs.every((r) => r.event!.chosen === i));
+  assert.deepEqual(p.eventVotes, [null, null, null]);
+});
+
+test('Événement à plusieurs : un combat d\'événement se joue avec toute la table', () => {
+  const p = new Party(table(2), 33);
+  passGods(p);
+  const ev = EVENTS.find((e) => e.options.some((o) => !o.next && o.ops.some((x) => x.op === 'fight')))!;
+  const i = ev.options.findIndex((o) => !o.next && o.ops.some((x) => x.op === 'fight'));
+  atEvent(p, ev.id);
+  p.apply([0, 'eventVote', i]);
+  p.apply([1, 'eventVote', i]);
+  const c = p.combat!;
+  assert.ok(c, 'combat commun créé');
+  assert.equal(c.partySize, 2);
+  assert.ok(p.runs.every((r, k) => r.phase === 'combat' && r.combat === c && r.seat === k));
+});
+
+test('Partie : le journal rejoue aussi les événements votés', () => {
+  let seed = 70, r = botParty(table(3), seed);
+  while (!r.log.some((a) => a[1] === 'eventVote') && seed < 90) r = botParty(table(3), ++seed);
+  assert.ok(r.log.some((a) => a[1] === 'eventVote'), 'une partie est passée par un événement');
+  assert.notEqual(r.end, 'bloqué');
+  const p = new Party(table(3), seed);
+  for (const a of r.log) p.apply(a);
+  assert.equal(p.over, r.end);
 });

@@ -148,9 +148,9 @@ const where = (t: TriggerDef) => (t.kind === 'card' ? 'à la cible' : 'à un enn
 const notWon = (t: TriggerDef) => t.kind !== 'won';
 const inTurn = (t: TriggerDef) => t.kind !== 'won' && t.kind !== 'end';
 
-function foeStatus(id: string, status: StatusId, value: number, name: string, max?: number): RewardDef {
+function foeStatus(id: string, status: StatusId, value: number, name: string, max?: number, o: Partial<RewardDef> = {}): RewardDef {
   return {
-    id, value, max, ok: notWon,
+    id, value, max, ok: notWon, ...o,
     text: (n, t) => `applique ${n} ${name} ${where(t)}`,
     apply: (c, n, x) => { const e = foe(c, x); if (e) c.fxStatus(e, status, n); },
   };
@@ -171,7 +171,12 @@ export const REWARDS: RewardDef[] = [
   foeStatus('vulnerabilite', 'vulnerabilite', 5, 'vulnérabilité', 3),
   foeStatus('faiblesse', 'faiblesse', 3.5, 'faiblesse', 3),
   foeStatus('erosion', 'erosion', 0.7, 'érosion', 4),
-  foeStatus('etourdi', 'etourdi', 11, 'étourdi', 2),
+  // Étourdir enlève une action entière : rare, une fois par tour au plus, et jamais sur un déclencheur qu'on
+  // provoque à chaque tour (fin de tour, 2e carte d'un élément, zone, cible empoisonnée). Voir docs/BALANCE.md.
+  foeStatus('etourdi', 'etourdi', 18, 'étourdi', 1, {
+    perTurn: 1,
+    ok: (t) => notWon(t) && t.kind !== 'end' && !t.id.startsWith('deuxieme_') && t.id !== 'zone' && t.id !== 'cible_empoisonnee',
+  }),
   { id: 'brulure_zone', value: 2.8, max: 2, ok: notWon, text: (n) => `applique ${n} brûlure à tous les ennemis`,
     apply: (c, n) => { for (const e of c.living()) c.fxStatus(e, 'brulure', n); } },
   { id: 'poison_zone', value: 2.8, max: 3, ok: notWon, text: (n) => `applique ${n} poison à tous les ennemis`,
@@ -212,7 +217,7 @@ export const RULES = {
   air_perce: 'Tes dégâts Air ignorent l\'armure et le bouclier.',
   vulne_forte: 'La vulnérabilité que tu appliques augmente les dégâts de 75 % au lieu de 50 %.',
   brule_empoisonne: 'Chaque brûlure que tu appliques applique autant de poison.',
-  etourdi_fragile: 'Les ennemis étourdis subissent le double de dégâts.',
+  etourdi_fragile: 'Les ennemis étourdis subissent 50 % de dégâts en plus.',
   renvoi_moitie: 'Tu renvoies la moitié des dégâts que tu subis à l\'attaquant.',
   triple_element: 'La première fois que tu joues 3 éléments différents dans un tour : +2 PA et pioche 2 cartes.',
   soin_bouclier: 'La moitié des soins au-delà de tes PV max devient du bouclier.',
