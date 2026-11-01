@@ -70,6 +70,7 @@ puis mets le statut à jour en terminant. Statuts : à faire, en cours, en relec
 - Plafonds de piles (brûlure, poison) et limites globales d'effets par tour : refusés ; on limite par objet.
 
 ## Journal
+- 01/11/2026 : Grok — combat des Pious. Les morts gardaient leur place dans la rangée : à force d'appels, les vivants sortaient de l'écran. Ils n'occupent plus de place, et la rangée se serre à partir de 4. L'appel s'arrête toujours à 5 vivants.
 - 31/10/2026 : Grok — échelle à plusieurs mesurée sur des parties complètes. Le bot vote ensemble, se soigne et achète. PV ×2,5 / ×4,1 / ×6 (dégâts ×1). 100 parties : 33/13/2 (14,1), 39/9/0 (14,2), 41/9/3 (15,1). Un héros qui meurt pendant son tour ne bloque plus la table.
 - 31/10/2026 : le jeu s'appelle désormais **La Main des Douze** (accueil, onglet, documentation). Dépôt et Worker gardent leur nom technique.
 - 31/10/2026 : Claude — multijoueur, étape 5 : on joue à plusieurs dans le jeu. Salon depuis l'accueil (« Jouer à plusieurs », code ou lien), votes sur la carte, alliés et bouton « Prêt » en combat, reprise après coupure. `npm run preview` fait tourner les salons en local (deux onglets pour jouer à deux).

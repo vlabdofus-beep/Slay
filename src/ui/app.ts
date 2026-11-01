@@ -1082,7 +1082,7 @@ function arenaHtml(run: Run): string {
         ${floatsHtml(-1)}
         <span class="chips">${powerChips(c)}${statusChips(p.status)}${laterChip(c)}</span>
       </div>
-      <div class="foes" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
+      <div class="foes${c.living().length >= 4 ? ' packed' : ''}" style="height:${STAGE.ground * 100}%">${c.enemies.map((e) => enemyHtml(e, targeting)).join('')}</div>
       ${targeting ? `<p class="prompt">Choisis une cible. <button class="link" data-act="cancel">Annuler</button></p>` : ''}
     </section>`;
 }
