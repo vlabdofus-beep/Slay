@@ -3779,7 +3779,7 @@
       "resistances": {"neutre": 39, "terre": 24, "feu": 0, "eau": 50, "air": 33},
       "mecaniques": [],
       "actions": {
-        "machoires": {"nom": "Mâchoires", "effets": [{"type": "damage", "amount": 13, "element": "eau"}]},
+        "machoires": {"nom": "Mâchoires", "effets": [{"type": "damage", "amount": 8, "element": "eau"}]},
         "vase": {
           "nom": "Coup de vase",
           "effets": [
@@ -5040,11 +5040,11 @@
     "chef_crocodaille": {
       "nom": "Chef Crocodaille",
       "pv": [100, 106],
-      "resistances": {"neutre": 23, "terre": 48, "feu": 43, "eau": 50, "air": 23},
+      "resistances": {"neutre": 23, "terre": 38, "feu": 33, "eau": 40, "air": 13},
       "mecaniques": [{"kind": "rage", "n": 1, "every": 4}],
       "actions": {
         "appel": {"nom": "Appel du marais", "effets": [{"type": "summon", "monster": "crocodaille", "count": 1}]},
-        "machoires": {"nom": "Mâchoires d'acier", "effets": [{"type": "damage", "amount": 18, "element": "eau"}]},
+        "machoires": {"nom": "Mâchoires d'acier", "effets": [{"type": "damage", "amount": 6, "element": "eau"}]},
         "vase": {
           "nom": "Vase",
           "effets": [{"type": "status", "status": "vulnerabilite", "amount": 2, "on": "target"}, {"type": "block", "amount": 14}]
