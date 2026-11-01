@@ -281,6 +281,34 @@ test('voleur : vole des kamas et s\'enfuit avec ; enroulement ; épines ; rage t
   assert.equal(n.enemies[0].status.puissance, 2);
 });
 
+test('piou : l\'appel s\'arrête à 5 vivants, et une place se libère quand l\'un meurt', () => {
+  const c = combatWith(['piou_rouge', 'piou_bleu'], []);
+  for (let turn = 0; turn < 6 && c.living().length < 5; turn++) {
+    for (const e of c.living()) e.moveId = 'appel';
+    c.hand = [];
+    c.endTurn();
+    assert.ok(c.living().length <= 5);
+    assert.equal(c.outcome, 'ongoing');
+  }
+  assert.equal(c.living().length, 5);
+  const before = c.enemies.length;
+  for (const e of c.living()) e.moveId = 'appel';
+  c.hand = [];
+  c.endTurn();
+  assert.equal(c.living().length, 5, 'au-delà de 5, l\'appel ne fait plus entrer personne');
+  assert.equal(c.enemies.length, before);
+  c.living()[0].hp = 1;
+  c.hand = [newCard('iop_pression')];
+  c.player.energy = 9;
+  c.player.status.puissance = 30;
+  c.playCard(0, c.living()[0].uid);
+  assert.ok(c.living().length < 5);
+  for (const e of c.living()) e.moveId = 'appel';
+  c.hand = [];
+  c.endTurn();
+  assert.equal(c.living().length, 5);
+});
+
 test('sommeil, explosion, plafond, artefact, invocation et cartes de statut', () => {
   const s = combatWith(['abraknyde_sombre'], []);
   assert.equal(s.intent(s.enemies[0]).note, 'Endormi');

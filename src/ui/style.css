@@ -406,13 +406,19 @@ body[data-screen="combat"] .bg { display: none; }
 .hero.hurt .bar { animation: hurt .45s ease; }
 .hero .passives { text-align: center; text-shadow: 0 1px 2px #000; }
 .foes {
-  position: absolute; top: 0; left: 46%; right: 3%; display: flex; justify-content: space-evenly; align-items: flex-end; gap: 1rem;
+  position: absolute; top: 0; left: 36%; right: 9rem; display: flex; justify-content: space-evenly; align-items: flex-end; gap: .5rem;
 }
-.foes .enemy { margin-bottom: -118px; }
+.foes .enemy { flex: 1 1 0; width: auto; max-width: 180px; min-width: 0; margin-bottom: -118px; }
+/* Un mort ne garde pas sa place : sinon les invocations (Piou) poussent la rangée hors de l'écran. */
+.foes .enemy.dead { position: absolute; left: 50%; bottom: 0; width: 140px; max-width: 140px; margin: 0; pointer-events: none; }
+.foes.packed { gap: .25rem; }
+.foes.packed .enemy { margin-bottom: -96px; }
+.foes.packed .enemy-pic { width: min(112px, 100%); height: auto; aspect-ratio: 1; }
+.foes.packed .enemy-name { font-size: .85rem; }
 .enemy { position: relative; width: 180px; display: grid; justify-items: center; gap: 4px; padding: 0; background: none; border: 0; cursor: default; color: inherit; font: inherit; transition: transform .25s ease, filter .2s; }
 .enemy-under { display: grid; justify-items: center; gap: 4px; width: 100%; min-height: 108px; padding-top: 6px; }
 .enemy-under .bar { width: 100%; }
-.enemy-name { text-shadow: 0 1px 3px #000, 0 0 8px #000; }
+.enemy-name { text-shadow: 0 1px 3px #000, 0 0 8px #000; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .enemy .affinity { text-shadow: 0 1px 2px #000; }
 .enemy-pic { filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .55)); }
 .enemy.targetable { cursor: crosshair; }
@@ -498,7 +504,8 @@ body.is-dragging { cursor: grabbing; }
   .topbar { gap: .6rem; font-size: .8rem; flex-wrap: wrap; }
   .tb-enc { display: none; }
   .hero { width: 120px; }
-  .foes { left: 38%; gap: .2rem; }
+  .foes { left: 34%; right: 6.5rem; gap: .2rem; }
+  .foes .enemy { max-width: 104px; }
   .enemy { width: 104px; }
   .enemy-pic { width: 84px; height: 84px; }
   .foes .enemy { margin-bottom: -64px; }
