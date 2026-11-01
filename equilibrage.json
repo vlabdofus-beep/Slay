@@ -5388,10 +5388,10 @@
     "gardienne_egouts": {
       "nom": "Gardienne des Égouts",
       "pv": [190, 200],
-      "resistances": {"neutre": 50, "terre": 45, "feu": 43, "eau": 28, "air": 18},
+      "resistances": {"neutre": 30, "terre": 25, "feu": 23, "eau": 18, "air": 88},
       "mecaniques": [{"kind": "gardien"}, {"kind": "regeneration", "n": 6}],
       "actions": {
-        "appel": {"nom": "Appel des égouts", "effets": [{"type": "summon", "monster": "rat_egoutant", "count": 2}]},
+        "appel": {"nom": "Appel des égouts", "effets": [{"type": "summon", "monster": "rat_egoutant", "count": 1}]},
         "peste": {
           "nom": "Peste",
           "effets": [
@@ -5399,7 +5399,7 @@
             {"type": "status", "status": "faiblesse", "amount": 1, "on": "target"}
           ]
         },
-        "queue": {"nom": "Coup de queue", "effets": [{"type": "damage", "amount": 26, "element": "terre"}]}
+        "queue": {"nom": "Coup de queue", "effets": [{"type": "damage", "amount": 21, "element": "terre"}]}
       },
       "rythme": {"kind": "cycle", "order": ["appel", "peste", "queue", "queue"]}
     },
